@@ -207,7 +207,7 @@ export default function AddForm({ onClick }) {
 
   const checkCompanyApi = async () => {
     await axios
-      .get(baseURL + "companies/companies/")
+      .get(baseURL + "companies/companies")
       .then(function (response) {
         if (response.data.emi != null) {
           setAdvancePay(response.data.emi);
@@ -260,7 +260,7 @@ export default function AddForm({ onClick }) {
   
   const fetchCompanyDetails = async () => {
     try {
-      const response = await axios.get(baseURL + "companies/companies/");
+      const response = await axios.get(baseURL + "companies/companies");
       setCompanyData(response.data);
       return response.data;
     } catch (error) {

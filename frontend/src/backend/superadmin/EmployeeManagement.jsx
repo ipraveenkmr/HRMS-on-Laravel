@@ -77,7 +77,7 @@ const EmployeeManagement = () => {
 
   const fetchBranches = async () => {
     try {
-      const response = await axios.get(`${baseURL}employees/branches/`);
+      const response = await axios.get(`${baseURL}employees/branches`);
       setBranches(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);

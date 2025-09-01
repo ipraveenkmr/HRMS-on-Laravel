@@ -172,7 +172,7 @@ export default function Username({ closeform }) {
 
   const usersApi = async () => {
     try {
-      const response = await axios.get(baseURL + "users/");
+      const response = await axios.get(baseURL + "users");
       updateUsernamelist(response.data);
     } catch (error) {
       console.log("Error fetching users:", error);

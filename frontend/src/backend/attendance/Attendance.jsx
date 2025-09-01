@@ -189,7 +189,7 @@ export default function Attendance() {
   const employeeApi = async () => {
     // starting
     await axios
-      .get(baseURL + "employees/")
+      .get(baseURL + "employees")
       .then(function (response) {
         updateEmployee(response.data);
       })

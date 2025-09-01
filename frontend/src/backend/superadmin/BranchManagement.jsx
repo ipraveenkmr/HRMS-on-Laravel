@@ -42,7 +42,7 @@ const BranchManagement = () => {
 
   const fetchBranches = async () => {
     try {
-      const response = await axios.get(`${baseURL}companies/branches/`);
+      const response = await axios.get(`${baseURL}companies/branches`);
       setBranches(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
@@ -73,7 +73,7 @@ const BranchManagement = () => {
         setEditingBranch(null);
       } else {
         // Create new branch
-        const response = await axios.post(`${baseURL}companies/branches/`, formData);
+        const response = await axios.post(`${baseURL}companies/branches`, formData);
         setBranches([...branches, response.data]);
       }
       

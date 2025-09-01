@@ -60,11 +60,11 @@ class ApiService {
         const commonApis = [
             { endpoint: "assets", action: "updateAssetlist" },
             { endpoint: "assets/categories/all", action: "updateAssetCategory" },
-            { endpoint: "auth/users/", action: "updateUsernamelist" },
-            { endpoint: "companies/branches/", action: "updateBranchamelist" },
-            { endpoint: "companies/companies/", action: "updateCompanyList" },
-            { endpoint: "departments/", action: "updateDepartments" },
-            { endpoint: "dashboard/financial-year/", action: "updateWorkinghour" },
+            { endpoint: "auth/users", action: "updateUsernamelist" },
+            { endpoint: "companies/branches", action: "updateBranchamelist" },
+            { endpoint: "companies/companies", action: "updateCompanyList" },
+            { endpoint: "departments", action: "updateDepartments" },
+            { endpoint: "dashboard/financial-year", action: "updateWorkinghour" },
             { endpoint: "dashboard/stats", action: "updateDashdata" },
         ];
 
@@ -81,7 +81,7 @@ class ApiService {
         const { username } = usecdotStore.getState();
         if (username) {
             try {
-                const response = await this.get(`employees/username/${username}/`);
+                const response = await this.get(`employees/username/${username}`);
                 const employeeData = response.data[0];
                 this.updateStore("updateEmpname", employeeData.emp_name);
                 this.updateStore("updateEmptype", employeeData.emp_type);
@@ -185,7 +185,7 @@ class ApiService {
 
     async fiApi() {
         try {
-            const response = await this.get("dashboard/financial-year/");
+            const response = await this.get("dashboard/financial-year");
             this.updateStore("updateWorkinghour", response.data);
         } catch (error) {
             console.error("fiApi error:", error);
@@ -212,7 +212,7 @@ class ApiService {
 
     async employeeEditApi(username) {
         try {
-            const response = await this.get(`employees/username/${username}/`);
+            const response = await this.get(`employees/username/${username}`);
             const employeeData = response.data[0];
             this.updateStore("updateEmpname", employeeData.emp_name);
             this.updateStore("updateEmptype", employeeData.emp_type);
@@ -225,7 +225,7 @@ class ApiService {
 
     async usersApi() {
         try {
-            const response = await this.get("auth/users/");
+            const response = await this.get("auth/users");
             this.updateStore("updateUsernamelist", response.data);
         } catch (error) {
             console.error("usersApi error:", error);
@@ -234,7 +234,7 @@ class ApiService {
 
     async branchApi() {
         try {
-            const response = await this.get("companies/branches/");
+            const response = await this.get("companies/branches");
             this.updateStore("updateBranchamelist", response.data);
         } catch (error) {
             console.error("branchApi error:", error);
@@ -243,7 +243,7 @@ class ApiService {
 
     async companyApi() {
         try {
-            const response = await this.get("companies/companies/");
+            const response = await this.get("companies/companies");
             this.updateStore("updateCompanyList", response.data);
         } catch (error) {
             console.error("companyApi error:", error);
@@ -360,7 +360,7 @@ class ApiService {
 
     async departmentApi() {
         try {
-            const response = await this.get("departments/");
+            const response = await this.get("departments");
             this.updateStore("updateDepartments", response.data);
         } catch (error) {
             console.error("departmentApi error:", error);

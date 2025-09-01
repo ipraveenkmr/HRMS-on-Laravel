@@ -318,7 +318,7 @@ export default function Employee() {
   const employeeApi = async () => {
     // starting
     await axios
-      .get(baseURL + "employees/", {
+      .get(baseURL + "employees", {
         // headers: {
         //   "Access-Control-Allow-Origin": "*",
         //   "Content-type": "Application/json",

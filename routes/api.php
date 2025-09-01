@@ -33,7 +33,8 @@ Route::prefix('/auth')->group(function () {
 });
 
 // Employee routes (protected)
-Route::prefix('/employees')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/employees')->group(function () {
+// Route::prefix('/employees')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [EmployeeController::class, 'index']);
     Route::post('/', [EmployeeController::class, 'store']);
     Route::get('/{employee_id}', [EmployeeController::class, 'show']);
@@ -52,7 +53,7 @@ Route::prefix('/employees')->middleware('auth:sanctum')->group(function () {
 });
 
 // Attendance routes (protected)
-Route::prefix('/attendance')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/attendance')->group(function () {
     Route::get('/', [AttendanceController::class, 'index']);
     Route::post('/', [AttendanceController::class, 'store']);
     Route::get('/{attendance_id}', [AttendanceController::class, 'show']);
@@ -67,7 +68,7 @@ Route::prefix('/attendance')->middleware('auth:sanctum')->group(function () {
 });
 
 // Tasks routes (protected)
-Route::prefix('/tasks')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/tasks')->group(function () {
     Route::get('/', [TaskController::class, 'index']);
     Route::post('/', [TaskController::class, 'store']);
     Route::get('/{task_id}', [TaskController::class, 'show']);
@@ -79,7 +80,7 @@ Route::prefix('/tasks')->middleware('auth:sanctum')->group(function () {
 });
 
 // Daily Tasks routes (protected)
-Route::prefix('/daily-tasks')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/daily-tasks')->group(function () {
     Route::get('/', [TaskController::class, 'indexDailyTasks']);
     Route::post('/', [TaskController::class, 'storeDailyTask']);
     Route::get('/{task_id}', [TaskController::class, 'showDailyTask']);
@@ -91,7 +92,7 @@ Route::prefix('/daily-tasks')->middleware('auth:sanctum')->group(function () {
 });
 
 // Leave routes (protected)
-Route::prefix('/leave')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/leave')->group(function () {
     Route::get('/', [LeaveController::class, 'index']);
     Route::post('/', [LeaveController::class, 'store']);
     Route::get('/{leave_id}', [LeaveController::class, 'show']);
@@ -106,7 +107,7 @@ Route::prefix('/leave')->middleware('auth:sanctum')->group(function () {
 });
 
 // Assets routes (protected)
-Route::prefix('/assets')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/assets')->group(function () {
     Route::get('/', [AssetController::class, 'index']);
     Route::post('/', [AssetController::class, 'store']);
     Route::get('/{asset_id}', [AssetController::class, 'show']);
@@ -119,7 +120,7 @@ Route::prefix('/assets')->middleware('auth:sanctum')->group(function () {
 });
 
 // Asset Categories routes (protected)
-Route::prefix('/asset-categories')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/asset-categories')->group(function () {
     Route::get('/', [AssetController::class, 'indexCategories']);
     Route::post('/', [AssetController::class, 'storeCategory']);
     Route::get('/{category_id}', [AssetController::class, 'showCategory']);
@@ -128,7 +129,7 @@ Route::prefix('/asset-categories')->middleware('auth:sanctum')->group(function (
 });
 
 // Payroll routes (protected)
-Route::prefix('/payroll')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/payroll')->group(function () {
     Route::get('/', [PayslipController::class, 'index']);
     Route::post('/', [PayslipController::class, 'store']);
     Route::get('/{payslip_id}', [PayslipController::class, 'show']);
@@ -140,7 +141,7 @@ Route::prefix('/payroll')->middleware('auth:sanctum')->group(function () {
 });
 
 // Loans routes (protected)
-Route::prefix('/loans')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/loans')->group(function () {
     Route::get('/', [LoanController::class, 'index']);
     Route::post('/', [LoanController::class, 'store']);
     Route::get('/{loan_id}', [LoanController::class, 'show']);
@@ -154,14 +155,14 @@ Route::prefix('/loans')->middleware('auth:sanctum')->group(function () {
 });
 
 // Dashboard routes (protected)
-Route::prefix('/dashboard')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/dashboard')->group(function () {
     Route::get('/stats', [HRMSController::class, 'getDashboardStats']);
     Route::get('/notifications', [HRMSController::class, 'getNotifications']);
     Route::get('/financial-year', [HRMSController::class, 'getFinancialYearInfo']);
 });
 
 // Companies routes (protected)
-Route::prefix('/companies')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/companies')->group(function () {
     Route::get('/', [HRMSController::class, 'getCompanies']);
     Route::post('/', [HRMSController::class, 'storeCompany']);
     Route::get('/{company_id}', [HRMSController::class, 'showCompany']);
@@ -170,7 +171,7 @@ Route::prefix('/companies')->middleware('auth:sanctum')->group(function () {
 });
 
 // Departments routes (protected)
-Route::prefix('/departments')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/departments')->group(function () {
     Route::get('/', [HRMSController::class, 'getDepartments']);
     Route::post('/', [HRMSController::class, 'storeDepartment']);
     Route::get('/{dept_id}', [HRMSController::class, 'showDepartment']);
@@ -179,7 +180,7 @@ Route::prefix('/departments')->middleware('auth:sanctum')->group(function () {
 });
 
 // Paygrade routes (protected)
-Route::prefix('/paygrade')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/paygrade')->group(function () {
     Route::get('/', [HRMSController::class, 'getPayGrades']);
     Route::post('/', [HRMSController::class, 'storePayGrade']);
     Route::get('/{paygrade_id}', [HRMSController::class, 'showPayGrade']);
@@ -188,7 +189,7 @@ Route::prefix('/paygrade')->middleware('auth:sanctum')->group(function () {
 });
 
 // Financial Years routes (protected)
-Route::prefix('/financial-years')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/financial-years')->group(function () {
     Route::get('/', [HRMSController::class, 'getFinancialYears']);
     Route::post('/', [HRMSController::class, 'storeFinancialYear']);
     Route::get('/{year_id}', [HRMSController::class, 'showFinancialYear']);
@@ -197,7 +198,7 @@ Route::prefix('/financial-years')->middleware('auth:sanctum')->group(function ()
 });
 
 // Travel Expenses routes (protected)
-Route::prefix('/travel-expenses')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/travel-expenses')->group(function () {
     Route::get('/', [HRMSController::class, 'getTravelExpenses']);
     Route::post('/', [HRMSController::class, 'storeTravelExpense']);
     Route::get('/{expense_id}', [HRMSController::class, 'showTravelExpense']);

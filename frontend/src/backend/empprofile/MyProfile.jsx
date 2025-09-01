@@ -402,7 +402,7 @@ export default function MyProfile() {
         setIsEditMode(false);
         setActiveStep(0);
         // Refresh employee list in store
-        const employeeListResponse = await axios.get(baseURL + "employees/");
+        const employeeListResponse = await axios.get(baseURL + "employees");
         updateEmployee(employeeListResponse.data);
       }
     } catch (error) {

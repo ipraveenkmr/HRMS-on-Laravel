@@ -101,7 +101,7 @@ function PrintPayslip({ onClick, eventid, uname }) {
 
   const getEmployeeApi = async () => {
     try {
-      const response = await axios.get(baseURL + "employees/username/" + uname + "/");
+      const response = await axios.get(baseURL + "employees/username/" + uname);
       const empData = response.data[0];
 
       // Basic employee information
@@ -149,7 +149,7 @@ function PrintPayslip({ onClick, eventid, uname }) {
 
   const getCompanyApi = async () => {
     try {
-      const response = await axios.get(baseURL + "companies/companies/");
+      const response = await axios.get(baseURL + "companies/companies");
       if (response.data && response.data.length > 0) {
         // Find the company that matches the employee's company ID
         const companyData = response.data.find(comp => comp.id === company) || response.data[0];

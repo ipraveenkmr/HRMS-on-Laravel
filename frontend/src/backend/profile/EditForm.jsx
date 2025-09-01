@@ -278,7 +278,7 @@ export default function EditForm({ onClick, eventid }) {
 
   const employeeApi = async () => {
     await axios
-      .get(baseURL + "employees/", {})
+      .get(baseURL + "employees", {})
       .then(function (response) {
         updateEmployee(response.data);
       })

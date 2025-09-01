@@ -476,7 +476,7 @@ export default function AddForm({ closeform, eventid }) {
     };
 
     await axios
-      .post(baseURL + "employees/", values)
+      .post(baseURL + "employees", values)
       .then(function (response) {
         console.log("Employee post: " + JSON.stringify(response.data));
         toast.success("Your data is submitted!", {
@@ -510,7 +510,7 @@ export default function AddForm({ closeform, eventid }) {
   const employeeApi = async () => {
     // starting
     await axios
-      .get(baseURL + "employees/", {
+      .get(baseURL + "employees", {
         // headers: {
         //   "Access-Control-Allow-Origin": "*",
         //   "Content-type": "Application/json",

@@ -181,7 +181,7 @@ export default function Login() {
 
   const employeeApi = async () => {
     await axios
-      .get(baseURL + "employees/")
+      .get(baseURL + "employees")
       .then(function (response) {
         updateEmployee(response.data);
         navigate("/backend/");
@@ -211,7 +211,7 @@ export default function Login() {
     formData.append("password", data.get("password"));
 
     await axios
-      .post(baseURL + "auth/token/", formData, {
+      .post(baseURL + "auth/token", formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
