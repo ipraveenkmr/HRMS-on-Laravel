@@ -64,7 +64,7 @@ return new class extends Migration
             $table->foreignId('department_id')->constrained()->onDelete('cascade');
             $table->string('designation', 99)->nullable();
             $table->enum('emp_type', ['Employee', 'Manager', 'Asset Admin', 'Admin'])->default('Employee');
-            $table->enum('job_type', ['Pemanent', 'Contractual'])->default('Pemanent');
+            $table->enum('job_type', ['Permanent', 'Contractual'])->default('Permanent');
             $table->string('probation_period_in_month', 99)->nullable();
             $table->string('pf_account_number_uan', 99)->nullable();
             $table->string('esi_account_number', 99)->nullable();
@@ -78,6 +78,7 @@ return new class extends Migration
             // Salary Details
             $table->foreignId('pay_grade_id')->constrained()->onDelete('cascade');
             $table->bigInteger('gross_salary')->nullable();
+            $table->bigInteger('ctc')->nullable();
             $table->string('bank_name', 99)->nullable();
             $table->string('bank_account_number', 99)->nullable();
             $table->string('ifsc_code', 99)->nullable();

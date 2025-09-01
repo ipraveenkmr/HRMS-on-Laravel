@@ -38,7 +38,7 @@ class EmployeeController extends Controller
             ]);
 
             $file = $request->file('file');
-            
+
             if (!$this->isValidImage($file->getClientOriginalName())) {
                 return response()->json([
                     'detail' => 'Invalid file type. Only image files are allowed.'
@@ -47,7 +47,7 @@ class EmployeeController extends Controller
 
             $extension = $file->getClientOriginalExtension();
             $uniqueFilename = 'profile_' . Str::uuid() . '.' . $extension;
-            
+
             $file->move(public_path(self::UPLOAD_DIR), $uniqueFilename);
 
             return response()->json([
@@ -70,7 +70,7 @@ class EmployeeController extends Controller
             ]);
 
             $file = $request->file('file');
-            
+
             if (!$this->isValidImage($file->getClientOriginalName())) {
                 return response()->json([
                     'detail' => 'Invalid file type. Only image files are allowed.'
@@ -79,7 +79,7 @@ class EmployeeController extends Controller
 
             $extension = $file->getClientOriginalExtension();
             $uniqueFilename = 'aadhaar_' . Str::uuid() . '.' . $extension;
-            
+
             $file->move(public_path(self::UPLOAD_DIR), $uniqueFilename);
 
             return response()->json([
@@ -102,7 +102,7 @@ class EmployeeController extends Controller
             ]);
 
             $file = $request->file('file');
-            
+
             if (!$this->isValidImage($file->getClientOriginalName())) {
                 return response()->json([
                     'detail' => 'Invalid file type. Only image files are allowed.'
@@ -111,7 +111,7 @@ class EmployeeController extends Controller
 
             $extension = $file->getClientOriginalExtension();
             $uniqueFilename = 'pan_' . Str::uuid() . '.' . $extension;
-            
+
             $file->move(public_path(self::UPLOAD_DIR), $uniqueFilename);
 
             return response()->json([
@@ -132,7 +132,7 @@ class EmployeeController extends Controller
         $employees = Employee::with(['department', 'payGrade', 'companyDetail', 'branchDetail'])
             ->orderBy('created_at')
             ->get();
-        
+
         return response()->json($employees);
     }
 
@@ -141,11 +141,11 @@ class EmployeeController extends Controller
         $employees = Employee::with(['department', 'payGrade', 'companyDetail', 'branchDetail'])
             ->where('id', $employee_id)
             ->get();
-        
+
         if ($employees->isEmpty()) {
             return response()->json(['detail' => 'Employee not found'], 404);
         }
-        
+
         return response()->json($employees);
     }
 
@@ -154,11 +154,11 @@ class EmployeeController extends Controller
         $employees = Employee::with(['department', 'payGrade', 'companyDetail', 'branchDetail'])
             ->where('username', $username)
             ->get();
-        
+
         if ($employees->isEmpty()) {
             return response()->json(['detail' => 'Employee not found'], 404);
         }
-        
+
         return response()->json($employees);
     }
 
@@ -167,7 +167,7 @@ class EmployeeController extends Controller
         $employees = Employee::with(['department', 'payGrade', 'companyDetail', 'branchDetail'])
             ->where('department_id', $dept_id)
             ->get();
-        
+
         return response()->json($employees);
     }
 
@@ -176,12 +176,14 @@ class EmployeeController extends Controller
         $employees = Employee::with(['department', 'payGrade', 'companyDetail', 'branchDetail'])
             ->where('manager_id', $manager_id)
             ->get();
-        
+
         return response()->json($employees);
     }
 
     public function store(Request $request): JsonResponse
     {
+
+        // dd($request->all());
         $validated = $request->validate([
             'username' => 'required|string|max:200|unique:employees',
             'emp_name' => 'required|string|max:200',
@@ -197,15 +199,15 @@ class EmployeeController extends Controller
             'emp_status' => ['nullable', Rule::in(['Working', 'Resigned', 'Notice Period'])],
             'pay_grade_id' => 'required|exists:pay_grades,id',
             'gross_salary' => 'nullable|integer|min:0',
-            'manager_id' => 'nullable|exists:employees,id',
+            // 'manager_id' => 'nullable|exists:employees,id',
         ]);
-
+        // dd($validated);
         // Check if employee with username already exists
         $existingEmployee = Employee::where('username', $validated['username'])->first();
         if ($existingEmployee) {
             return response()->json(['detail' => 'Employee with this username already exists'], 400);
         }
-
+        // dd($validated);
         $employee = Employee::create($validated);
 
         // Create leave calculator data for the employee
@@ -242,7 +244,7 @@ class EmployeeController extends Controller
     public function update(Request $request, $employee_id): JsonResponse
     {
         $employee = Employee::find($employee_id);
-        
+
         if (!$employee) {
             return response()->json(['detail' => 'Employee not found'], 404);
         }
@@ -266,14 +268,14 @@ class EmployeeController extends Controller
         ]);
 
         $employee->update($validated);
-        
+
         return response()->json($employee->load(['department', 'payGrade', 'companyDetail', 'branchDetail']));
     }
 
     public function updateByUsername(Request $request, $username): JsonResponse
     {
         $employee = Employee::where('username', $username)->first();
-        
+
         if (!$employee) {
             return response()->json(['detail' => 'Employee not found'], 404);
         }
@@ -297,20 +299,20 @@ class EmployeeController extends Controller
         ]);
 
         $employee->update($validated);
-        
+
         return response()->json($employee->load(['department', 'payGrade', 'companyDetail', 'branchDetail']));
     }
 
     public function destroy($employee_id): JsonResponse
     {
         $employee = Employee::find($employee_id);
-        
+
         if (!$employee) {
             return response()->json(['detail' => 'Employee not found'], 404);
         }
-        
+
         $employee->delete();
-        
+
         return response()->json(['message' => 'Data was deleted successfully!']);
     }
 
@@ -325,7 +327,7 @@ class EmployeeController extends Controller
     {
         $branches = BranchDetail::with('companyName')->get();
         $result = [];
-        
+
         foreach ($branches as $branch) {
             $branchData = [
                 'id' => $branch->id,
@@ -336,14 +338,14 @@ class EmployeeController extends Controller
                 'latitude' => $branch->latitude,
                 'created_at' => $branch->created_at
             ];
-            
+
             if ($branch->companyName) {
                 $branchData['company_name'] = $branch->companyName->company_name;
             }
-            
+
             $result[] = $branchData;
         }
-        
+
         return response()->json($result);
     }
 
