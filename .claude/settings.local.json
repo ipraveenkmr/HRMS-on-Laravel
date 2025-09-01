@@ -3,7 +3,10 @@
     "allow": [
       "Bash(php artisan:*)",
       "Bash(rm:*)",
-      "Bash(/mnt/d/laragon/bin/php artisan route:list --path=api/auth/token)"
+      "Bash(/mnt/d/laragon/bin/php artisan route:list --path=api/auth/token)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }

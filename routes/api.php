@@ -11,6 +11,8 @@ use App\Http\Controllers\PayslipController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\BranchController;
 
 // Root route
 Route::get('/', [HRMSController::class, 'index']);
@@ -37,9 +39,6 @@ Route::prefix('/employees')->group(function () {
 // Route::prefix('/employees')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [EmployeeController::class, 'index']);
     Route::post('/', [EmployeeController::class, 'store']);
-    Route::get('/{employee_id}', [EmployeeController::class, 'show']);
-    Route::put('/{employee_id}', [EmployeeController::class, 'update']);
-    Route::delete('/{employee_id}', [EmployeeController::class, 'destroy']);
     Route::get('/username/{username}', [EmployeeController::class, 'getEmployeeByUsername']);
     Route::get('/department/{dept_id}', [EmployeeController::class, 'getEmployeesByDepartment']);
     Route::get('/manager/{manager_id}', [EmployeeController::class, 'getEmployeesByManager']);
@@ -50,6 +49,10 @@ Route::prefix('/employees')->group(function () {
     Route::get('/branches', [EmployeeController::class, 'getBranches']);
     Route::get('/paygrades', [EmployeeController::class, 'getPaygrades']);
     Route::get('/companies', [EmployeeController::class, 'getCompanies']);
+    // Wildcard routes must come LAST
+    Route::get('/{employee_id}', [EmployeeController::class, 'show']);
+    Route::put('/{employee_id}', [EmployeeController::class, 'update']);
+    Route::delete('/{employee_id}', [EmployeeController::class, 'destroy']);
 });
 
 // Attendance routes (protected)
@@ -163,11 +166,21 @@ Route::prefix('/dashboard')->group(function () {
 
 // Companies routes (protected)
 Route::prefix('/companies')->group(function () {
-    Route::get('/', [HRMSController::class, 'getCompanies']);
-    Route::post('/', [HRMSController::class, 'storeCompany']);
-    Route::get('/{company_id}', [HRMSController::class, 'showCompany']);
-    Route::put('/{company_id}', [HRMSController::class, 'updateCompany']);
-    Route::delete('/{company_id}', [HRMSController::class, 'destroyCompany']);
+    Route::get('/', [CompanyController::class, 'index']);
+    Route::post('/', [CompanyController::class, 'store']);
+    Route::get('/{company_id}', [CompanyController::class, 'show']);
+    Route::put('/{company_id}', [CompanyController::class, 'update']);
+    Route::delete('/{company_id}', [CompanyController::class, 'destroy']);
+});
+
+// Branches routes (protected)
+Route::prefix('/branches')->group(function () {
+    Route::get('/', [BranchController::class, 'index']);
+    Route::post('/', [BranchController::class, 'store']);
+    Route::get('/{branch_id}', [BranchController::class, 'show']);
+    Route::put('/{branch_id}', [BranchController::class, 'update']);
+    Route::delete('/{branch_id}', [BranchController::class, 'destroy']);
+    Route::get('/company/{company_id}', [BranchController::class, 'getByCompany']);
 });
 
 // Departments routes (protected)

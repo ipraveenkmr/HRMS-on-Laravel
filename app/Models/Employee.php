@@ -80,14 +80,15 @@ class Employee extends Model
         'pan_pic',
         'isbasicpay',
         'esi_number',
-        'uan_number'
+        'uan_number',
+        'manager_id'
     ];
 
     protected $attributes = [
         'gender' => 'Male',
         'work_mode' => 'Office',
         'emp_type' => 'Employee',
-        'job_type' => 'Pemanent',
+        'job_type' => 'Permanent',
         'qualification' => 'Under Graduate',
         'emp_status' => 'Working',
         'isbasicpay' => false
@@ -105,7 +106,7 @@ class Employee extends Model
     const GENDER_CHOICES = ['Male', 'Female', 'Other'];
     const WORKMODE_CHOICES = ['Office', 'Field'];
     const EMPTYPE_CHOICES = ['Employee', 'Manager', 'Asset Admin', 'Admin'];
-    const JOBTYPE_CHOICES = ['Pemanent', 'Contractual'];
+    const JOBTYPE_CHOICES = ['Permanent', 'Contractual'];
     const QUALIFICATION_CHOICES = ['Under Graduate', 'Graduate', 'Post Graduate'];
     const EMPSTATUS_CHOICES = ['Working', 'Resigned', 'Notice Period'];
     const FNF_CHOICES = ['Pending', 'Completed'];
