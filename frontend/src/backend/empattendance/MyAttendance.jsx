@@ -190,7 +190,7 @@ export default function MyAttendance() {
   const deleteApi = async (event) => {
     // starting
     await axios
-      .delete(baseURL + "delete-attendance/" + event + "/", {})
+      .delete(baseURL + "delete-attendance/" + event, {})
       .then(function (response) {
         Swal.fire("Deleted!", "Your file has been deleted.", "success");
         attendanceApi();

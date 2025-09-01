@@ -207,7 +207,7 @@ export default function AddForm({ onClick }) {
   const attendanceApi = async () => {
     // starting
     await axios
-      .get(baseURL + "attendance/")
+      .get(baseURL + "attendance")
       .then(function (response) {
         console.log("attendance: " + JSON.stringify(response.data));
         updateAttendance(response.data);

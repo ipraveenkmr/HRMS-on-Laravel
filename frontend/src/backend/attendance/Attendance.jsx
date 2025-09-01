@@ -209,7 +209,7 @@ export default function Attendance() {
   const attendanceApi = async () => {
     // starting
     await axios
-      .get(baseURL + "attendance/")
+      .get(baseURL + "attendance")
       .then(function (response) {
         var records = response.data;
 
@@ -230,7 +230,7 @@ export default function Attendance() {
   const attendanceApiAll = async () => {
     // starting
     await axios
-      .get(baseURL + "attendance/")
+      .get(baseURL + "attendance")
       .then(function (response) {
         updateAttendance(response.data);
       })
@@ -342,7 +342,7 @@ export default function Attendance() {
   const attendanceApiDate = async (frm, too) => {
     // starting
     await axios
-      .get(baseURL + "attendance/")
+      .get(baseURL + "attendance")
       .then(function (response) {
         var records = response.data;
 

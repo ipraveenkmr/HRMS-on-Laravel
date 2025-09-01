@@ -42,7 +42,7 @@ const BranchManagement = () => {
 
   const fetchBranches = async () => {
     try {
-      const response = await axios.get(`${baseURL}companies/branches`);
+      const response = await axios.get(`${baseURL}branches`);
       setBranches(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
@@ -66,14 +66,14 @@ const BranchManagement = () => {
     try {
       if (editingBranch) {
         // Update existing branch
-        const response = await axios.put(`${baseURL}companies/branches/${editingBranch.id}`, formData);
+        const response = await axios.put(`${baseURL}branches/${editingBranch.id}`, formData);
         setBranches(branches.map(branch => 
           branch.id === editingBranch.id ? response.data : branch
         ));
         setEditingBranch(null);
       } else {
         // Create new branch
-        const response = await axios.post(`${baseURL}companies/branches`, formData);
+        const response = await axios.post(`${baseURL}branches`, formData);
         setBranches([...branches, response.data]);
       }
       
@@ -114,7 +114,7 @@ const BranchManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this branch?')) {
       try {
-        await axios.delete(`${baseURL}companies/branches/${id}`);
+        await axios.delete(`${baseURL}branches/${id}`);
         setBranches(branches.filter(branch => branch.id !== id));
       } catch (error) {
         console.error('Error deleting branch:', error);

@@ -59,9 +59,9 @@ class ApiService {
     async initializeCommonData() {
         const commonApis = [
             { endpoint: "assets", action: "updateAssetlist" },
-            { endpoint: "assets/categories/all", action: "updateAssetCategory" },
+            { endpoint: "asset-categories", action: "updateAssetCategory" },
             { endpoint: "auth/users", action: "updateUsernamelist" },
-            { endpoint: "companies/branches", action: "updateBranchamelist" },
+            { endpoint: "branches", action: "updateBranchamelist" },
             { endpoint: "companies/companies", action: "updateCompanyList" },
             { endpoint: "departments", action: "updateDepartments" },
             { endpoint: "dashboard/financial-year", action: "updateWorkinghour" },
@@ -234,7 +234,7 @@ class ApiService {
 
     async branchApi() {
         try {
-            const response = await this.get("companies/branches");
+            const response = await this.get("branches");
             this.updateStore("updateBranchamelist", response.data);
         } catch (error) {
             console.error("branchApi error:", error);
@@ -288,7 +288,7 @@ class ApiService {
 
     async assetcategoryApi() {
         try {
-            const response = await this.get("assets/categories/all");
+            const response = await this.get("asset-categories");
             this.updateStore("updateAssetCategory", response.data);
         } catch (error) {
             console.error("assetcategoryApi error:", error);

@@ -55,7 +55,7 @@ export default function EditForm({ onClick, eventid }) {
   const attendanceEditApi = async () => {
     // starting
     await axios
-      .get(baseURL + "attendance/" + eventid + "/")
+      .get(baseURL + "attendance/" + eventid)
       .then(function (response) {
         formdata.current = response.data[0];
         console.log("kcheckpost " + JSON.stringify(formdata.current));
@@ -238,7 +238,7 @@ export default function EditForm({ onClick, eventid }) {
   const attendanceApi = async () => {
     // starting
     await axios
-      .get(baseURL + "attendance/")
+      .get(baseURL + "attendance")
       .then(function (response) {
         console.log("attendance: " + JSON.stringify(response.data));
         updateAttendance(response.data);
