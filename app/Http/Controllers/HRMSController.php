@@ -38,6 +38,45 @@ class HRMSController extends Controller
         ]);
     }
 
+    public function getDashboardStats(): JsonResponse
+    {
+        $employees = Employee::count();
+        $departments = Department::count();
+        $activeEmployees = Employee::where('emp_status', 'Working')->count();
+        $resignedEmployees = Employee::where('emp_status', 'Resigned')->count();
+        $noticePeriodEmployees = Employee::where('emp_status', 'Notice Period')->count();
+        $todayAttendance = AttendanceRecord::whereDate('created_at', today())->count();
+        
+        return response()->json([
+            'total_employees' => $employees,
+            'total_departments' => $departments,
+            'active_employees' => $activeEmployees,
+            'resigned_employees' => $resignedEmployees,
+            'notice_period_employees' => $noticePeriodEmployees,
+            'today_attendance' => $todayAttendance
+        ]);
+    }
+
+    public function getFinancialYearInfo(): JsonResponse
+    {
+        $currentYear = date('Y');
+        $currentFinancialYear = FinancialYear::where('year', 'LIKE', '%' . $currentYear . '%')
+            ->orWhere('year', 'LIKE', '%' . ($currentYear - 1) . '%')
+            ->first();
+        
+        if (!$currentFinancialYear) {
+            // If no current financial year found, get the latest one
+            $currentFinancialYear = FinancialYear::latest('created_at')->first();
+        }
+        
+        $allFinancialYears = FinancialYear::orderBy('created_at', 'desc')->get();
+        
+        return response()->json([
+            'current_financial_year' => $currentFinancialYear,
+            'all_financial_years' => $allFinancialYears
+        ]);
+    }
+
     public function getDepartments(): JsonResponse
     {
         $departments = Department::orderBy('created_at')->get();

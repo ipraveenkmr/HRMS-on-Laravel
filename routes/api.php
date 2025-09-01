@@ -166,7 +166,7 @@ Route::prefix('/dashboard')->group(function () {
 
 // Companies routes (protected)
 Route::prefix('/companies')->group(function () {
-    Route::get('/', [CompanyController::class, 'index']);
+    Route::get('/companies', [CompanyController::class, 'index']);
     Route::post('/', [CompanyController::class, 'store']);
     Route::get('/{company_id}', [CompanyController::class, 'show']);
     Route::put('/{company_id}', [CompanyController::class, 'update']);

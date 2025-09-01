@@ -5,10 +5,37 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\AssignedJob;
 use App\Models\DailyTask;
+use App\Models\Employee;
 use Illuminate\Http\JsonResponse;
 
 class TaskController extends Controller
 {
+    // Standard CRUD Methods (Required by Routes)
+    public function index(): JsonResponse
+    {
+        return $this->indexTasks();
+    }
+
+    public function show($task_id): JsonResponse
+    {
+        return $this->showTask($task_id);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        return $this->storeTask($request);
+    }
+
+    public function update(Request $request, $task_id): JsonResponse
+    {
+        return $this->updateTask($request, $task_id);
+    }
+
+    public function destroy($task_id): JsonResponse
+    {
+        return $this->destroyTask($task_id);
+    }
+
     // Assigned Jobs (Tasks)
     public function indexTasks(): JsonResponse
     {
@@ -213,6 +240,33 @@ class TaskController extends Controller
     {
         $dailyTasks = DailyTask::with(['employee'])
             ->where('department_id', $departmentId)
+            ->orderBy('created_at')
+            ->get();
+        
+        return response()->json($dailyTasks);
+    }
+
+    // Missing Manager Methods
+    public function getTasksByManager($manager_id): JsonResponse
+    {
+        // Get employees under this manager
+        $employeeIds = Employee::where('manager_id', $manager_id)->pluck('id');
+        
+        $tasks = AssignedJob::with(['employee', 'department'])
+            ->whereIn('employee_id', $employeeIds)
+            ->orderBy('created_at')
+            ->get();
+        
+        return response()->json($tasks);
+    }
+
+    public function getDailyTasksByManager($manager_id): JsonResponse
+    {
+        // Get employees under this manager
+        $employeeIds = Employee::where('manager_id', $manager_id)->pluck('id');
+        
+        $dailyTasks = DailyTask::with(['employee', 'department'])
+            ->whereIn('employee_id', $employeeIds)
             ->orderBy('created_at')
             ->get();
         

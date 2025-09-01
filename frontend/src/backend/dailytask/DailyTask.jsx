@@ -177,7 +177,7 @@ export default function DailyTask() {
   const dailyTaskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "daily-tasks/")
+      .get(baseURL + "daily-tasks")
       .then(function (response) {
         console.log("assets: " + JSON.stringify(response.data));
         updateDailytask(response.data);

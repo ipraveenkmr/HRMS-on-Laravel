@@ -148,7 +148,7 @@ export default function EmpDailyTask() {
   const dailytaskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "daily-tasks/")
+      .get(baseURL + "daily-tasks")
       .then(function (response) {
         updateDailytask(response.data);
       })
@@ -210,7 +210,7 @@ export default function EmpDailyTask() {
   const dailyTaskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "daily-tasks/")
+      .get(baseURL + "daily-tasks")
       .then(function (response) {
         console.log("assets: " + JSON.stringify(response.data));
         updateDailytask(response.data);

@@ -1,8 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
 import Avatar from "@mui/material/Avatar";
-import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import Link from "@mui/material/Link";
@@ -10,7 +8,6 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
 import { styled } from "@mui/material/styles";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -84,54 +81,7 @@ const GlassCard = styled(Box)({
   width: '100%',
 });
 
-const StyledTextField = styled(TextField)({
-  '& .MuiOutlinedInput-root': {
-    borderRadius: '16px',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    backdropFilter: 'blur(5px)',
-    border: '1px solid rgba(255, 255, 255, 0.3)',
-    '& fieldset': {
-      border: 'none',
-    },
-    '&:hover': {
-      backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    },
-    '&.Mui-focused': {
-      backgroundColor: 'rgba(255, 255, 255, 0.25)',
-      boxShadow: '0 0 0 2px rgba(255, 255, 255, 0.5)',
-    },
-  },
-  '& .MuiInputLabel-root': {
-    color: 'rgba(255, 255, 255, 0.7)',
-    '&.Mui-focused': {
-      color: 'white',
-    },
-  },
-  '& .MuiOutlinedInput-input': {
-    color: 'white',
-    '&::placeholder': {
-      color: 'rgba(255, 255, 255, 0.7)',
-      opacity: 1,
-    },
-  },
-});
 
-const GradientButton = styled(Button)({
-  background: 'linear-gradient(45deg, #2196F3 30%, #9C27B0 90%)',
-  borderRadius: '16px',
-  color: 'white',
-  height: '56px',
-  fontSize: '1.1rem',
-  fontWeight: 600,
-  textTransform: 'none',
-  boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    background: 'linear-gradient(45deg, #1976D2 30%, #7B1FA2 90%)',
-    transform: 'translateY(-2px)',
-    boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
-  },
-});
 
 function Copyright(props) {
   return (
@@ -193,7 +143,7 @@ export default function Login() {
 
   const myattendanceApi = async () => {
     await axios
-      .get(baseURL + "attendance/employee/" + username + "/")
+      .get(baseURL + "attendance/employee/" + username)
       .then(function (response) {
         updateAttendance(response.data);
       })
@@ -316,56 +266,47 @@ export default function Login() {
               onSubmit={handleSubmit}
               sx={{ width: '100%' }}
             >
-              <StyledTextField
-                margin="normal"
-                required
-                fullWidth
-                id="email"
-                label="Username"
-                name="email"
-                autoComplete="email"
-                autoFocus
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonIcon sx={{ color: 'rgba(255, 255, 255, 0.6)' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 2 }}
-              />
+              <div className="mb-4 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <PersonIcon sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: 20 }} />
+                </div>
+                <input
+                  required
+                  id="email"
+                  name="email"
+                  type="text"
+                  autoComplete="email"
+                  autoFocus
+                  placeholder="Username"
+                  className="w-full h-10 pl-10 pr-3 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50 hover:bg-white/25 transition-all duration-200"
+                />
+              </div>
 
-              <StyledTextField
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                autoComplete="current-password"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon sx={{ color: 'rgba(255, 255, 255, 0.6)' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={handleClickShowPassword}
-                        onMouseDown={handleMouseDownPassword}
-                        edge="end"
-                        sx={{ color: 'rgba(255, 255, 255, 0.6)' }}
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 2 }}
-              />
+              <div className="mb-4 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <LockIcon sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: 20 }} />
+                </div>
+                <input
+                  required
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  autoComplete="current-password"
+                  placeholder="Password"
+                  className="w-full h-10 pl-10 pr-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50 hover:bg-white/25 transition-all duration-200"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={handleClickShowPassword}
+                    onMouseDown={handleMouseDownPassword}
+                    size="small"
+                    sx={{ color: 'rgba(255, 255, 255, 0.6)' }}
+                  >
+                    {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
+                  </IconButton>
+                </div>
+              </div>
 
               <FormControlLabel
                 control={
@@ -387,14 +328,12 @@ export default function Login() {
                 sx={{ mb: 2 }}
               />
 
-              <GradientButton
+              <button
                 type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mb: 2 }}
+                className="w-full h-10 mb-4 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold text-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 Sign In
-              </GradientButton>
+              </button>
 
               <Box sx={{ textAlign: 'center' }}>
                 <Link

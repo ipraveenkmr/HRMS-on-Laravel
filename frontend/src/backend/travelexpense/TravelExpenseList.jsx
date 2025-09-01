@@ -100,7 +100,7 @@ const TravelExpenseList = ({
   const fetchEmployees = useCallback(async () => {
     try {
       const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/';
-      const response = await axios.get(`${baseURL}employees/`);
+      const response = await axios.get(`${baseURL}employees`);
       setEmployees(response.data);
     } catch (error) {
       console.error('Error fetching employees:', error);

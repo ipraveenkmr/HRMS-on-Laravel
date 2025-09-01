@@ -137,7 +137,7 @@ export default function MyAttendance() {
   const attendanceApi = async () => {
     // starting
     await axios
-      .get(baseURL + "attendance/employee/" + username + "/")
+      .get(baseURL + "attendance/employee/" + username)
       .then(function (response) {
         updateAttendance(response.data);
       })

@@ -295,7 +295,7 @@ export default function AddForm({ closeform, eventid }) {
   const employeeEditApi = async () => {
     // starting
     await axios
-      .get(baseURL + "employees/" + eventid + "/", {
+      .get(baseURL + "employees/" + eventid, {
         // headers: {
         //   "Access-Control-Allow-Origin": "*",
         //   "Content-type": "Application/json",

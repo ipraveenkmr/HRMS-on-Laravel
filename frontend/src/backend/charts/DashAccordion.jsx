@@ -23,7 +23,7 @@ export default function DashAccordion() {
   const dailytaskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "daily-tasks/")
+      .get(baseURL + "daily-tasks")
       .then(function (response) {
         updateDailytask(response.data);
       })

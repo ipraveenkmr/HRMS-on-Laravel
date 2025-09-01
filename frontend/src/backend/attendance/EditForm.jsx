@@ -128,7 +128,7 @@ export default function EditForm({ onClick, eventid }) {
 
         // starting
         await axios
-          .post(baseURL + "attendance/", values)
+          .post(baseURL + "attendance", values)
           .then(function (response) {
             console.log("Employee post: " + JSON.stringify(response.data));
             toast.success("Your data is submitted!", {

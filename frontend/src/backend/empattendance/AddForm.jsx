@@ -89,7 +89,7 @@ export default function AddForm({ onClick }) {
         formik.values.department_id = emp_department;
         // starting
         await axios
-          .post(baseURL + "attendance/", values)
+          .post(baseURL + "attendance", values)
           .then(function (response) {
             console.log("Employee post: " + JSON.stringify(response.data));
             toast.success("Your data is submitted!", {
@@ -193,7 +193,7 @@ export default function AddForm({ onClick }) {
   const attendanceApi = async () => {
     // starting
     await axios
-      .get(baseURL + "attendance/employee/" + username + "/")
+      .get(baseURL + "attendance/employee/" + username)
       .then(function (response) {
         console.log("attendance: " + JSON.stringify(response.data));
         updateAttendance(response.data);

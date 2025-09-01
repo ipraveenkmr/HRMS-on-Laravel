@@ -59,7 +59,7 @@ const EmployeeManagement = () => {
 
   const fetchEmployees = async () => {
     try {
-      const response = await axios.get(`${baseURL}employees/`);
+      const response = await axios.get(`${baseURL}employees`);
       setEmployees(response.data);
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -86,7 +86,7 @@ const EmployeeManagement = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get(`${baseURL}employees/departments/`);
+      const response = await axios.get(`${baseURL}employees/departments`);
       setDepartments(response.data);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -133,7 +133,7 @@ const EmployeeManagement = () => {
         setEditingEmployee(null);
       } else {
         // Create new employee
-        const response = await axios.post(`${baseURL}employees/`, formData);
+        const response = await axios.post(`${baseURL}employees`, formData);
         setEmployees([...employees, response.data]);
       }
 

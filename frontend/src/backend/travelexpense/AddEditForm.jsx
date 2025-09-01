@@ -102,8 +102,8 @@ const AddEditForm = ({
       console.log('Fetching data from:', baseURL);
 
       const [employeesRes, departmentsRes] = await Promise.all([
-        axios.get(`${baseURL}employees/`),
-        axios.get(`${baseURL}departments/`),
+        axios.get(`${baseURL}employees`),
+        axios.get(`${baseURL}departments`),
       ]);
 
       console.log('Employees response:', employeesRes);

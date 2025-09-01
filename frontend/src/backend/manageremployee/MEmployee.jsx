@@ -295,7 +295,7 @@ export default function Employee() {
   const employeeApi = async () => {
     // starting
     await axios
-      .get(baseURL + "employees/manager/" + emp_id + "/", {
+      .get(baseURL + "employees/manager/" + emp_id, {
         // headers: {
         //   "Access-Control-Allow-Origin": "*",
         //   "Content-type": "Application/json",
@@ -461,7 +461,7 @@ export default function Employee() {
 
     if (event.target.value) {
       await axios
-        .get(baseURL + "employees/manager/" + emp_id + "/")
+        .get(baseURL + "employees/manager/" + emp_id)
         .then(function (response) {
           updateEmployee(response.data);
         })

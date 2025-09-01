@@ -150,7 +150,7 @@ export default function Task() {
   const employeeApi = async () => {
     // starting
     await axios
-      .get(baseURL + "employees/manager/" + emp_id + "/")
+      .get(baseURL + "employees/manager/" + emp_id)
       .then(function (response) {
         updateDeptEmployee(response.data);
       })
