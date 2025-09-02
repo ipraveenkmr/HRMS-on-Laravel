@@ -139,7 +139,7 @@ The API will be available at `http://localhost:8000`
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/loans` | List all loans |
-| POST | `/api/create-loan` | Apply for loan |
+| POST | `/api/loans` | Apply for loan |
 | GET | `/api/myloan/{employeeId}` | Get employee loans |
 | POST | `/api/calculateemi` | Calculate EMI |
 | GET | `/api/checkloan/{employeeId}` | Check active loans |

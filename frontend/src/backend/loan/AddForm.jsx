@@ -44,17 +44,17 @@ export default function AddForm({ onClick }) {
 
     onSubmit: async (values) => {
       console.log(values);
-      formik.values.employee = selectedemp;
+      formik.values.employee_id = selectedemp;
       formik.values.username = empusername;
       formik.values.apply_date = applydate;
       formik.values.status = statustype;
-      formik.values.department = empdepartment;
+      formik.values.department_id = empdepartment?.id;
 
       console.log("Values: " + JSON.stringify(values));
 
       // starting
       await axios
-        .post(baseURL + "create-loan/", values)
+        .post(baseURL + "loans", values)
         .then(function (response) {
           console.log("Loan post: " + JSON.stringify(response.data));
           toast.success("Your data is submitted!", {

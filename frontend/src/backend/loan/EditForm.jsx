@@ -71,9 +71,9 @@ export default function EditForm({ onClick, eventid }) {
     initialValues: {
       id: eventid,
       username: username,
-      employee: selectedemp,
+      employee_id: selectedemp,
       apply_date: applydate,
-      department: empdepartment,
+      department_id: empdepartment,
       loan_amount: formdata.current.loan_amount,
       loan_period_in_month: formdata.current.loan_period_in_month,
     },
@@ -88,7 +88,7 @@ export default function EditForm({ onClick, eventid }) {
 
       // starting
       await axios
-        .post(baseURL + "create-loan/", values)
+        .post(baseURL + "loans", values)
         .then(function (response) {
           console.log("Loan post: " + JSON.stringify(response.data));
           toast.success("Your data is submitted!", {
