@@ -155,7 +155,7 @@ export default function EditForm({ onClick, eventid }) {
   const taskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "tasks/")
+      .get(baseURL + "tasks")
       .then(function (response) {
         console.log("Tasks: " + JSON.stringify(response.data));
         updateAssignedjobs(response.data);

@@ -48,7 +48,7 @@ export default function EditForm({ onClick, eventid }) {
   const dailytaskEditApi = async () => {
     // starting
     await axios
-      .get(baseURL + "daily-tasks/" + eventid + "/")
+      .get(baseURL + "daily-tasks/" + eventid)
       .then(function (response) {
         formdata.current = response.data[0];
         console.log("kcheckpost " + JSON.stringify(formdata.current));

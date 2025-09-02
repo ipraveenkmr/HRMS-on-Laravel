@@ -108,7 +108,7 @@ export default function AddForm({ onClick }) {
 
       // starting
       await axios
-        .post(baseURL + "tasks/", submitData)
+        .post(baseURL + "tasks", submitData)
         .then(function (response) {
           console.log("Task post: " + JSON.stringify(response.data));
           toast.success("Your data is submitted!", {

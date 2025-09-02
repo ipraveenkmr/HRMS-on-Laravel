@@ -61,7 +61,7 @@ export default function AddForm({ onClick }) {
 
       // starting
       await axios
-        .post(baseURL + "tasks/", values)
+        .post(baseURL + "tasks", values)
         .then(function (response) {
           console.log("Task post: " + JSON.stringify(response.data));
           toast.success("Your data is submitted!", {
@@ -120,7 +120,7 @@ export default function AddForm({ onClick }) {
   const taskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "tasks/")
+      .get(baseURL + "tasks")
       .then(function (response) {
         console.log("Tasks: " + JSON.stringify(response.data));
         updateAssignedjobs(response.data);

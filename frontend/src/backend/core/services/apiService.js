@@ -252,7 +252,7 @@ class ApiService {
 
     async taskApi() {
         try {
-            const response = await this.get("tasks/");
+            const response = await this.get("tasks");
             this.updateStore("updateAssignedjobs", response.data);
         } catch (error) {
             console.error("taskApi error:", error);

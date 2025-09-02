@@ -49,7 +49,7 @@ export default function EditForm({ onClick, eventid }) {
   const taskEditApi = async () => {
     // starting
     await axios
-      .get(baseURL + "tasks/" + eventid + "/")
+      .get(baseURL + "tasks/" + eventid)
       .then(function (response) {
         formdata.current = response.data[0];
         console.log("kcheckpost " + JSON.stringify(formdata.current));
@@ -161,7 +161,7 @@ export default function EditForm({ onClick, eventid }) {
   const taskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "tasks/")
+      .get(baseURL + "tasks")
       .then(function (response) {
         console.log("Tasks: " + JSON.stringify(response.data));
         updateAssignedjobs(response.data);

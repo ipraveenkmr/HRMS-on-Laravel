@@ -593,7 +593,7 @@ export default function AddForm({ closeform, eventid }) {
 
     await axios({
       method: eventid > 0 ? 'put' : 'post',
-      url: eventid > 0 ? `${baseURL}employees/${eventid}/` : `${baseURL}employees/`,
+      url: eventid > 0 ? `${baseURL}employees/${eventid}` : `${baseURL}employees`,
       data: values
     })
       .then(function (response) {

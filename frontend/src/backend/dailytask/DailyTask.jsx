@@ -191,7 +191,7 @@ export default function DailyTask() {
   const deleteApi = async (event) => {
     // starting
     await axios
-      .delete(baseURL + "daily-tasks/" + event + "/", {})
+      .delete(baseURL + "daily-tasks/" + event, {})
       .then(function (response) {
         Swal.fire("Deleted!", "Your file has been deleted.", "success");
         dailyTaskApi();

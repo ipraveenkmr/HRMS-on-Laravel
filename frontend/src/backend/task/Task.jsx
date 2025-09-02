@@ -190,7 +190,7 @@ export default function Task() {
   const taskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "tasks/")
+      .get(baseURL + "tasks")
       .then(function (response) {
         updateAssignedjobs(response.data);
       })
@@ -203,7 +203,7 @@ export default function Task() {
   const deleteApi = async (event) => {
     // starting
     await axios
-      .delete(baseURL + "tasks/" + event + "/", {})
+      .delete(baseURL + "tasks/" + event, {})
       .then(function (response) {
         Swal.fire("Deleted!", "Your file has been deleted.", "success");
         taskApi();
