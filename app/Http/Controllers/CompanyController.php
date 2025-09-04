@@ -6,9 +6,19 @@ use Illuminate\Http\Request;
 use App\Models\CompanyDetail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class CompanyController extends Controller
 {
+    // File upload configuration
+    private const UPLOAD_DIR = 'uploads';
+    private const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+
+    private function isValidImage($filename): bool
+    {
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        return in_array('.' . $extension, self::ALLOWED_IMAGE_EXTENSIONS);
+    }
     public function index(): JsonResponse
     {
         try {
@@ -34,7 +44,8 @@ class CompanyController extends Controller
                 'cloudinary_email' => 'nullable|email|max:99',
                 'cloudinary_preset' => 'nullable|string|max:99',
                 'cloudinary_api' => 'nullable|string|max:99',
-                'status' => ['nullable', Rule::in(['Active', 'Inactive'])]
+                'status' => ['nullable', Rule::in(['Active', 'Inactive'])],
+                'logo' => 'nullable|string|max:255'
             ]);
 
             $company = CompanyDetail::create($validated);
@@ -87,7 +98,8 @@ class CompanyController extends Controller
                 'cloudinary_email' => 'nullable|email|max:99',
                 'cloudinary_preset' => 'nullable|string|max:99',
                 'cloudinary_api' => 'nullable|string|max:99',
-                'status' => ['nullable', Rule::in(['Active', 'Inactive'])]
+                'status' => ['nullable', Rule::in(['Active', 'Inactive'])],
+                'logo' => 'nullable|string|max:255'
             ]);
 
             $company->update($validated);
@@ -144,6 +156,43 @@ class CompanyController extends Controller
             return response()->json([
                 'error' => 'Failed to delete company',
                 'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function uploadLogo(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'file' => 'required|file|image|max:5120' // 5MB max
+            ]);
+
+            $file = $request->file('file');
+
+            if (!$this->isValidImage($file->getClientOriginalName())) {
+                return response()->json([
+                    'error' => 'Invalid file type. Only image files are allowed.'
+                ], 400);
+            }
+
+            $extension = $file->getClientOriginalExtension();
+            $uniqueFilename = 'company_logo_' . Str::uuid() . '.' . $extension;
+
+            $file->move(public_path(self::UPLOAD_DIR), $uniqueFilename);
+
+            return response()->json([
+                'message' => 'Company logo uploaded successfully',
+                'file_path' => '/' . self::UPLOAD_DIR . '/' . $uniqueFilename,
+                'filename' => $uniqueFilename
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error uploading company logo: ' . $e->getMessage()
             ], 500);
         }
     }

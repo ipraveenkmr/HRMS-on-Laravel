@@ -35,7 +35,7 @@ const CompanyManagement = () => {
   const fetchCompanies = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${baseURL}companies/companies`);
+      const response = await axios.get(`${baseURL}companies`);
       setCompanies(response.data);
     } catch (error) {
       console.error('Error fetching companies:', error);
@@ -72,14 +72,14 @@ const CompanyManagement = () => {
       
       if (editingCompany) {
         // Update existing company
-        const response = await axios.put(`${baseURL}companies/companies/${editingCompany.id}`, companyData);
+        const response = await axios.put(`${baseURL}companies/${editingCompany.id}`, companyData);
         setCompanies(companies.map(company => 
           company.id === editingCompany.id ? response.data : company
         ));
         setEditingCompany(null);
       } else {
         // Create new company
-        const response = await axios.post(`${baseURL}companies/companies`, companyData);
+        const response = await axios.post(`${baseURL}companies`, companyData);
         setCompanies([...companies, response.data]);
       }
       
@@ -133,7 +133,7 @@ const CompanyManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this company?')) {
       try {
-        await axios.delete(`${baseURL}companies/companies/${id}`);
+        await axios.delete(`${baseURL}companies/${id}`);
         setCompanies(companies.filter(company => company.id !== id));
       } catch (error) {
         console.error('Error deleting company:', error);

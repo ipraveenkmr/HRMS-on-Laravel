@@ -18,7 +18,8 @@ class CompanyDetail extends Model
         'cloudinary_email',
         'cloudinary_preset',
         'cloudinary_api',
-        'status'
+        'status',
+        'logo'
     ];
 
     protected $attributes = [

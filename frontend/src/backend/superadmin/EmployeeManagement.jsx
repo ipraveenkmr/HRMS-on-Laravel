@@ -68,7 +68,7 @@ const EmployeeManagement = () => {
 
   const fetchCompanies = async () => {
     try {
-      const response = await axios.get(`${baseURL}employees/companies/`);
+      const response = await axios.get(`${baseURL}employees/companies`);
       setCompanies(response.data);
     } catch (error) {
       console.error('Error fetching companies:', error);

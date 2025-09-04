@@ -62,7 +62,7 @@ class ApiService {
             { endpoint: "asset-categories", action: "updateAssetCategory" },
             { endpoint: "auth/users", action: "updateUsernamelist" },
             { endpoint: "branches", action: "updateBranchamelist" },
-            { endpoint: "companies/companies", action: "updateCompanyList" },
+            { endpoint: "companies", action: "updateCompanyList" },
             { endpoint: "departments", action: "updateDepartments" },
             { endpoint: "dashboard/financial-year", action: "updateWorkinghour" },
             { endpoint: "dashboard/stats", action: "updateDashdata" },
@@ -243,7 +243,7 @@ class ApiService {
 
     async companyApi() {
         try {
-            const response = await this.get("companies/companies");
+            const response = await this.get("companies");
             this.updateStore("updateCompanyList", response.data);
         } catch (error) {
             console.error("companyApi error:", error);

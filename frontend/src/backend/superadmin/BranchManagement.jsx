@@ -52,7 +52,7 @@ const BranchManagement = () => {
 
   const fetchCompanies = async () => {
     try {
-      const response = await axios.get(`${baseURL}companies/companies`);
+      const response = await axios.get(`${baseURL}companies`);
       setCompanies(response.data);
     } catch (error) {
       console.error('Error fetching companies:', error);
