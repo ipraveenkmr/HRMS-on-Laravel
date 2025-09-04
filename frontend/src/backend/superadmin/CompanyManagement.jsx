@@ -35,7 +35,7 @@ const CompanyManagement = () => {
   const fetchCompanies = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${baseURL}companies/companies/`);
+      const response = await axios.get(`${baseURL}companies/companies`);
       setCompanies(response.data);
     } catch (error) {
       console.error('Error fetching companies:', error);
@@ -57,7 +57,7 @@ const CompanyManagement = () => {
         const logoFormData = new FormData();
         logoFormData.append('file', selectedFile);
         
-        const uploadResponse = await axios.post(`${baseURL}companies/upload-logo/`, logoFormData, {
+        const uploadResponse = await axios.post(`${baseURL}companies/upload-logo`, logoFormData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -79,7 +79,7 @@ const CompanyManagement = () => {
         setEditingCompany(null);
       } else {
         // Create new company
-        const response = await axios.post(`${baseURL}companies/companies/`, companyData);
+        const response = await axios.post(`${baseURL}companies/companies`, companyData);
         setCompanies([...companies, response.data]);
       }
       
