@@ -28,7 +28,7 @@ const FinancialYearManagement = () => {
   const fetchFinancialYears = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${baseURL}financial-years/financial-years/`);
+      const response = await axios.get(`${baseURL}financial-years`);
       setFinancialYears(response.data);
     } catch (error) {
       console.error('Error fetching financial years:', error);
@@ -44,14 +44,14 @@ const FinancialYearManagement = () => {
     try {
       if (editingFinancialYear) {
         // Update existing financial year
-        const response = await axios.put(`${baseURL}financial-years/financial-years/${editingFinancialYear.id}`, formData);
+        const response = await axios.put(`${baseURL}financial-years/${editingFinancialYear.id}`, formData);
         setFinancialYears(financialYears.map(fy => 
           fy.id === editingFinancialYear.id ? response.data : fy
         ));
         setEditingFinancialYear(null);
       } else {
         // Create new financial year
-        const response = await axios.post(`${baseURL}financial-years/financial-years/`, formData);
+        const response = await axios.post(`${baseURL}financial-years`, formData);
         setFinancialYears([...financialYears, response.data]);
       }
       
@@ -92,7 +92,7 @@ const FinancialYearManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this financial year?')) {
       try {
-        await axios.delete(`${baseURL}financial-years/financial-years/${id}`);
+        await axios.delete(`${baseURL}financial-years/${id}`);
         setFinancialYears(financialYears.filter(fy => fy.id !== id));
       } catch (error) {
         console.error('Error deleting financial year:', error);

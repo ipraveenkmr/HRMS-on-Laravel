@@ -95,7 +95,7 @@ const EmployeeManagement = () => {
 
   const fetchPaygrades = async () => {
     try {
-      const response = await axios.get(`${baseURL}paygrade/`);
+      const response = await axios.get(`${baseURL}paygrade`);
       setPaygrades(response.data);
     } catch (error) {
       console.error('Error fetching paygrades:', error);
@@ -104,7 +104,7 @@ const EmployeeManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${baseURL}auth/users/`);
+      const response = await axios.get(`${baseURL}auth/users`);
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);

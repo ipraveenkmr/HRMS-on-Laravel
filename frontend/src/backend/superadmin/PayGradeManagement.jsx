@@ -33,7 +33,7 @@ const PayGradeManagement = () => {
   const fetchPaygrades = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${baseURL}paygrade/`);
+      const response = await axios.get(`${baseURL}paygrade`);
       setPaygrades(response.data);
     } catch (error) {
       console.error('Error fetching paygrades:', error);
@@ -71,7 +71,7 @@ const PayGradeManagement = () => {
         setEditingPaygrade(null);
       } else {
         // Create new paygrade
-        const response = await axios.post(`${baseURL}paygrade/`, paygradeData);
+        const response = await axios.post(`${baseURL}paygrade`, paygradeData);
         setPaygrades([...paygrades, response.data]);
       }
 
