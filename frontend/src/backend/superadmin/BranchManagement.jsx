@@ -132,8 +132,17 @@ const BranchManagement = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const getCompanyName = (companyId) => {
-    const company = companies.find(c => c.id.toString() === companyId);
+  const getCompanyName = (branch) => {
+    // If branch has company_detail relationship, use it
+    if (branch.company_detail) {
+      return branch.company_detail.company_name;
+    }
+    // If branch has company_name property, use it
+    if (branch.company_name) {
+      return branch.company_name;
+    }
+    // Fallback to finding company by ID
+    const company = companies.find(c => c.id.toString() === branch.company_name_id?.toString());
     return company ? company.company_name : 'N/A';
   };
 
@@ -177,7 +186,7 @@ const BranchManagement = () => {
                   branches.map((branch) => (
                     <TableRow key={branch.id}>
                       <TableCell className="font-medium">{branch.branch_name}</TableCell>
-                      <TableCell>{getCompanyName(branch.company_name_id)}</TableCell>
+                      <TableCell>{getCompanyName(branch)}</TableCell>
                       <TableCell>{branch.branch_address || 'N/A'}</TableCell>
                       <TableCell>
                         {branch.latitude && branch.longitude ? 
