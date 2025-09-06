@@ -25,7 +25,7 @@ const AssetCategoryManagement = () => {
   const fetchAssetCategories = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${baseURL}asset-categories/`);
+      const response = await axios.get(`${baseURL}asset-categories`);
       setAssetCategories(response.data);
     } catch (error) {
       console.error('Error fetching asset categories:', error);
@@ -43,13 +43,13 @@ const AssetCategoryManagement = () => {
         // Update existing category
         const response = await axios.put(`${baseURL}asset-categories/${editingCategory.id}`, formData);
         setAssetCategories(assetCategories.map(category => 
-          category.id === editingCategory.id ? response.data : category
+          category.id === editingCategory.id ? response.data?.category : category
         ));
         setEditingCategory(null);
       } else {
         // Create new category
-        const response = await axios.post(`${baseURL}asset-categories/`, formData);
-        setAssetCategories([...assetCategories, response.data]);
+        const response = await axios.post(`${baseURL}asset-categories`, formData);
+        setAssetCategories([...assetCategories, response.data?.category]);
       }
       
       resetForm();

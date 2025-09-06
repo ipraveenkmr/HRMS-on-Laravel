@@ -90,13 +90,13 @@ const CompanyManagement = () => {
         // Update existing company
         const response = await axios.put(`${baseURL}companies/${editingCompany.id}`, companyData);
         setCompanies(companies.map(company =>
-          company.id === editingCompany.id ? response.data : company
+          company.id === editingCompany.id ? response.data.company : company
         ));
         setEditingCompany(null);
       } else {
         // Create new company
         const response = await axios.post(`${baseURL}companies`, companyData);
-        setCompanies([...companies, response.data]);
+        setCompanies([...companies, response.data?.company]);
       }
 
       resetForm();

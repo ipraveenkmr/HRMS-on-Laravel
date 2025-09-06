@@ -36,7 +36,7 @@ const AssetManagement = () => {
   const fetchAssets = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${baseURL}assets/assets/`);
+      const response = await axios.get(`${baseURL}assets`);
       setAssets(response.data);
     } catch (error) {
       console.error('Error fetching assets:', error);
@@ -49,7 +49,7 @@ const AssetManagement = () => {
   const fetchAssetCategories = async () => {
     try {
       setCategoriesLoading(true);
-      const response = await axios.get(`${baseURL}asset-categories/`);
+      const response = await axios.get(`${baseURL}asset-categories`);
       setAssetCategories(response.data);
     } catch (error) {
       console.error('Error fetching asset categories:', error);
@@ -85,15 +85,15 @@ const AssetManagement = () => {
 
       if (editingAsset) {
         // Update existing asset
-        const response = await axios.put(`${baseURL}assets/assets/${editingAsset.id}`, submitData);
+        const response = await axios.put(`${baseURL}assets/${editingAsset.id}`, submitData);
         setAssets(assets.map(asset => 
-          asset.id === editingAsset.id ? response.data : asset
+          asset.id === editingAsset.id ? response.data.asset : asset
         ));
         setEditingAsset(null);
       } else {
         // Create new asset
-        const response = await axios.post(`${baseURL}assets/assets/`, submitData);
-        setAssets([...assets, response.data]);
+        const response = await axios.post(`${baseURL}assets`, submitData);
+        setAssets([...assets, response.data.asset]);
       }
       
       resetForm();
@@ -146,7 +146,7 @@ const AssetManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this asset?')) {
       try {
-        await axios.delete(`${baseURL}assets/assets/${id}`);
+        await axios.delete(`${baseURL}assets/${id}`);
         setAssets(assets.filter(asset => asset.id !== id));
       } catch (error) {
         console.error('Error deleting asset:', error);

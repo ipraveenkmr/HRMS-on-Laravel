@@ -68,13 +68,13 @@ const BranchManagement = () => {
         // Update existing branch
         const response = await axios.put(`${baseURL}branches/${editingBranch.id}`, formData);
         setBranches(branches.map(branch => 
-          branch.id === editingBranch.id ? response.data : branch
+          branch.id === editingBranch.id ? response.data.branch : branch
         ));
         setEditingBranch(null);
       } else {
         // Create new branch
         const response = await axios.post(`${baseURL}branches`, formData);
-        setBranches([...branches, response.data]);
+        setBranches([...branches, response.data.branch]);
       }
       
       resetForm();

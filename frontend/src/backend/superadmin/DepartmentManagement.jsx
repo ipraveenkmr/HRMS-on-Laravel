@@ -27,7 +27,7 @@ const DepartmentManagement = () => {
   const fetchDepartments = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${baseURL}departments/`);
+      const response = await axios.get(`${baseURL}departments`);
       setDepartments(response.data);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -50,7 +50,7 @@ const DepartmentManagement = () => {
         setEditingDepartment(null);
       } else {
         // Create new department
-        const response = await axios.post(`${baseURL}departments/`, formData);
+        const response = await axios.post(`${baseURL}departments`, formData);
         setDepartments([...departments, response.data]);
       }
       
@@ -99,7 +99,7 @@ const DepartmentManagement = () => {
   const handleViewStats = async (department) => {
     try {
       setSelectedDepartment(department);
-      const response = await axios.get(`${baseURL}departments/${department.id}/stats/`);
+      const response = await axios.get(`${baseURL}departments/${department.id}/stats`);
       setDepartmentStats(response.data);
       setIsStatsModalOpen(true);
     } catch (error) {
