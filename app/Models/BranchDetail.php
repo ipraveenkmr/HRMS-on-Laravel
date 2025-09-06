@@ -27,6 +27,11 @@ class BranchDetail extends Model
         return $this->belongsTo(CompanyDetail::class, 'company_name_id');
     }
 
+    public function companyName()
+    {
+        return $this->belongsTo(CompanyDetail::class, 'company_name_id');
+    }
+
     public function employees()
     {
         return $this->hasMany(Employee::class, 'branch_name_id');

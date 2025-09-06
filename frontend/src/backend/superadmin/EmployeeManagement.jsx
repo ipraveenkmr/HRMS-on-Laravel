@@ -78,6 +78,7 @@ const EmployeeManagement = () => {
   const fetchBranches = async () => {
     try {
       const response = await axios.get(`${baseURL}employees/branches`);
+      console.log('Branches data:', response.data); // Debug log
       setBranches(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
@@ -205,11 +206,12 @@ const EmployeeManagement = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-
+    
     // Reset branch when company changes
     if (name === 'company_name_id') {
-      setFormData(prev => ({ ...prev, branch_name_id: '' }));
+      setFormData(prev => ({ ...prev, [name]: value, branch_name_id: '' }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
 
     // Auto-populate CTC when paygrade changes (if CTC is empty)
@@ -253,7 +255,18 @@ const EmployeeManagement = () => {
   };
 
   const getFilteredBranches = () => {
-    return branches.filter(branch => branch.company_name_id && branch.company_name_id.toString() === formData.company_name_id);
+    if (!formData.company_name_id) {
+      return [];
+    }
+    const filtered = branches.filter(branch => 
+      branch.company_name_id && 
+      branch.company_name_id.toString() === formData.company_name_id.toString()
+    );
+    console.log('Filtering branches for company:', formData.company_name_id); // Debug log
+    console.log('Filtering branches:', branches); // Debug log
+    console.log('Available branches:', branches); // Debug log
+    console.log('Filtered branches:', filtered); // Debug log
+    return filtered;
   };
 
   const getAvailableUsers = () => {
