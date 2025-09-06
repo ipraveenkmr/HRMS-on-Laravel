@@ -39,16 +39,16 @@ class CompanyController extends Controller
                 'company_name' => 'required|string|max:99',
                 'company_address' => 'nullable|string|max:199',
                 'support_email' => 'nullable|email|max:99',
-                'longitude' => 'nullable|string|max:99',
-                'latitude' => 'nullable|string|max:99',
-                'cloudinary_email' => 'nullable|email|max:99',
-                'cloudinary_preset' => 'nullable|string|max:99',
-                'cloudinary_api' => 'nullable|string|max:99',
-                'status' => ['nullable', Rule::in(['Active', 'Inactive'])],
-                'logo' => 'nullable|string|max:255'
+                // 'longitude' => 'nullable|string|max:99',
+                // 'latitude' => 'nullable|string|max:99',
+                // 'cloudinary_email' => 'nullable|email|max:99',
+                // 'cloudinary_preset' => 'nullable|string|max:99',
+                // 'cloudinary_api' => 'nullable|string|max:99',
+                // 'status' => ['nullable', Rule::in(['Active', 'Inactive'])],
+                // 'logo' => 'nullable|string|max:255'
             ]);
 
-            $company = CompanyDetail::create($validated);
+            $company = CompanyDetail::create($request->all());
 
             return response()->json([
                 'message' => 'Company created successfully',
@@ -102,7 +102,7 @@ class CompanyController extends Controller
                 'logo' => 'nullable|string|max:255'
             ]);
 
-            $company->update($validated);
+            $company->update($request->all());
 
             return response()->json([
                 'message' => 'Company updated successfully',
@@ -164,7 +164,7 @@ class CompanyController extends Controller
     {
         try {
             $request->validate([
-                'file' => 'required|file|image|max:5120' // 5MB max
+                'file' => 'required' // 5MB max
             ]);
 
             $file = $request->file('file');

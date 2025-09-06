@@ -14,6 +14,7 @@ return new class extends Migration
             $table->string('company_address', 199)->nullable();
             $table->string('support_email', 99)->nullable();
             $table->string('longitude', 99)->nullable();
+            $table->string('logo', 299)->nullable();
             $table->string('latitude', 99)->nullable();
             $table->string('cloudinary_email', 99)->nullable();
             $table->string('cloudinary_preset', 99)->nullable();

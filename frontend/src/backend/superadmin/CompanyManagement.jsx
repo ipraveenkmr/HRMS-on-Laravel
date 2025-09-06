@@ -13,6 +13,7 @@ const CompanyManagement = () => {
   const [editingCompany, setEditingCompany] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [image, setImage] = useState('');
   const [formData, setFormData] = useState({
     company_name: '',
     company_address: '',
@@ -47,33 +48,48 @@ const CompanyManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setUploading(true);
       let logoPath = formData.logo;
-      
+
       // Upload logo if a file is selected
       if (selectedFile) {
         const logoFormData = new FormData();
         logoFormData.append('file', selectedFile);
-        
-        const uploadResponse = await axios.post(`${baseURL}companies/upload-logo`, logoFormData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        logoPath = uploadResponse.data.file_path;
+
+        try {
+          const uploadResponse = await axios.post(`${baseURL}companies/upload-logo`, logoFormData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          logoPath = uploadResponse.data.file_path;
+        } catch (uploadError) {
+          console.error('Logo upload error:', uploadError);
+          if (uploadError.response?.status === 422) {
+            const validationErrors = uploadError.response.data.errors;
+            if (validationErrors?.file) {
+              alert(`File upload failed: ${validationErrors.file[0]}`);
+            } else {
+              alert('File validation failed. Please check file size (max 5MB) and format.');
+            }
+          } else {
+            alert('Logo upload failed. Please try again.');
+          }
+          throw uploadError;
+        }
       }
-      
+
       const companyData = {
         ...formData,
         logo: logoPath
       };
-      
+
       if (editingCompany) {
         // Update existing company
         const response = await axios.put(`${baseURL}companies/${editingCompany.id}`, companyData);
-        setCompanies(companies.map(company => 
+        setCompanies(companies.map(company =>
           company.id === editingCompany.id ? response.data : company
         ));
         setEditingCompany(null);
@@ -82,7 +98,7 @@ const CompanyManagement = () => {
         const response = await axios.post(`${baseURL}companies`, companyData);
         setCompanies([...companies, response.data]);
       }
-      
+
       resetForm();
       setIsAddModalOpen(false);
     } catch (error) {
@@ -137,7 +153,9 @@ const CompanyManagement = () => {
         setCompanies(companies.filter(company => company.id !== id));
       } catch (error) {
         console.error('Error deleting company:', error);
-        if (error.response?.data?.detail) {
+        if (error.response?.data?.error) {
+          alert(error.response.data.error);
+        } else if (error.response?.data?.detail) {
           alert(error.response.data.detail);
         } else {
           alert('Error deleting company. Please try again.');
@@ -150,14 +168,44 @@ const CompanyManagement = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    
     if (file && file.type.startsWith('image/')) {
+      // Check file size (5MB limit based on backend validation)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        alert('File size must be less than 5MB.');
+        event.target.value = '';
+        return;
+      }
+      
+      // Check file extension
+      const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+      const fileExtension = file.name.split('.').pop().toLowerCase();
+      if (!validExtensions.includes(fileExtension)) {
+        alert('Please select a valid image file (.jpg, .jpeg, .png, .gif, .bmp, .webp).');
+        event.target.value = '';
+        return;
+      }
+      
       setSelectedFile(file);
     } else {
       alert('Please select a valid image file.');
-      e.target.value = '';
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      let files = event.target.files;
+      let reader = new FileReader();
+      reader.readAsDataURL(files[0]);
+      reader.onload = (e) => {
+        setImage(e.target.result);
+      };
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -203,8 +251,8 @@ const CompanyManagement = () => {
                     <TableRow key={company.id}>
                       <TableCell>
                         {company.logo ? (
-                          <img 
-                            src={company.logo.startsWith('http') ? company.logo : `${baseURL.replace('/api/', '')}${company.logo}`} 
+                          <img
+                            src={company.logo.startsWith('http') ? company.logo : `${baseURL.replace('/api/', '')}${company.logo}`}
                             alt={`${company.company_name} logo`}
                             className="w-12 h-12 object-contain rounded"
                           />
@@ -262,9 +310,9 @@ const CompanyManagement = () => {
                   />
                   {selectedFile && (
                     <div className="mt-2">
-                      <img 
-                        src={URL.createObjectURL(selectedFile)} 
-                        alt="Logo preview" 
+                      <img
+                        src={image || URL.createObjectURL(selectedFile)}
+                        alt="Logo preview"
                         className="w-16 h-16 object-contain rounded border"
                       />
                       <p className="text-sm text-gray-600 mt-1">{selectedFile.name}</p>
@@ -272,16 +320,16 @@ const CompanyManagement = () => {
                   )}
                   {!selectedFile && formData.logo && (
                     <div className="mt-2">
-                      <img 
-                        src={formData.logo.startsWith('http') ? formData.logo : `${baseURL.replace('/api/', '')}${formData.logo}`} 
-                        alt="Current logo" 
+                      <img
+                        src={formData.logo.startsWith('http') ? formData.logo : `${baseURL.replace('/api/', '')}${formData.logo}`}
+                        alt="Current logo"
                         className="w-16 h-16 object-contain rounded border"
                       />
                       <p className="text-sm text-gray-600 mt-1">Current logo</p>
                     </div>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-1">Company Name *</label>
                   <Input
@@ -292,7 +340,7 @@ const CompanyManagement = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-1">Support Email</label>
                   <Input
@@ -303,7 +351,7 @@ const CompanyManagement = () => {
                     placeholder="support@company.com"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-1">Company Address</label>
                   <Input
@@ -313,7 +361,7 @@ const CompanyManagement = () => {
                     placeholder="Company address"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Longitude</label>
@@ -324,7 +372,7 @@ const CompanyManagement = () => {
                       placeholder="Longitude"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-1">Latitude</label>
                     <Input
@@ -335,7 +383,7 @@ const CompanyManagement = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-1">Cloudinary Email</label>
                   <Input
@@ -346,7 +394,7 @@ const CompanyManagement = () => {
                     placeholder="cloudinary@company.com"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-1">Cloudinary Preset</label>
                   <Input
@@ -356,7 +404,7 @@ const CompanyManagement = () => {
                     placeholder="Cloudinary preset"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-1">Cloudinary API Key</label>
                   <Input
@@ -366,7 +414,7 @@ const CompanyManagement = () => {
                     placeholder="Cloudinary API key"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-1">Status</label>
                   <select
@@ -379,14 +427,14 @@ const CompanyManagement = () => {
                     <option value="Inactive">Inactive</option>
                   </select>
                 </div>
-                
+
                 <div className="flex gap-2 pt-4">
                   <Button type="submit" className="flex-1" disabled={uploading}>
                     {uploading ? 'Uploading...' : (editingCompany ? 'Update' : 'Add')} Company
                   </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => {
                       setIsAddModalOpen(false);
                       setEditingCompany(null);
