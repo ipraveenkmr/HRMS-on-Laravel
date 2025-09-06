@@ -68,6 +68,7 @@ class Employee extends Model
         'full_and_final_settlement',
         'pay_grade_id',
         'gross_salary',
+        'ctc',
         'bank_name',
         'bank_account_number',
         'ifsc_code',
