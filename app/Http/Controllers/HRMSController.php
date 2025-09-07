@@ -41,17 +41,30 @@ class HRMSController extends Controller
     public function getDashboardStats(): JsonResponse
     {
         $employees = Employee::count();
-
         $todayAttendance = AttendanceRecord::whereDate('created_at', today())->count();
+
+        // Get attendance data for last 30 days
+        $attendanceData = AttendanceRecord::selectRaw('DATE(created_at) as date, COUNT(*) as present_count')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get();
+
+        // Format data for Google Charts (2D array format)
+        $chartData = [['Date', 'Present', 'Absent']]; // Header row
+        
+        foreach ($attendanceData as $record) {
+            $date = date('M j', strtotime($record->date)); // Format: "Jan 1"
+            $present = $record->present_count;
+            $absent = max(0, $employees - $present); // Calculate absent (ensure non-negative)
+            
+            $chartData[] = [$date, $present, $absent];
+        }
 
         return response()->json([
             'emp_count' => $employees,
             'asset_count' => Asset::count(),
-            'attendance_chart_data' => AttendanceRecord::selectRaw('DATE(created_at) as date, COUNT(*) as count')
-                ->where('created_at', '>=', now()->subDays(30))
-                ->groupBy('date')
-                ->orderBy('date', 'asc')
-                ->get(),
+            'attendance_chart_data' => $chartData,
             'attendance_count' => $todayAttendance
         ]);
     }
