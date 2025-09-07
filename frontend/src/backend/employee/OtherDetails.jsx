@@ -71,7 +71,7 @@ export default function OtherDetails() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${baseURL}employees/upload-profile-picture/`, {
+      const res = await fetch(`${baseURL}employees/upload-profile-picture`, {
         method: "POST",
         body: data,
       });
@@ -127,7 +127,7 @@ export default function OtherDetails() {
     setLoadinga(true);
 
     try {
-      const res = await fetch(`${baseURL}employees/upload-aadhaar/`, {
+      const res = await fetch(`${baseURL}employees/upload-aadhaar`, {
         method: "POST",
         body: data,
       });
@@ -183,7 +183,7 @@ export default function OtherDetails() {
     setLoadingp(true);
 
     try {
-      const res = await fetch(`${baseURL}employees/upload-pan/`, {
+      const res = await fetch(`${baseURL}employees/upload-pan`, {
         method: "POST",
         body: data,
       });
