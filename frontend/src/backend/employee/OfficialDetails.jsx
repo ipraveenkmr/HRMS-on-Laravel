@@ -393,7 +393,7 @@ export default function OfficialDetails() {
                 onBlur={handleUpdateStJobType}
                 label="Job Type"
               >
-                <MenuItem value={"Pemanent"}>Permanent</MenuItem>
+                <MenuItem value={"Permanent"}>Permanent</MenuItem>
                 <MenuItem value={"Contractual"}>Contractual</MenuItem>
               </Select>
             </FormControl>

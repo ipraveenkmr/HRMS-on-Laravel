@@ -61,7 +61,7 @@ class StoreEmployeeRequest extends FormRequest
             'department_id' => 'required|exists:departments,id',
             'designation' => 'nullable|string|max:99',
             'emp_type' => ['nullable', Rule::in(['Employee', 'Manager', 'Asset Admin', 'Admin'])],
-            'job_type' => ['nullable', Rule::in(['Pemanent', 'Contractual'])],
+            'job_type' => ['nullable', Rule::in(['Permanent', 'Contractual'])],
             'probation_period_in_month' => 'nullable|string|max:99',
             'pf_account_number_uan' => 'nullable|string|max:99',
             'esi_account_number' => 'nullable|string|max:99',
