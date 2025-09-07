@@ -206,7 +206,7 @@ const EmployeeManagement = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Reset branch when company changes
     if (name === 'company_name_id') {
       setFormData(prev => ({ ...prev, [name]: value, branch_name_id: '' }));
@@ -258,8 +258,8 @@ const EmployeeManagement = () => {
     if (!formData.company_name_id) {
       return [];
     }
-    const filtered = branches.filter(branch => 
-      branch.company_name_id && 
+    const filtered = branches.filter(branch =>
+      branch.company_name_id &&
       branch.company_name_id.toString() === formData.company_name_id.toString()
     );
     console.log('Filtering branches for company:', formData.company_name_id); // Debug log
@@ -342,9 +342,9 @@ const EmployeeManagement = () => {
                       <TableCell>{getCompanyName(employee.company_name_id)}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => handleEdit(employee)}>
+                          {/* <Button variant="outline" size="sm" onClick={() => handleEdit(employee)}>
                             Edit
-                          </Button>
+                          </Button> */}
                           <Button variant="destructive" size="sm" onClick={() => handleDelete(employee.id)}>
                             Delete
                           </Button>

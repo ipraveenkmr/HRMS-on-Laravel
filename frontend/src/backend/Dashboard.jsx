@@ -16,6 +16,7 @@ import { usecdotStore } from "../components/cdotStore";
 
 export default function Dashboard() {
   const dashdata = usecdotStore((state) => state.dashdata);
+  console.log("Dashdata:", dashdata);
 
   return (
     <>

@@ -29,7 +29,7 @@ class HRMSController extends Controller
         $departments = Department::count();
         $activeEmployees = Employee::where('emp_status', 'Working')->count();
         $todayAttendance = AttendanceRecord::whereDate('created_at', today())->count();
-        
+
         return response()->json([
             'employees' => $employees,
             'departments' => $departments,
@@ -41,19 +41,18 @@ class HRMSController extends Controller
     public function getDashboardStats(): JsonResponse
     {
         $employees = Employee::count();
-        $departments = Department::count();
-        $activeEmployees = Employee::where('emp_status', 'Working')->count();
-        $resignedEmployees = Employee::where('emp_status', 'Resigned')->count();
-        $noticePeriodEmployees = Employee::where('emp_status', 'Notice Period')->count();
+
         $todayAttendance = AttendanceRecord::whereDate('created_at', today())->count();
-        
+
         return response()->json([
-            'total_employees' => $employees,
-            'total_departments' => $departments,
-            'active_employees' => $activeEmployees,
-            'resigned_employees' => $resignedEmployees,
-            'notice_period_employees' => $noticePeriodEmployees,
-            'today_attendance' => $todayAttendance
+            'emp_count' => $employees,
+            'asset_count' => Asset::count(),
+            'attendance_chart_data' => AttendanceRecord::selectRaw('DATE(created_at) as date, COUNT(*) as count')
+                ->where('created_at', '>=', now()->subDays(30))
+                ->groupBy('date')
+                ->orderBy('date', 'asc')
+                ->get(),
+            'attendance_count' => $todayAttendance
         ]);
     }
 
@@ -63,14 +62,14 @@ class HRMSController extends Controller
         $currentFinancialYear = FinancialYear::where('year', 'LIKE', '%' . $currentYear . '%')
             ->orWhere('year', 'LIKE', '%' . ($currentYear - 1) . '%')
             ->first();
-        
+
         if (!$currentFinancialYear) {
             // If no current financial year found, get the latest one
             $currentFinancialYear = FinancialYear::latest('created_at')->first();
         }
-        
+
         $allFinancialYears = FinancialYear::orderBy('created_at', 'desc')->get();
-        
+
         return response()->json([
             'current_financial_year' => $currentFinancialYear,
             'all_financial_years' => $allFinancialYears
@@ -113,46 +112,50 @@ class HRMSController extends Controller
     public function showFinancialYear($year_id): JsonResponse
     {
         $financialYear = FinancialYear::find($year_id);
-        
+
         if (!$financialYear) {
             return response()->json(['detail' => 'Financial Year not found'], 404);
         }
-        
+
         return response()->json($financialYear);
     }
 
     public function updateFinancialYear(Request $request, $year_id): JsonResponse
     {
         $financialYear = FinancialYear::find($year_id);
-        
+
         if (!$financialYear) {
             return response()->json(['detail' => 'Financial Year not found'], 404);
         }
-        
+
         $validated = $request->validate([
-            'year' => ['sometimes', 'string', 'max:99', 
-                Rule::unique('financial_years', 'year')->ignore($year_id)],
+            'year' => [
+                'sometimes',
+                'string',
+                'max:99',
+                Rule::unique('financial_years', 'year')->ignore($year_id)
+            ],
             'working_hours' => 'sometimes|numeric|min:0|max:24',
             'loan_interest_rate' => 'sometimes|numeric|min:0|max:100',
             'login_time' => 'sometimes|string|max:99',
             'logout_time' => 'sometimes|string|max:99'
         ]);
-        
+
         $financialYear->update($validated);
-        
+
         return response()->json($financialYear);
     }
 
     public function destroyFinancialYear($year_id): JsonResponse
     {
         $financialYear = FinancialYear::find($year_id);
-        
+
         if (!$financialYear) {
             return response()->json(['detail' => 'Financial Year not found'], 404);
         }
-        
+
         $financialYear->delete();
-        
+
         return response()->json(['message' => 'Financial Year deleted successfully']);
     }
 
@@ -210,25 +213,28 @@ class HRMSController extends Controller
     public function showPayGrade($paygrade_id): JsonResponse
     {
         $payGrade = PayGrade::find($paygrade_id);
-        
+
         if (!$payGrade) {
             return response()->json(['detail' => 'PayGrade not found'], 404);
         }
-        
+
         return response()->json($payGrade);
     }
 
     public function updatePayGrade(Request $request, $paygrade_id): JsonResponse
     {
         $payGrade = PayGrade::find($paygrade_id);
-        
+
         if (!$payGrade) {
             return response()->json(['detail' => 'PayGrade not found'], 404);
         }
-        
+
         $validated = $request->validate([
-            'grade' => ['sometimes', 'integer', 
-                Rule::unique('pay_grades', 'grade')->ignore($paygrade_id)],
+            'grade' => [
+                'sometimes',
+                'integer',
+                Rule::unique('pay_grades', 'grade')->ignore($paygrade_id)
+            ],
             'min_gross_range' => 'sometimes|integer|min:0',
             'max_gross_range' => 'sometimes|integer|min:0',
             'basic' => 'sometimes|integer|min:0',
@@ -240,22 +246,22 @@ class HRMSController extends Controller
             'sa' => 'sometimes|integer|min:0',
             'income_tax' => 'sometimes|integer|min:0'
         ]);
-        
+
         $payGrade->update($validated);
-        
+
         return response()->json($payGrade);
     }
 
     public function destroyPayGrade($paygrade_id): JsonResponse
     {
         $payGrade = PayGrade::find($paygrade_id);
-        
+
         if (!$payGrade) {
             return response()->json(['detail' => 'PayGrade not found'], 404);
         }
-        
+
         $payGrade->delete();
-        
+
         return response()->json(['message' => 'PayGrade deleted successfully']);
     }
 
@@ -269,24 +275,24 @@ class HRMSController extends Controller
     {
         $employee = Employee::with(['department', 'payGrade', 'companyDetail', 'branchDetail'])
             ->find($id);
-        
+
         if (!$employee) {
             return response()->json(['error' => 'Employee not found'], 404);
         }
-        
+
         return response()->json($employee);
     }
 
     public function updateProfile(Request $request, $id): JsonResponse
     {
         $employee = Employee::find($id);
-        
+
         if (!$employee) {
             return response()->json(['error' => 'Employee not found'], 404);
         }
-        
+
         $employee->update($request->all());
-        
+
         return response()->json([
             'message' => 'Profile updated successfully',
             'employee' => $employee
@@ -308,42 +314,46 @@ class HRMSController extends Controller
     public function showDepartment($dept_id): JsonResponse
     {
         $department = Department::find($dept_id);
-        
+
         if (!$department) {
             return response()->json(['detail' => 'Department not found'], 404);
         }
-        
+
         return response()->json($department);
     }
 
     public function updateDepartment(Request $request, $dept_id): JsonResponse
     {
         $department = Department::find($dept_id);
-        
+
         if (!$department) {
             return response()->json(['detail' => 'Department not found'], 404);
         }
-        
+
         $validated = $request->validate([
-            'department_name' => ['sometimes', 'string', 'max:99', 
-                Rule::unique('departments', 'department_name')->ignore($dept_id)]
+            'department_name' => [
+                'sometimes',
+                'string',
+                'max:99',
+                Rule::unique('departments', 'department_name')->ignore($dept_id)
+            ]
         ]);
-        
+
         $department->update($validated);
-        
+
         return response()->json($department);
     }
 
     public function destroyDepartment($dept_id): JsonResponse
     {
         $department = Department::find($dept_id);
-        
+
         if (!$department) {
             return response()->json(['detail' => 'Department not found'], 404);
         }
-        
+
         $department->delete();
-        
+
         return response()->json(['message' => 'Department deleted successfully']);
     }
 }
