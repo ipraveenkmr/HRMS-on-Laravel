@@ -222,7 +222,7 @@ class EmployeeController extends Controller
             'emp_last_working_date' => 'nullable|date',
             'pay_grade_id' => 'required|exists:pay_grades,id',
             'gross_salary' => 'nullable|integer|min:0',
-            'ctc' => 'nullablemax:99',
+            'ctc' => 'nullable',
             'pf' => 'nullable',
             'esi' => 'nullable',
             'bank_name' => 'nullable|string|max:99',
