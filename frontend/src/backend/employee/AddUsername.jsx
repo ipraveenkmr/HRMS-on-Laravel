@@ -118,7 +118,7 @@ export default function Username({ closeform }) {
     if (password === confirmpassword) {
       setIsLoading(true);
       try {
-        const response = await axios.post(baseURL + "auth/signup/", {
+        const response = await axios.post(baseURL + "auth/signup", {
           username: username,
           password: password,
         });
