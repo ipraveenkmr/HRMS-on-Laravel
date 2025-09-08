@@ -168,13 +168,13 @@ export default function AssetAllocation() {
       
       if (emp_type === "Admin" || emp_type === "Asset Admin") {
         // Admin sees all allocations
-        endpoint = `${baseURL}assets/allocations/`;
+        endpoint = `${baseURL}assets`;
       } else if (emp_type === "Manager") {
         // Manager sees department allocations
-        endpoint = `${baseURL}assets/allocations/manager/${emp_id}/`;
+        endpoint = `${baseURL}assets/manager/${emp_id}`;
       } else if (emp_type === "Employee") {
         // Employee sees only their allocations
-        endpoint = `${baseURL}assets/allocations/employee/${username}/`;
+        endpoint = `${baseURL}assets/employee/${username}`;
         const response = await axios.get(endpoint);
         updateMyAssets(response.data);
         return;
@@ -200,7 +200,7 @@ export default function AssetAllocation() {
       });
 
       if (result.isConfirmed) {
-        await axios.delete(`${baseURL}assets/allocations/${id}`);
+        await axios.delete(`${baseURL}assets/${id}`);
         await fetchAssetAllocations();
         Swal.fire("Deleted!", "Asset allocation has been deleted.", "success");
       }

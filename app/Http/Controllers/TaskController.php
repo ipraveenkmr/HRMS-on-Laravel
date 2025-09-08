@@ -229,7 +229,7 @@ class TaskController extends Controller
     public function getEmployeeDailyTasks($employeeId): JsonResponse
     {
         $dailyTasks = DailyTask::with(['department'])
-            ->where('employee_id', $employeeId)
+            ->where('username', $employeeId)
             ->orderBy('created_at')
             ->get();
         

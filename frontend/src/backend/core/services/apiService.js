@@ -111,7 +111,7 @@ class ApiService {
                 { endpoint: `tasks/manager/${usecdotStore.getState().emp_id}`, action: "updateAssignedjobs" },
                 { endpoint: `leave/manager/${usecdotStore.getState().emp_id}`, action: "updateLeave" },
                 { endpoint: `daily-tasks/manager/${usecdotStore.getState().emp_id}`, action: "updateDailytask" },
-                { endpoint: `assets/allocations/manager/${usecdotStore.getState().emp_id}`, action: "updateAssets" },
+                { endpoint: `assets/manager/${usecdotStore.getState().emp_id}`, action: "updateAssets" },
                 { endpoint: "leave", action: "updateManageLeave" },
                 { endpoint: "paygrade", action: "updatePaygrade" },
             ],
@@ -119,14 +119,14 @@ class ApiService {
                 { endpoint: `tasks/employee/${username}`, action: "updateAssignedjobs" },
                 { endpoint: `leave/employee/${username}`, action: "updateLeave" },
                 { endpoint: `daily-tasks/employee/${username}`, action: "updateDailytask" },
-                { endpoint: `assets/allocations/employee/${username}`, action: "updateMyAssets" },
+                { endpoint: `assets/employee/${username}`, action: "updateMyAssets" },
                 { endpoint: "paygrade", action: "updatePaygrade" },
             ],
             "Asset Admin": [
                 { endpoint: `tasks/employee/${username}`, action: "updateAssignedjobs" },
                 { endpoint: `leave/employee/${username}`, action: "updateLeave" },
                 { endpoint: `daily-tasks/employee/${username}`, action: "updateDailytask" },
-                { endpoint: `assets/allocations/employee/${username}`, action: "updateMyAssets" },
+                { endpoint: `assets/employee/${username}`, action: "updateMyAssets" },
                 { endpoint: "assets", action: "updateAssets" },
                 { endpoint: "paygrade", action: "updatePaygrade" },
             ],
@@ -203,7 +203,7 @@ class ApiService {
 
     async mydailytaskApi(username) {
         try {
-            const response = await this.get(`daily-tasks/employee/${username}/`);
+            const response = await this.get(`daily-tasks/employee/${username}`);
             this.updateStore("updateDailytask", response.data);
         } catch (error) {
             console.error("mydailytaskApi error:", error);
@@ -315,7 +315,7 @@ class ApiService {
 
     async managerassetApi(emp_id) {
         try {
-            const response = await this.get(`assets/allocations/manager/${emp_id}/`);
+            const response = await this.get(`assets/manager/${emp_id}`);
             this.updateStore("updateAssets", response.data);
         } catch (error) {
             console.error("managerassetApi error:", error);

@@ -98,7 +98,7 @@ export default function AddForm({ onClick }) {
 
       // starting
       await axios
-        .post(baseURL + "assets/allocations/", values)
+        .post(baseURL + "assets", values)
         .then(function (response) {
           console.log("Employee post: " + JSON.stringify(response.data));
           toast.success("Asset allocated successfully!", {

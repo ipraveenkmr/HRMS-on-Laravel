@@ -157,7 +157,7 @@ export default function EditForm({ onClick, eventid }) {
   const dailytaskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "daily-tasks/employee/" + username + "/")
+      .get(baseURL + "daily-tasks/employee/" + username)
       .then(function (response) {
         console.log("Daily Task: " + JSON.stringify(response.data));
         updateDailytask(response.data);

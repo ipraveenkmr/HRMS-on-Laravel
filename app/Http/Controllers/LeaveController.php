@@ -120,11 +120,43 @@ class LeaveController extends Controller
         return response()->json(['message' => 'Leave record deleted successfully']);
     }
 
+    public function getEmployeeLeave($username): JsonResponse
+    {
+        $leaves = LeaveTracker::with(['employee', 'department', 'financialYear'])
+            ->where('username', $username)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return response()->json($leaves);
+    }
+
     public function getEmployeeLeaves($employeeId): JsonResponse
     {
         $leaves = LeaveTracker::with(['department', 'financialYear'])
             ->where('employee_id', $employeeId)
             ->orderBy('created_at')
+            ->get();
+        
+        return response()->json($leaves);
+    }
+
+    public function getLeaveByDepartment($dept_id): JsonResponse
+    {
+        $leaves = LeaveTracker::with(['employee', 'financialYear'])
+            ->where('department_id', $dept_id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return response()->json($leaves);
+    }
+
+    public function getLeaveByManager($manager_id): JsonResponse
+    {
+        $leaves = LeaveTracker::with(['employee', 'department', 'financialYear'])
+            ->whereHas('employee', function($query) use ($manager_id) {
+                $query->where('manager_id', $manager_id);
+            })
+            ->orderBy('created_at', 'desc')
             ->get();
         
         return response()->json($leaves);
@@ -151,6 +183,64 @@ class LeaveController extends Controller
         }
         
         return response()->json($leaveCalculator);
+    }
+
+    public function createLeaveCalculator(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'financial_year_id' => 'required|exists:financial_years,id',
+            'username' => 'required|string|max:200',
+            'employee_id' => 'required|exists:employees,id',
+            'remaining_CL_Days' => 'nullable|numeric|min:0',
+            'remaining_CL_Hours' => 'nullable|numeric|min:0',
+            'remaining_EI_Days' => 'nullable|numeric|min:0',
+            'remaining_EI_Hours' => 'nullable|numeric|min:0',
+            'remaining_LWP_Days' => 'nullable|numeric|min:0',
+            'remaining_LWP_Hours' => 'nullable|numeric|min:0',
+            'remaining_medical_leave_in_days' => 'nullable|numeric|min:0',
+            'remaining_medical_leave_in_hours' => 'nullable|numeric|min:0',
+            'remaining_other_leave_in_days' => 'nullable|numeric|min:0',
+            'remaining_other_leave_in_hours' => 'nullable|numeric|min:0',
+        ]);
+
+        $leaveCalculator = LeaveCalculator::create($validated);
+        
+        return response()->json([
+            'message' => 'Leave calculator created successfully',
+            'leave_calculator' => $leaveCalculator->load(['employee', 'financialYear'])
+        ], 201);
+    }
+
+    public function updateLeaveCalculator(Request $request, $calculator_id): JsonResponse
+    {
+        $leaveCalculator = LeaveCalculator::find($calculator_id);
+        
+        if (!$leaveCalculator) {
+            return response()->json(['error' => 'Leave calculator not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'financial_year_id' => 'sometimes|exists:financial_years,id',
+            'username' => 'sometimes|string|max:200',
+            'employee_id' => 'sometimes|exists:employees,id',
+            'remaining_CL_Days' => 'nullable|numeric|min:0',
+            'remaining_CL_Hours' => 'nullable|numeric|min:0',
+            'remaining_EI_Days' => 'nullable|numeric|min:0',
+            'remaining_EI_Hours' => 'nullable|numeric|min:0',
+            'remaining_LWP_Days' => 'nullable|numeric|min:0',
+            'remaining_LWP_Hours' => 'nullable|numeric|min:0',
+            'remaining_medical_leave_in_days' => 'nullable|numeric|min:0',
+            'remaining_medical_leave_in_hours' => 'nullable|numeric|min:0',
+            'remaining_other_leave_in_days' => 'nullable|numeric|min:0',
+            'remaining_other_leave_in_hours' => 'nullable|numeric|min:0',
+        ]);
+
+        $leaveCalculator->update($validated);
+        
+        return response()->json([
+            'message' => 'Leave calculator updated successfully',
+            'leave_calculator' => $leaveCalculator->load(['employee', 'financialYear'])
+        ]);
     }
 
     public function getManageLeave(): JsonResponse

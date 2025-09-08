@@ -161,7 +161,7 @@ export default function EmpDailyTask() {
   const mydailytaskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "daily-tasks/employee/" + username + "/")
+      .get(baseURL + "daily-tasks/employee/" + username)
       .then(function (response) {
         updateDailytask(response.data);
       })
