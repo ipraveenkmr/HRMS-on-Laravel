@@ -9,7 +9,8 @@
       "Bash(curl:*)",
       "Bash(ls:*)",
       "Bash(mkdir:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(php:*)"
     ],
     "deny": []
   }
