@@ -108,27 +108,27 @@ class ApiService {
                 { endpoint: "leave", action: "updateManageLeave" },
             ],
             Manager: [
-                { endpoint: `tasks/manager/${usecdotStore.getState().emp_id}/`, action: "updateAssignedjobs" },
-                { endpoint: `leave/manager/${usecdotStore.getState().emp_id}/`, action: "updateLeave" },
-                { endpoint: `daily-tasks/manager/${usecdotStore.getState().emp_id}/`, action: "updateDailytask" },
-                { endpoint: `assets/allocations/manager/${usecdotStore.getState().emp_id}/`, action: "updateAssets" },
-                { endpoint: "leave/", action: "updateManageLeave" },
-                { endpoint: "paygrade/", action: "updatePaygrade" },
+                { endpoint: `tasks/manager/${usecdotStore.getState().emp_id}`, action: "updateAssignedjobs" },
+                { endpoint: `leave/manager/${usecdotStore.getState().emp_id}`, action: "updateLeave" },
+                { endpoint: `daily-tasks/manager/${usecdotStore.getState().emp_id}`, action: "updateDailytask" },
+                { endpoint: `assets/allocations/manager/${usecdotStore.getState().emp_id}`, action: "updateAssets" },
+                { endpoint: "leave", action: "updateManageLeave" },
+                { endpoint: "paygrade", action: "updatePaygrade" },
             ],
             Employee: [
                 { endpoint: `tasks/employee/${username}`, action: "updateAssignedjobs" },
                 { endpoint: `leave/employee/${username}`, action: "updateLeave" },
                 { endpoint: `daily-tasks/employee/${username}`, action: "updateDailytask" },
                 { endpoint: `assets/allocations/employee/${username}`, action: "updateMyAssets" },
-                { endpoint: "paygrade/", action: "updatePaygrade" },
+                { endpoint: "paygrade", action: "updatePaygrade" },
             ],
             "Asset Admin": [
                 { endpoint: `tasks/employee/${username}`, action: "updateAssignedjobs" },
                 { endpoint: `leave/employee/${username}`, action: "updateLeave" },
                 { endpoint: `daily-tasks/employee/${username}`, action: "updateDailytask" },
                 { endpoint: `assets/allocations/employee/${username}`, action: "updateMyAssets" },
-                { endpoint: "assets/", action: "updateAssets" },
-                { endpoint: "paygrade/", action: "updatePaygrade" },
+                { endpoint: "assets", action: "updateAssets" },
+                { endpoint: "paygrade", action: "updatePaygrade" },
             ],
         };
 
@@ -369,7 +369,7 @@ class ApiService {
 
     async paygradeApi() {
         try {
-            const response = await this.get("paygrade/");
+            const response = await this.get("paygrade");
             this.updateStore("updatePaygrade", response.data);
         } catch (error) {
             console.error("paygradeApi error:", error);

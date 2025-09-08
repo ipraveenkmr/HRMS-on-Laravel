@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('financial_year_id')->constrained()->onDelete('cascade');
             $table->foreignId('employee_id')->constrained()->onDelete('cascade');
             $table->foreignId('department_id')->constrained()->onDelete('cascade');
-            $table->string('attendance_date', 99)->unique();
+            $table->string('attendance_date', 99);
             $table->string('username', 200)->nullable();
             $table->string('attendance', 99)->nullable();
             $table->string('login_at', 99)->nullable();
@@ -29,6 +29,7 @@ return new class extends Migration
             $table->timestamps();
             
             $table->index(['created_at']);
+            $table->unique(['employee_id', 'attendance_date']);
         });
     }
 

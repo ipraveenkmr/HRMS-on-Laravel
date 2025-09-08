@@ -136,12 +136,12 @@ class AttendanceController extends Controller
         $validated['financial_year_id'] = $financialYear->id;
 
         // Check for duplicate attendance record
-        $existingAttendance = AttendanceRecord::where('attendance_date', $validated['attendance_date'])
-            ->where('username', $validated['username'])
+        $existingAttendance = AttendanceRecord::where('employee_id', $validated['employee_id'])
+            ->where('attendance_date', $validated['attendance_date'])
             ->first();
 
         if ($existingAttendance) {
-            return response()->json(['detail' => 'Attendance record already exists for this date and user'], 400);
+            return response()->json(['detail' => 'Attendance record already exists for this employee on this date'], 400);
         }
 
         $attendance = AttendanceRecord::create($validated);
