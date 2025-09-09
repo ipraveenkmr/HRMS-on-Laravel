@@ -13,6 +13,7 @@ use App\Models\NotificationDetail;
 use App\Models\AssetCategory;
 use App\Models\Asset;
 use App\Models\AttendanceRecord;
+use App\Models\TravelExpense;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
 
@@ -368,5 +369,186 @@ class HRMSController extends Controller
         $department->delete();
 
         return response()->json(['message' => 'Department deleted successfully']);
+    }
+
+    // Travel Expense CRUD Methods
+    public function getTravelExpenses(): JsonResponse
+    {
+        $travelExpenses = TravelExpense::with(['employee', 'approver'])->orderBy('created_at', 'desc')->get();
+        return response()->json($travelExpenses);
+    }
+
+    public function storeTravelExpense(Request $request): JsonResponse
+    {
+        // Clean up the request data before validation
+        $requestData = $request->all();
+        
+        // Handle invalid date - set to today's date if invalid
+        if (isset($requestData['expense_date']) && 
+            ($requestData['expense_date'] === 'Invalid Date' || empty($requestData['expense_date']))) {
+            $requestData['expense_date'] = date('Y-m-d');
+        }
+
+        // Create a new request instance with cleaned data
+        $cleanRequest = new \Illuminate\Http\Request();
+        $cleanRequest->replace($requestData);
+
+        $validated = $cleanRequest->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'department_id' => 'nullable|exists:departments,id',
+            'expense_type' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'currency' => 'nullable|string|max:10',
+            'description' => 'nullable|string',
+            'expense_date' => 'required|date',
+            'from_location' => 'nullable|string|max:255',
+            'to_location' => 'nullable|string|max:255',
+            'purpose' => 'nullable|string',
+            'receipt_document' => 'nullable|string',
+            'status' => 'sometimes|in:Pending,Approved,Rejected',
+            'approved_by' => 'nullable|exists:employees,id',
+            'approval_date' => 'nullable|date',
+            'remarks' => 'nullable|string',
+            'username' => 'nullable|string|max:255'
+        ]);
+
+        // Set default values
+        $validated['status'] = $validated['status'] ?? 'Pending';
+        $validated['currency'] = $validated['currency'] ?? 'INR';
+
+        // Remove empty string values for nullable fields
+        foreach (['approved_by', 'approval_date', 'remarks'] as $field) {
+            if (isset($validated[$field]) && $validated[$field] === '') {
+                $validated[$field] = null;
+            }
+        }
+
+        $travelExpense = TravelExpense::create($validated);
+        $travelExpense->load(['employee', 'approver']);
+
+        return response()->json($travelExpense, 201);
+    }
+
+    public function showTravelExpense($expense_id): JsonResponse
+    {
+        $travelExpense = TravelExpense::with(['employee', 'approver'])->find($expense_id);
+
+        if (!$travelExpense) {
+            return response()->json(['detail' => 'Travel Expense not found'], 404);
+        }
+
+        return response()->json($travelExpense);
+    }
+
+    public function updateTravelExpense(Request $request, $expense_id): JsonResponse
+    {
+        $travelExpense = TravelExpense::find($expense_id);
+
+        if (!$travelExpense) {
+            return response()->json(['detail' => 'Travel Expense not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'employee_id' => 'sometimes|exists:employees,id',
+            'expense_type' => 'sometimes|string|max:255',
+            'amount' => 'sometimes|numeric|min:0',
+            'description' => 'nullable|string',
+            'expense_date' => 'sometimes|date',
+            'receipt_path' => 'nullable|string',
+            'status' => 'sometimes|in:pending,approved,rejected',
+            'approved_by' => 'nullable|exists:employees,id',
+            'comments' => 'nullable|string'
+        ]);
+
+        if (isset($validated['status']) && $validated['status'] === 'approved' && !isset($validated['approved_by'])) {
+            $validated['approved_date'] = now();
+        }
+
+        $travelExpense->update($validated);
+        $travelExpense->load(['employee', 'approver']);
+
+        return response()->json($travelExpense);
+    }
+
+    public function destroyTravelExpense($expense_id): JsonResponse
+    {
+        $travelExpense = TravelExpense::find($expense_id);
+
+        if (!$travelExpense) {
+            return response()->json(['detail' => 'Travel Expense not found'], 404);
+        }
+
+        $travelExpense->delete();
+
+        return response()->json(['message' => 'Travel Expense deleted successfully']);
+    }
+
+    public function getEmployeeTravelExpenses($username): JsonResponse
+    {
+        $employee = Employee::where('username', $username)->first();
+
+        if (!$employee) {
+            return response()->json(['detail' => 'Employee not found'], 404);
+        }
+
+        $travelExpenses = TravelExpense::with(['employee', 'approver'])
+            ->where('employee_id', $employee->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($travelExpenses);
+    }
+
+    public function getTravelExpensesByDepartment($dept_id): JsonResponse
+    {
+        $department = Department::find($dept_id);
+
+        if (!$department) {
+            return response()->json(['detail' => 'Department not found'], 404);
+        }
+
+        $travelExpenses = TravelExpense::with(['employee', 'approver'])
+            ->whereHas('employee', function ($query) use ($dept_id) {
+                $query->where('dept_id', $dept_id);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($travelExpenses);
+    }
+
+    public function getTravelExpensesByManager($manager_id): JsonResponse
+    {
+        $manager = Employee::find($manager_id);
+
+        if (!$manager) {
+            return response()->json(['detail' => 'Manager not found'], 404);
+        }
+
+        $travelExpenses = TravelExpense::with(['employee', 'approver'])
+            ->whereHas('employee', function ($query) use ($manager_id) {
+                $query->where('manager_id', $manager_id);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($travelExpenses);
+    }
+
+    public function getTravelExpensesSummary(): JsonResponse
+    {
+        $totalExpenses = TravelExpense::count();
+        $pendingExpenses = TravelExpense::where('status', 'Pending')->count();
+        $approvedExpenses = TravelExpense::where('status', 'Approved')->count();
+        $rejectedExpenses = TravelExpense::where('status', 'Rejected')->count();
+        $totalApprovedAmount = TravelExpense::where('status', 'Approved')->sum('amount');
+
+        return response()->json([
+            'total_expenses' => $totalExpenses,
+            'pending_expenses' => $pendingExpenses,
+            'approved_expenses' => $approvedExpenses,
+            'rejected_expenses' => $rejectedExpenses,
+            'total_approved_amount' => (float) $totalApprovedAmount
+        ]);
     }
 }

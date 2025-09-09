@@ -6,7 +6,7 @@ const travelExpenseService = {
   // Get all travel expenses
   getTravelExpenses: async () => {
     try {
-      const response = await axios.get(`${baseURL}travel-expenses/`);
+      const response = await axios.get(`${baseURL}travel-expenses`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -56,7 +56,7 @@ const travelExpenseService = {
   // Create a new travel expense
   createTravelExpense: async (expenseData) => {
     try {
-      const response = await axios.post(`${baseURL}travel-expenses/`, expenseData);
+      const response = await axios.post(`${baseURL}travel-expenses`, expenseData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

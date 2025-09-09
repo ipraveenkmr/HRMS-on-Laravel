@@ -215,6 +215,7 @@ Route::prefix('/financial-years')->group(function () {
 Route::prefix('/travel-expenses')->group(function () {
     Route::get('/', [HRMSController::class, 'getTravelExpenses']);
     Route::post('/', [HRMSController::class, 'storeTravelExpense']);
+    Route::get('/stats/summary', [HRMSController::class, 'getTravelExpensesSummary']);
     Route::get('/{expense_id}', [HRMSController::class, 'showTravelExpense']);
     Route::put('/{expense_id}', [HRMSController::class, 'updateTravelExpense']);
     Route::delete('/{expense_id}', [HRMSController::class, 'destroyTravelExpense']);

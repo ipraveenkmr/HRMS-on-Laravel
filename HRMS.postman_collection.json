@@ -1,0 +1,279 @@
+{
+	"info": {
+		"_postman_id": "56740640-d014-4e51-aab7-3f0a136ca1db",
+		"name": "HRMS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "38351865"
+	},
+	"item": [
+		{
+			"name": "Assets",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://192.168.10.173:8000/api/assets",
+					"protocol": "http",
+					"host": [
+						"192",
+						"168",
+						"10",
+						"173"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"assets"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"praveen\",\r\n    \"password\": \"Praveen@123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://hrms.test/api/auth/token",
+					"protocol": "http",
+					"host": [
+						"hrms",
+						"test"
+					],
+					"path": [
+						"api",
+						"auth",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Users",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"praveen\",\r\n    \"password\": \"Praveen@123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://hrms.test/api/auth/signup",
+					"protocol": "http",
+					"host": [
+						"hrms",
+						"test"
+					],
+					"path": [
+						"api",
+						"auth",
+						"signup"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "employees",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "  {\r\n      \"username\": \"praveen\",\r\n      \"emp_name\": \"John Doe\",\r\n      \"company_name_id\": 1,\r\n      \"branch_name_id\": 1,\r\n      \"department_id\": 1,\r\n      \"pay_grade_id\": 1,\r\n      \"emp_email\": \"john.doe@company.com\",\r\n      \"gender\": \"Male\",\r\n      \"work_mode\": \"Office\",\r\n      \"qualification\": \"Graduate\",\r\n      \"emp_type\": \"Admin\",\r\n      \"job_type\": \"Permanent\",\r\n      \"emp_status\": \"Working\",\r\n      \"gross_salary\": 50000,\r\n      \"ctc\": 7000000\r\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://hrms.test/api/employees",
+					"protocol": "http",
+					"host": [
+						"hrms",
+						"test"
+					],
+					"path": [
+						"api",
+						"employees"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "company",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "  {\r\n      \"company_name\": \"TechCorp Solutions\",\r\n      \"company_address\": \"123 Business St, Tech City\",\r\n      \"support_email\": \"support@techcorp.com\",\r\n      \"longitude\": \"77.1025\",\r\n      \"latitude\": \"28.7041\",\r\n      \"status\": \"Active\"\r\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://hrms.test/api/companies",
+					"protocol": "http",
+					"host": [
+						"hrms",
+						"test"
+					],
+					"path": [
+						"api",
+						"companies"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "branch",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "  {\r\n      \"company_name_id\": 1,\r\n      \"branch_name\": \"Main Office\",\r\n      \"branch_address\": \"456 Main St, Downtown\",\r\n      \"longitude\": \"77.2090\",\r\n      \"latitude\": \"28.6139\"\r\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://hrms.test/api/branches",
+					"protocol": "http",
+					"host": [
+						"hrms",
+						"test"
+					],
+					"path": [
+						"api",
+						"branches"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "department",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"department_name\": \"Human Resources\"\r\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://hrms.test/api/departments",
+					"protocol": "http",
+					"host": [
+						"hrms",
+						"test"
+					],
+					"path": [
+						"api",
+						"departments"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "paygrade",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "  {\r\n    \"grade\": 1,\r\n    \"min_gross_range\": 50000,\r\n    \"max_gross_range\": 75000,\r\n    \"basic\": 30000,\r\n    \"hra\": 12000,\r\n    \"ta\": 2000,\r\n    \"com\": 1000,\r\n    \"medical\": 2000,\r\n    \"edu\": 1000,\r\n    \"sa\": 5000,\r\n    \"income_tax\": 2000\r\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://hrms.test/api/paygrade",
+					"protocol": "http",
+					"host": [
+						"hrms",
+						"test"
+					],
+					"path": [
+						"api",
+						"paygrade"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "financial-years",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "  {\r\n    \"year\": \"2024-2025\",\r\n    \"working_hours\": 8.5,\r\n    \"loan_interest_rate\": 7.5,\r\n    \"login_time\": \"09:00:00\",\r\n    \"logout_time\": \"17:30:00\"\r\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://hrms.test/api/financial-years",
+					"protocol": "http",
+					"host": [
+						"hrms",
+						"test"
+					],
+					"path": [
+						"api",
+						"financial-years"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
