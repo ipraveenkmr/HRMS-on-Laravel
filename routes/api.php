@@ -222,6 +222,7 @@ Route::prefix('/travel-expenses')->group(function () {
     Route::get('/employee/{username}', [HRMSController::class, 'getEmployeeTravelExpenses']);
     Route::get('/department/{dept_id}', [HRMSController::class, 'getTravelExpensesByDepartment']);
     Route::get('/manager/{manager_id}', [HRMSController::class, 'getTravelExpensesByManager']);
+    Route::patch('/{expense_id}/status', [HRMSController::class, 'updateTravelExpenseStatus']);
 });
 
 // Fallback route for SPA

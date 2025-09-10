@@ -374,7 +374,7 @@ class HRMSController extends Controller
     // Travel Expense CRUD Methods
     public function getTravelExpenses(): JsonResponse
     {
-        $travelExpenses = TravelExpense::with(['employee', 'approver'])->orderBy('created_at', 'desc')->get();
+        $travelExpenses = TravelExpense::orderBy('created_at', 'desc')->get();
         return response()->json($travelExpenses);
     }
 
@@ -424,14 +424,13 @@ class HRMSController extends Controller
         }
 
         $travelExpense = TravelExpense::create($validated);
-        $travelExpense->load(['employee', 'approver']);
 
         return response()->json($travelExpense, 201);
     }
 
     public function showTravelExpense($expense_id): JsonResponse
     {
-        $travelExpense = TravelExpense::with(['employee', 'approver'])->find($expense_id);
+        $travelExpense = TravelExpense::find($expense_id);
 
         if (!$travelExpense) {
             return response()->json(['detail' => 'Travel Expense not found'], 404);
@@ -455,7 +454,7 @@ class HRMSController extends Controller
             'description' => 'nullable|string',
             'expense_date' => 'sometimes|date',
             'receipt_path' => 'nullable|string',
-            'status' => 'sometimes|in:pending,approved,rejected',
+            'status' => 'sometimes|in:Pending,Approved,Rejected',
             'approved_by' => 'nullable|exists:employees,id',
             'comments' => 'nullable|string'
         ]);
@@ -465,7 +464,6 @@ class HRMSController extends Controller
         }
 
         $travelExpense->update($validated);
-        $travelExpense->load(['employee', 'approver']);
 
         return response()->json($travelExpense);
     }
@@ -491,8 +489,7 @@ class HRMSController extends Controller
             return response()->json(['detail' => 'Employee not found'], 404);
         }
 
-        $travelExpenses = TravelExpense::with(['employee', 'approver'])
-            ->where('employee_id', $employee->id)
+        $travelExpenses = TravelExpense::where('employee_id', $employee->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -507,9 +504,8 @@ class HRMSController extends Controller
             return response()->json(['detail' => 'Department not found'], 404);
         }
 
-        $travelExpenses = TravelExpense::with(['employee', 'approver'])
-            ->whereHas('employee', function ($query) use ($dept_id) {
-                $query->where('dept_id', $dept_id);
+        $travelExpenses = TravelExpense::whereHas('employee', function ($query) use ($dept_id) {
+                $query->where('department_id', $dept_id);
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -525,8 +521,7 @@ class HRMSController extends Controller
             return response()->json(['detail' => 'Manager not found'], 404);
         }
 
-        $travelExpenses = TravelExpense::with(['employee', 'approver'])
-            ->whereHas('employee', function ($query) use ($manager_id) {
+        $travelExpenses = TravelExpense::whereHas('employee', function ($query) use ($manager_id) {
                 $query->where('manager_id', $manager_id);
             })
             ->orderBy('created_at', 'desc')
@@ -549,6 +544,34 @@ class HRMSController extends Controller
             'approved_expenses' => $approvedExpenses,
             'rejected_expenses' => $rejectedExpenses,
             'total_approved_amount' => (float) $totalApprovedAmount
+        ]);
+    }
+
+    public function updateTravelExpenseStatus(Request $request, $expense_id): JsonResponse
+    {
+        $travelExpense = TravelExpense::find($expense_id);
+
+        if (!$travelExpense) {
+            return response()->json(['detail' => 'Travel Expense not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|in:Pending,Approved,Rejected',
+            'approved_by' => 'nullable|string|max:255',
+            'remarks' => 'nullable|string'
+        ]);
+
+        if ($validated['status'] === 'Approved') {
+            $validated['approval_date'] = now();
+        } else {
+            $validated['approval_date'] = null;
+        }
+
+        $travelExpense->update($validated);
+
+        return response()->json([
+            'message' => 'Travel expense status updated successfully',
+            'travel_expense' => $travelExpense
         ]);
     }
 }

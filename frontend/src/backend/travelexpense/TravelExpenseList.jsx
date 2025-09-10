@@ -72,6 +72,7 @@ const TravelExpenseList = ({
     setLoading(true);
     try {
       let data;
+      console.log('Fetching expenses with params:', { employeeView, isManager, isAdmin, currentUser });
       if (employeeView && currentUser?.empusername) {
         data = await travelExpenseService.getEmployeeTravelExpenses(currentUser.empusername);
       } else if (isManager && !isAdmin && currentUser?.emp_id) {
@@ -161,7 +162,7 @@ const TravelExpenseList = ({
         await travelExpenseService.updateExpenseStatus(
           expense.id, 
           newStatus, 
-          currentUser?.empusername || currentUser?.emp_name,
+          currentUser?.emp_id || currentUser?.id,
           result.value
         );
         toast.success(`Expense ${newStatus.toLowerCase()} successfully`);
