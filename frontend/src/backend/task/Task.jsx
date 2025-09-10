@@ -240,7 +240,7 @@ export default function Task() {
 
     if (event.target.value) {
       await axios
-        .get(baseURL + "tasks/manager/" + event.target.value + "/")
+        .get(baseURL + "tasks/manager/" + event.target.value)
         .then(function (response) {
           console.log("taskbydept: " + JSON.stringify(response.data));
           updateAssignedjobs(response.data);

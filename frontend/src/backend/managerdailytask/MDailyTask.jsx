@@ -179,7 +179,7 @@ export default function DailyTask() {
   const dailyTaskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "daily-tasks/manager/" + emp_id + "/")
+      .get(baseURL + "daily-tasks/manager/" + emp_id)
       .then(function (response) {
         console.log("assets: " + JSON.stringify(response.data));
         updateDailytask(response.data);
@@ -210,7 +210,7 @@ export default function DailyTask() {
 
     if (event.target.value) {
       await axios
-        .get(baseURL + "daily-tasks/manager/" + emp_id + "/")
+        .get(baseURL + "daily-tasks/manager/" + emp_id)
         .then(function (response) {
           console.log("daily-tasks/manager: " + JSON.stringify(response.data));
           updateDailytask(response.data);

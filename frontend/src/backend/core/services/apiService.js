@@ -194,7 +194,7 @@ class ApiService {
 
     async managerdailytaskApi(emp_id) {
         try {
-            const response = await this.get(`daily-tasks/manager/${emp_id}/`);
+            const response = await this.get(`daily-tasks/manager/${emp_id}`);
             this.updateStore("updateDailytask", response.data);
         } catch (error) {
             console.error("managerdailytaskApi error:", error);
@@ -270,7 +270,7 @@ class ApiService {
 
     async managertaskApi(emp_id) {
         try {
-            const response = await this.get(`tasks/manager/${emp_id}/`);
+            const response = await this.get(`tasks/manager/${emp_id}`);
             this.updateStore("updateAssignedjobs", response.data);
         } catch (error) {
             console.error("managertaskApi error:", error);
@@ -279,7 +279,7 @@ class ApiService {
 
     async mytaskApi(username) {
         try {
-            const response = await this.get(`tasks/employee/${username}/`);
+            const response = await this.get(`tasks/employee/${username}`);
             this.updateStore("updateAssignedjobs", response.data);
         } catch (error) {
             console.error("mytaskApi error:", error);

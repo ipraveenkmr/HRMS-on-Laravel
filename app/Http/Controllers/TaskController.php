@@ -124,10 +124,10 @@ class TaskController extends Controller
         return response()->json(['message' => 'Task deleted successfully']);
     }
 
-    public function getEmployeeTasks($employeeId): JsonResponse
+    public function getEmployeeTasks($username): JsonResponse
     {
         $tasks = AssignedJob::with(['department'])
-            ->where('employee_id', $employeeId)
+            ->where('username', $username)
             ->orderBy('created_at')
             ->get();
         

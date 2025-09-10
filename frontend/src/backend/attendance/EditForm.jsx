@@ -57,7 +57,7 @@ export default function EditForm({ onClick, eventid }) {
     await axios
       .get(baseURL + "attendance/" + eventid)
       .then(function (response) {
-        formdata.current = response.data[0];
+        formdata.current = response.data;
         console.log("kcheckpost " + JSON.stringify(formdata.current));
         setAttendancetype(formdata.current.attendance);
         formik.values.employee = formdata.current.employee;

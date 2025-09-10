@@ -208,7 +208,7 @@ export default function Task() {
   const taskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "tasks/manager/" + emp_id + "/")
+      .get(baseURL + "tasks/manager/" + emp_id)
       .then(function (response) {
         updateAssignedjobs(response.data);
       })
@@ -260,7 +260,7 @@ export default function Task() {
 
     if (event.target.value) {
       await axios
-        .get(baseURL + "tasks/manager/" + emp_id + "/")
+        .get(baseURL + "tasks/manager/" + emp_id)
         .then(function (response) {
           console.log("taskbydept: " + JSON.stringify(response.data));
           updateAssignedjobs(response.data);

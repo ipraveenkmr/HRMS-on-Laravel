@@ -51,14 +51,14 @@ export default function EditForm({ onClick, eventid }) {
     await axios
       .get(baseURL + "tasks/" + eventid)
       .then(function (response) {
-        formdata.current = response.data[0];
-        console.log("kcheckpost " + JSON.stringify(formdata.current));
+        formdata.current = response.data;
+        // console.log("kcheckpost " + JSON.stringify(formdata.current));
         setSubmissiondate(formdata.current.submission_date);
         setSelectedmanager(formdata.current.manager);
         setStatustype(formdata.current.status);
         setSelectedemp(formdata.current.employee_id);
         formik.values.task = formdata.current.task;
-        setAtask(response.data[0].task);
+        setAtask(response.data.task);
         formik.values.task_time = formdata.current.task_time;
         formik.values.comment = formdata.current.comment;
         formik.values.description = formdata.current.description;

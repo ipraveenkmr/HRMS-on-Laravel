@@ -161,7 +161,7 @@ export default function AddForm({ onClick }) {
   const taskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "tasks/employee/" + username + "/")
+      .get(baseURL + "tasks/employee/" + username)
       .then(function (response) {
         updateAssignedjobs(response.data);
       })
