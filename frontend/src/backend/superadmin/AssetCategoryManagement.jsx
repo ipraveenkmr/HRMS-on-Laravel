@@ -164,14 +164,14 @@ const AssetCategoryManagement = () => {
                       <TableCell>{formatDateTime(category.created_at)}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button 
+                          {/* <Button 
                             variant="outline" 
                             size="sm" 
                             onClick={() => handleViewAssets(category.id)}
                             title="View assets in this category"
                           >
                             View Assets
-                          </Button>
+                          </Button> */}
                           <Button variant="outline" size="sm" onClick={() => handleEdit(category)}>
                             Edit
                           </Button>

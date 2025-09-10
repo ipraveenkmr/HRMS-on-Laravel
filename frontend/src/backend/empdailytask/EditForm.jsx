@@ -50,18 +50,17 @@ export default function EditForm({ onClick, eventid }) {
     await axios
       .get(baseURL + "daily-tasks/" + eventid)
       .then(function (response) {
-        formdata.current = response.data[0];
-        console.log("kcheckpost " + JSON.stringify(formdata.current));
-        formik.values.task = response.data[0].task;
-        formik.values.submission_date = response.data[0].submission_date;
-        formik.values.manager = response.data[0].manager;
-        formik.values.description = response.data[0].description;
-        setSelectedtask(response.data[0].task);
+        formdata.current = response.data;
+        // console.log("daily-tasks ", response.data.task);
+        formik.values.task = response.data.task;
+        formik.values.submission_date = response.data.submission_date;
+        formik.values.manager = response.data.manager;
+        formik.values.description = response.data.description;
+        setSelectedtask(response.data.task);
         // setSelectedemp(response.data[0].manager);
-
         {
           employees.map((item, index) => {
-            if (item.emp_name == response.data[0].manager) {
+            if (item.emp_name == response.data?.manager) {
               setSelectedemp(item.id);
             }
           });
