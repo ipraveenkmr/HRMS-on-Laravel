@@ -168,13 +168,13 @@ export default function AssetAllocation() {
       
       if (emp_type === "Admin" || emp_type === "Asset Admin") {
         // Admin sees all allocations
-        endpoint = `${baseURL}assets`;
+        endpoint = `${baseURL}asset-allocations`;
       } else if (emp_type === "Manager") {
         // Manager sees department allocations
-        endpoint = `${baseURL}assets/manager/${emp_id}`;
+        endpoint = `${baseURL}asset-allocations/manager/${emp_id}`;
       } else if (emp_type === "Employee") {
         // Employee sees only their allocations
-        endpoint = `${baseURL}assets/employee/${username}`;
+        endpoint = `${baseURL}asset-allocations/employee/${username}`;
         const response = await axios.get(endpoint);
         updateMyAssets(response.data);
         return;
@@ -357,11 +357,11 @@ export default function AssetAllocation() {
               : filteredData
             ).map((row) => (
               <TableRow key={row.id}>
-                <TableCell>{row.employee_name || row.username}</TableCell>
-                <TableCell>{row.asset_name || row.asset_id}</TableCell>
-                <TableCell>{row.category_name || row.asset_category}</TableCell>
+                <TableCell>{row.employee_name || row.username || "N/A"}</TableCell>
+                <TableCell>{row.asset_name || row.asset_id || "N/A"}</TableCell>
+                <TableCell>{row.category_name || row.asset_category || "N/A"}</TableCell>
                 {(emp_type === "Admin" || emp_type === "Asset Admin") && (
-                  <TableCell>{row.department_name || row.department_id}</TableCell>
+                  <TableCell>{row.department_name || row.department_id || "N/A"}</TableCell>
                 )}
                 <TableCell>
                   {row.allocation_date ? moment(row.allocation_date).format("DD-MM-YYYY") : "N/A"}
