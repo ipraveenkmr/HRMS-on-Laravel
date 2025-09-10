@@ -220,6 +220,7 @@ Route::prefix('/travel-expenses')->group(function () {
     Route::put('/{expense_id}', [HRMSController::class, 'updateTravelExpense']);
     Route::delete('/{expense_id}', [HRMSController::class, 'destroyTravelExpense']);
     Route::get('/employee/{username}', [HRMSController::class, 'getEmployeeTravelExpenses']);
+    Route::get('/employee-id/{employee_id}', [HRMSController::class, 'getTravelExpensesByEmployeeId']);
     Route::get('/department/{dept_id}', [HRMSController::class, 'getTravelExpensesByDepartment']);
     Route::get('/manager/{manager_id}', [HRMSController::class, 'getTravelExpensesByManager']);
     Route::patch('/{expense_id}/status', [HRMSController::class, 'updateTravelExpenseStatus']);

@@ -496,6 +496,21 @@ class HRMSController extends Controller
         return response()->json($travelExpenses);
     }
 
+    public function getTravelExpensesByEmployeeId($employee_id): JsonResponse
+    {
+        $employee = Employee::find($employee_id);
+
+        if (!$employee) {
+            return response()->json(['detail' => 'Employee not found'], 404);
+        }
+
+        $travelExpenses = TravelExpense::where('employee_id', $employee_id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($travelExpenses);
+    }
+
     public function getTravelExpensesByDepartment($dept_id): JsonResponse
     {
         $department = Department::find($dept_id);

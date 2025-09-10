@@ -75,6 +75,8 @@ const TravelExpenseList = ({
       console.log('Fetching expenses with params:', { employeeView, isManager, isAdmin, currentUser });
       if (employeeView && currentUser?.empusername) {
         data = await travelExpenseService.getEmployeeTravelExpenses(currentUser.empusername);
+      } else if (employeeView && currentUser?.emp_id) {
+        data = await travelExpenseService.getTravelExpensesByEmployeeId(currentUser.emp_id);
       } else if (isManager && !isAdmin && currentUser?.emp_id) {
         data = await travelExpenseService.getTravelExpensesByDepartment(currentUser.emp_id);
       } else {

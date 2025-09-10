@@ -33,6 +33,16 @@ const travelExpenseService = {
     }
   },
 
+  // Get travel expenses by employee ID
+  getTravelExpensesByEmployeeId: async (employeeId) => {
+    try {
+      const response = await axios.get(`${baseURL}travel-expenses/employee-id/${employeeId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Get travel expenses by manager employee ID
   getTravelExpensesByDepartment: async (employeeId) => {
     try {
