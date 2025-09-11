@@ -87,6 +87,7 @@ class ApiService {
                 this.updateStore("updateEmptype", employeeData.emp_type);
                 this.updateStore("updateEmpdepartment", employeeData.department_id);
                 this.updateStore("updateEmpid", employeeData.id);
+                this.updateStore("updateEmpusername", employeeData.username);
             } catch (error) {
                 console.error("Failed to fetch employee data:", error);
             }
@@ -218,6 +219,7 @@ class ApiService {
             this.updateStore("updateEmptype", employeeData.emp_type);
             this.updateStore("updateEmpdepartment", employeeData.department_id);
             this.updateStore("updateEmpid", employeeData.id);
+            this.updateStore("updateEmpusername", employeeData.username);
         } catch (error) {
             console.error("employeeEditApi error:", error);
         }
