@@ -104,7 +104,8 @@ Route::prefix('/leave')->group(function () {
     Route::get('/employee/{username}', [LeaveController::class, 'getEmployeeLeave']);
     Route::get('/department/{dept_id}', [LeaveController::class, 'getLeaveByDepartment']);
     Route::get('/manager/{manager_id}', [LeaveController::class, 'getLeaveByManager']);
-    Route::get('/calculator/{employee_id}', [LeaveController::class, 'getLeaveCalculator']);
+    Route::get('/calculator/employee/{employee_id}', [LeaveController::class, 'getLeaveCalculator']);
+    Route::get('/calculator/{username}', [LeaveController::class, 'getLeaveCalculatorByUsername']);
     Route::post('/calculator', [LeaveController::class, 'createLeaveCalculator']);
     Route::put('/calculator/{calculator_id}', [LeaveController::class, 'updateLeaveCalculator']);
 });

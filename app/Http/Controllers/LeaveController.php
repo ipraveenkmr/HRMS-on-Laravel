@@ -239,6 +239,21 @@ class LeaveController extends Controller
         return response()->json($leaveCalculator);
     }
 
+    public function getLeaveCalculatorByUsername($username): JsonResponse
+    {
+        $leaveCalculator = LeaveCalculator::with(['employee', 'financialYear'])
+            ->whereHas('employee', function($query) use ($username) {
+                $query->where('username', $username);
+            })
+            ->get();
+        
+        if ($leaveCalculator->isEmpty()) {
+            return response()->json(['error' => 'Leave calculator not found for username: ' . $username], 404);
+        }
+        
+        return response()->json($leaveCalculator);
+    }
+
     public function createLeaveCalculator(Request $request): JsonResponse
     {
         $validated = $request->validate([
