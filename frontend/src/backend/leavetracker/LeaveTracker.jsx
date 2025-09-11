@@ -225,7 +225,7 @@ export default function LeaveTracker() {
   const deleteApi = async (event) => {
     // starting
     await axios
-      .delete(baseURL + "delete-leave/" + event, {})
+      .delete(baseURL + "leave/" + event, {})
       .then(function (response) {
         Swal.fire("Deleted!", "Your file has been deleted.", "success");
         leaveApi();
