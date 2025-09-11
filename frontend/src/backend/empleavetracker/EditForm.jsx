@@ -42,6 +42,7 @@ export default function EditForm({ onClick, eventid }) {
   const [showform, setShowform] = useState(false);
   const [yearleaveto, setYearleaveto] = useState("");
   const emp_id = usecdotStore((state) => state.emp_id);
+  const emp_department = usecdotStore((state) => state.emp_department);
   const updateLeave = usecdotStore((state) => state.updateLeave);
 
   useEffect(() => {
@@ -62,7 +63,7 @@ export default function EditForm({ onClick, eventid }) {
   const leaveEditApi = async () => {
     // starting
     await axios
-      .get(baseURL + "leave/" + eventid + "/")
+      .get(baseURL + "leave/" + eventid)
       .then(function (response) {
         formdata.current = response.data[0];
         console.log("kcheckpost " + JSON.stringify(formdata.current));
@@ -97,7 +98,8 @@ export default function EditForm({ onClick, eventid }) {
       leave_to_date: dateleaveto,
       leave_to_month: monthleaveto,
       leave_to_year: yearleaveto,
-      employee: emp_id,
+      employee_id: emp_id,
+      department_id: emp_department && typeof emp_department === 'object' ? emp_department.id : emp_department,
       leave_reason: formdata.current.leave_reason,
       total_leave_in_days: formdata.current.total_leave_in_days,
       total_leave_in_hours: formdata.current.total_leave_in_hours,
@@ -114,7 +116,8 @@ export default function EditForm({ onClick, eventid }) {
       }
 
       console.log(values);
-      formik.values.employee = selectedemp;
+      formik.values.employee_id = emp_id;
+      formik.values.department_id = emp_department && typeof emp_department === 'object' ? emp_department.id : emp_department;
       formik.values.leave_from_date = convert(dateleavefrom);
       formik.values.leave_from_month = monthleavefrom;
       formik.values.leave_from_year = yearleavefrom;
@@ -122,13 +125,12 @@ export default function EditForm({ onClick, eventid }) {
       formik.values.leave_to_month = monthleaveto;
       formik.values.leave_to_year = yearleaveto;
       formik.values.leave_type = leavetype;
-      formik.values.employee = emp_id;
       formik.values.remaining_leave_in_days = inhours;
       formik.values.remaining_leave_in_hours = indays;
 
       // starting
       await axios
-        .post(baseURL + "create-leave/", values)
+        .post(baseURL + "leave", values)
         .then(function (response) {
           console.log("Employee post: " + JSON.stringify(response.data));
           toast.success("Your data is submitted!", {
@@ -196,7 +198,7 @@ export default function EditForm({ onClick, eventid }) {
   const leaveApi = async () => {
     // starting
     await axios
-      .get(baseURL + "leave/employee/" + username + "/")
+      .get(baseURL + "leave/employee/" + username)
       .then(function (response) {
         updateLeave(response.data);
       })

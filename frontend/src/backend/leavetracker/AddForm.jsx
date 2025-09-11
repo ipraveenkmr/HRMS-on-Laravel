@@ -80,7 +80,8 @@ export default function AddForm({ onClick }) {
       }
       console.log(values);
       formik.values.username = empusername;
-      formik.values.employee = selectedemp;
+      formik.values.employee_id = selectedemp;
+      formik.values.department_id = dept;
       formik.values.leave_from_date = convert(dateleavefrom);
       formik.values.leave_from_month = monthleavefrom;
       formik.values.leave_from_year = yearleavefrom;
@@ -89,21 +90,20 @@ export default function AddForm({ onClick }) {
       formik.values.leave_to_year = yearleaveto;
       formik.values.leave_reason = lreason;
       formik.values.leave_status = leavestatus;
-      formik.values.CL_Days = cldays;
-      formik.values.CL_Hours = clhours;
-      formik.values.EI_Days = eidays;
-      formik.values.EI_Hours = eihours;
-      formik.values.LWP_Days = lwpdays;
-      formik.values.LWP_Hours = lwphours;
+      formik.values.cl_days = cldays;
+      formik.values.cl_hours = clhours;
+      formik.values.ei_days = eidays;
+      formik.values.ei_hours = eihours;
+      formik.values.lwp_days = lwpdays;
+      formik.values.lwp_hours = lwphours;
       formik.values.medical_leave_in_days = medicaldays;
       formik.values.medical_leave_in_hours = medicalhours;
       formik.values.other_leave_in_days = otherdays;
       formik.values.other_leave_in_hours = otherhours;
-      formik.values.department = dept;
 
       // starting
       await axios
-        .post(baseURL + "create-leave/", values)
+        .post(baseURL + "leave", values)
         .then(function (response) {
           console.log("Employee post: " + JSON.stringify(response.data));
           toast.success("Your data is submitted!", {
@@ -141,7 +141,7 @@ export default function AddForm({ onClick }) {
   const leaveCalcApi = async () => {
     // starting
     await axios
-      .get(baseURL + "leavecalc/" + uname + "/")
+      .get(baseURL + "leavecalc/" + uname)
       .then(function (response) {
         console.log("leave calc" + JSON.stringify(response.data));
         seRremainingClDays(response.data[0].remaining_CL_Days);
@@ -185,10 +185,15 @@ export default function AddForm({ onClick }) {
     employees.map((item, index) => {
       if (item.id == event.target.value) {
         updateEmpusername(item.username);
-        setDept(item.department);
+        // Extract department_id from department object if it's an object, otherwise use the value directly
+        const deptId = item.department && typeof item.department === 'object' 
+          ? item.department.id 
+          : item.department_id || item.department;
+        setDept(deptId);
         // setUname(item.username);
         // leaveCalcApi();
         console.log("username: " + item.username);
+        console.log("department_id: " + deptId);
       }
     });
   };
@@ -312,7 +317,7 @@ export default function AddForm({ onClick }) {
   const leaveApi = async () => {
     // starting
     await axios
-      .get(baseURL + "leave/")
+      .get(baseURL + "leave")
       .then(function (response) {
         console.log("leaves: " + JSON.stringify(response.data));
         updateLeave(response.data);

@@ -68,7 +68,7 @@ export default function AddForm({ onClick, eventid, uname }) {
   const leaveCalcApi = async () => {
     // starting
     await axios
-      .get(baseURL + "leavecalc/" + uname + "/")
+      .get(baseURL + "leavecalc/" + uname)
       .then(function (response) {
         seRremainingClDays(response.data[0].remaining_CL_Days);
         seRremainingClHours(response.data[0].remaining_CL_Hours);
@@ -90,7 +90,7 @@ export default function AddForm({ onClick, eventid, uname }) {
   const leaveEditApi = async () => {
     // starting
     await axios
-      .get(baseURL + "leave/" + eventid + "/")
+      .get(baseURL + "leave/" + eventid)
       .then(function (response) {
         formdata.current = response.data[0];
         setDateleavefrom(formdata.current.leave_from_date);
@@ -113,7 +113,11 @@ export default function AddForm({ onClick, eventid, uname }) {
         setOtherdays(formdata.current.other_leave_in_days);
         setOtherhours(formdata.current.other_leave_in_hours);
 
-        setDept(response.data[0].department);
+        // Extract department_id from department object if it's an object, otherwise use the value directly
+        const deptId = response.data[0].department && typeof response.data[0].department === 'object' 
+          ? response.data[0].department.id 
+          : response.data[0].department_id || response.data[0].department;
+        setDept(deptId);
         formik.values.leave_reason = formdata.current.leave_reason;
         setShowform(true);
       })
@@ -146,8 +150,8 @@ export default function AddForm({ onClick, eventid, uname }) {
       }
       console.log(values);
       formik.values.username = empusername;
-      formik.values.department = dept;
-      formik.values.employee = selectedemp;
+      formik.values.department_id = dept;
+      formik.values.employee_id = selectedemp;
       formik.values.leave_from_date = convert(dateleavefrom);
       formik.values.leave_from_month = monthleavefrom;
       formik.values.leave_from_year = yearleavefrom;
@@ -156,12 +160,12 @@ export default function AddForm({ onClick, eventid, uname }) {
       formik.values.leave_to_year = yearleaveto;
       formik.values.leave_reason = lreason;
       formik.values.leave_status = leavestatus;
-      formik.values.CL_Days = cldays;
-      formik.values.CL_Hours = clhours;
-      formik.values.EI_Days = eidays;
-      formik.values.EI_Hours = eihours;
-      formik.values.LWP_Days = lwpdays;
-      formik.values.LWP_Hours = lwphours;
+      formik.values.cl_days = cldays;
+      formik.values.cl_hours = clhours;
+      formik.values.ei_days = eidays;
+      formik.values.ei_hours = eihours;
+      formik.values.lwp_days = lwpdays;
+      formik.values.lwp_hours = lwphours;
       formik.values.medical_leave_in_days = medicaldays;
       formik.values.medical_leave_in_hours = medicalhours;
       formik.values.other_leave_in_days = otherdays;
@@ -169,7 +173,7 @@ export default function AddForm({ onClick, eventid, uname }) {
 
       // starting
       await axios
-        .post(baseURL + "create-leave/", values)
+        .post(baseURL + "leave", values)
         .then(function (response) {
           console.log("Employee post: " + JSON.stringify(response.data));
           toast.success("Your data is submitted!", {
@@ -227,7 +231,13 @@ export default function AddForm({ onClick, eventid, uname }) {
     employees.map((item, index) => {
       if (item.id == event.target.value) {
         updateEmpusername(item.username);
+        // Extract department_id from department object if it's an object, otherwise use the value directly
+        const deptId = item.department && typeof item.department === 'object' 
+          ? item.department.id 
+          : item.department_id || item.department;
+        setDept(deptId);
         console.log("username: " + item.username);
+        console.log("department_id: " + deptId);
       }
     });
   };
@@ -351,7 +361,7 @@ export default function AddForm({ onClick, eventid, uname }) {
   const leaveApi = async () => {
     // starting
     await axios
-      .get(baseURL + "leave/")
+      .get(baseURL + "leave")
       .then(function (response) {
         console.log("leaves: " + JSON.stringify(response.data));
         updateLeave(response.data);

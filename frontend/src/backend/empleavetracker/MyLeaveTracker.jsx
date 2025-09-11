@@ -138,7 +138,7 @@ export default function MyLeaveTracker() {
   const leaveApi = async () => {
     // starting
     await axios
-      .get(baseURL + "leave/employee/" + username + "/")
+      .get(baseURL + "leave/employee/" + username)
       .then(function (response) {
         updateLeave(response.data);
       })
@@ -191,7 +191,7 @@ export default function MyLeaveTracker() {
   const deleteApi = async (event) => {
     // starting
     await axios
-      .delete(baseURL + "delete-leave/" + event + "/", {})
+      .delete(baseURL + "delete-leave/" + event, {})
       .then(function (response) {
         Swal.fire("Deleted!", "Your file has been deleted.", "success");
         leaveApi();
