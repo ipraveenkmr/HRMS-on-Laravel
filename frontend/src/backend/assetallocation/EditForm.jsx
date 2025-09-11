@@ -59,7 +59,7 @@ export default function EditForm({ onClick, eventid }) {
   const assetApi = async () => {
     // starting
     await axios
-      .get(baseURL + "assets/")
+      .get(baseURL + "assets")
       .then(function (response) {
         setIassets(response.data);
         setAlist(response.data);
@@ -81,7 +81,7 @@ export default function EditForm({ onClick, eventid }) {
   const assetEditApi = async () => {
     // starting
     await axios
-      .get(baseURL + "assets/" + eventid)
+      .get(baseURL + "asset-allocations/" + eventid)
       .then(function (response) {
         formdata.current = response.data;
         console.log("kcheckpost " + JSON.stringify(formdata.current));
@@ -147,7 +147,7 @@ export default function EditForm({ onClick, eventid }) {
 
       // starting
       await axios
-        .put(baseURL + "assets/" + eventid, values)
+        .put(baseURL + "asset-allocations/" + eventid, values)
         .then(function (response) {
           console.log("Asset allocation updated: " + JSON.stringify(response.data));
           toast.success("Asset allocation updated successfully!", {

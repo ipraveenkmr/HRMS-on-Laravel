@@ -119,14 +119,14 @@ class ApiService {
                 { endpoint: `tasks/employee/${username}`, action: "updateAssignedjobs" },
                 { endpoint: `leave/employee/${username}`, action: "updateLeave" },
                 { endpoint: `daily-tasks/employee/${username}`, action: "updateDailytask" },
-                { endpoint: `assets/employee/${username}`, action: "updateMyAssets" },
+                { endpoint: `asset-allocations/employee/${username}`, action: "updateMyAssets" },
                 { endpoint: "paygrade", action: "updatePaygrade" },
             ],
             "Asset Admin": [
                 { endpoint: `tasks/employee/${username}`, action: "updateAssignedjobs" },
                 { endpoint: `leave/employee/${username}`, action: "updateLeave" },
                 { endpoint: `daily-tasks/employee/${username}`, action: "updateDailytask" },
-                { endpoint: `assets/employee/${username}`, action: "updateMyAssets" },
+                { endpoint: `asset-allocations/employee/${username}`, action: "updateMyAssets" },
                 { endpoint: "asset-allocations", action: "updateAssets" },
                 { endpoint: "paygrade", action: "updatePaygrade" },
             ],
@@ -324,7 +324,7 @@ class ApiService {
 
     async myassetApi(username) {
         try {
-            const response = await this.get(`assets/employee/${username}/`);
+            const response = await this.get(`asset-allocations/employee/${username}`);
             this.updateStore("updateMyAssets", response.data);
         } catch (error) {
             console.error("myassetApi error:", error);

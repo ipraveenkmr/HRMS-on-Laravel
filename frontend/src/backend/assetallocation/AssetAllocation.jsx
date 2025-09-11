@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -219,19 +219,21 @@ export default function AssetAllocation() {
     return assets || [];
   };
 
-  // Filter data based on search and filters
-  console.log("Assets data:", getDisplayData());
-  const filteredData = getDisplayData().filter((item) => {
-    const matchesSearch = searchQuery === "" ||
-      (item.employee?.emp_name && item.employee.emp_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (item.asset?.asset_name && item.asset.asset_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (item.username && item.username.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Filter data based on search and filters - memoized to prevent multiple calculations
+  const filteredData = useMemo(() => {
+    // console.log("Assets data:", getDisplayData());
+    return getDisplayData().filter((item) => {
+      const matchesSearch = searchQuery === "" ||
+        (item.employee?.emp_name && item.employee.emp_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.asset?.asset_name && item.asset.asset_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.username && item.username.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesStatus = statusFilter === "" || item.status === statusFilter;
-    const matchesDepartment = departmentFilter === "" || item.department_id == departmentFilter;
+      const matchesStatus = statusFilter === "" || item.status === statusFilter;
+      const matchesDepartment = departmentFilter === "" || item.department_id == departmentFilter;
 
-    return matchesSearch && matchesStatus && matchesDepartment;
-  });
+      return matchesSearch && matchesStatus && matchesDepartment;
+    });
+  }, [searchQuery, statusFilter, departmentFilter, assets, myassets, emp_type]);
 
   const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - filteredData.length) : 0;
 
@@ -343,7 +345,7 @@ export default function AssetAllocation() {
             <TableRow>
               <TableCell>Employee</TableCell>
               <TableCell>Asset</TableCell>
-              <TableCell>Category</TableCell>
+              {/* <TableCell>Category</TableCell> */}
               {(emp_type === "Admin" || emp_type === "Asset Admin") && (
                 <TableCell>Department</TableCell>
               )}
@@ -361,7 +363,7 @@ export default function AssetAllocation() {
               <TableRow key={row.id}>
                 <TableCell>{row.employee?.emp_name || row.username || "N/A"}</TableCell>
                 <TableCell>{row.asset?.asset_name || "N/A"}</TableCell>
-                <TableCell>{row.asset?.asset_category?.category || "N/A"}</TableCell>
+                {/* <TableCell>{row.asset?.asset_category?.category || "N/A"}</TableCell> */}
                 {(emp_type === "Admin" || emp_type === "Asset Admin") && (
                   <TableCell>{row.department?.department_name || "N/A"}</TableCell>
                 )}

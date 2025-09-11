@@ -65,7 +65,7 @@ export default function AddForm({ onClick }) {
   const assetApi = async () => {
     // starting
     await axios
-      .get(baseURL + "assets/")
+      .get(baseURL + "assets")
       .then(function (response) {
         setIassets(response.data);
       })
@@ -97,7 +97,7 @@ export default function AddForm({ onClick }) {
 
       // starting
       await axios
-        .post(baseURL + "assets", values)
+        .post(baseURL + "asset-allocations", values)
         .then(function (response) {
           console.log("Employee post: " + JSON.stringify(response.data));
           toast.success("Asset allocated successfully!", {
