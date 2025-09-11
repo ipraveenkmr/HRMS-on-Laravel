@@ -323,7 +323,7 @@ export default function AddForm({ onClick }) {
   const leaveApi = async () => {
     // starting
     await axios
-      .get(baseURL + "leave")
+      .get(baseURL + "leave/employee/" + username)
       .then(function (response) {
         updateLeave(response.data);
       })
