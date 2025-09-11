@@ -31,7 +31,6 @@ export default function AddForm({ onClick }) {
   const [selectedasset, setSelectedasset] = useState("");
   const [assetcategory, setAssetcategory] = useState("");
   const form = useRef();
-  const updateAssets = usecdotStore((state) => state.updateAssets);
   const username = usecdotStore((state) => state.username);
   const employees = usecdotStore((state) => state.employees);
   const departments = usecdotStore((state) => state.departments);

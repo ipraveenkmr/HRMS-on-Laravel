@@ -31,7 +31,6 @@ export default function EditForm({ onClick, eventid }) {
   const [selectedasset, setSelectedasset] = useState("");
   const [assetcategory, setAssetcategory] = useState("");
   const form = useRef();
-  const updateAssets = usecdotStore((state) => state.updateAssets);
   const employees = usecdotStore((state) => state.employees);
   const departments = usecdotStore((state) => state.departments);
   const assetcategories = usecdotStore((state) => state.assetcategories);

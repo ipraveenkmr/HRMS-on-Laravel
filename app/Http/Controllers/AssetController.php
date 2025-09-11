@@ -202,6 +202,32 @@ class AssetController extends Controller
         return response()->json($allocations);
     }
 
+    public function getEmployeeAllocationsByUsername($username): JsonResponse
+    {
+        $allocations = AssetAllocation::with(['asset.assetCategory', 'employee', 'department'])
+            ->where('username', $username)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return response()->json($allocations);
+    }
+
+    public function getAllocationsByManager($managerId): JsonResponse
+    {
+        // Get allocations for employees under this manager
+        // First get all employees under this manager
+        $employeeIds = \App\Models\Employee::where('manager_id', $managerId)
+            ->pluck('id')
+            ->toArray();
+        
+        $allocations = AssetAllocation::with(['asset.assetCategory', 'employee', 'department'])
+            ->whereIn('employee_id', $employeeIds)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return response()->json($allocations);
+    }
+
     // Asset Categories
     public function indexCategories(): JsonResponse
     {

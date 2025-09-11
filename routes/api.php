@@ -122,6 +122,17 @@ Route::prefix('/assets')->group(function () {
     Route::get('/category/{category_id}', [AssetController::class, 'getAssetsByCategory']);
 });
 
+// Asset Allocations routes (protected)
+Route::prefix('/asset-allocations')->group(function () {
+    Route::get('/', [AssetController::class, 'indexAllocations']);
+    Route::post('/', [AssetController::class, 'storeAllocation']);
+    Route::get('/{allocation_id}', [AssetController::class, 'showAllocation']);
+    Route::put('/{allocation_id}', [AssetController::class, 'updateAllocation']);
+    Route::delete('/{allocation_id}', [AssetController::class, 'destroyAllocation']);
+    Route::get('/employee/{username}', [AssetController::class, 'getEmployeeAllocationsByUsername']);
+    Route::get('/manager/{manager_id}', [AssetController::class, 'getAllocationsByManager']);
+});
+
 // Asset Categories routes (protected)
 Route::prefix('/asset-categories')->group(function () {
     Route::get('/', [AssetController::class, 'indexCategories']);

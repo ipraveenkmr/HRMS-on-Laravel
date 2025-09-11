@@ -137,7 +137,7 @@ export default function EditForm({ onClick, eventid }) {
   const assetApi = async () => {
     // starting
     await axios
-      .get(baseURL + "myasset/" + username + "/")
+      .get(baseURL + "asset-allocations/employee/" + username)
       .then(function (response) {
         updateAssets(response.data);
       })

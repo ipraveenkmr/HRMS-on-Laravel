@@ -113,7 +113,7 @@ export default function AddForm({ onClick }) {
   const assetApi = async () => {
     // starting
     await axios
-      .get(baseURL + "myasset/" + username + "/")
+      .get(baseURL + "asset-allocations/employee/" + username )
       .then(function (response) {
         updateAssets(response.data);
       })

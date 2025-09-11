@@ -128,7 +128,7 @@ export default function AssetAllocation() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
-  
+
   // Store data
   const assets = usecdotStore((state) => state.assets);
   const updateAssets = usecdotStore((state) => state.updateAssets);
@@ -165,7 +165,7 @@ export default function AssetAllocation() {
   const fetchAssetAllocations = async () => {
     try {
       let endpoint = "";
-      
+
       if (emp_type === "Admin" || emp_type === "Asset Admin") {
         // Admin sees all allocations
         endpoint = `${baseURL}asset-allocations`;
@@ -179,8 +179,9 @@ export default function AssetAllocation() {
         updateMyAssets(response.data);
         return;
       }
-      
+
       const response = await axios.get(endpoint);
+      // console.log("Fetched asset allocations:", response.data);
       updateAssets(response.data);
     } catch (error) {
       console.error("Error fetching asset allocations:", error);
@@ -200,7 +201,7 @@ export default function AssetAllocation() {
       });
 
       if (result.isConfirmed) {
-        await axios.delete(`${baseURL}assets/${id}`);
+        await axios.delete(`${baseURL}asset-allocations/${id}`);
         await fetchAssetAllocations();
         Swal.fire("Deleted!", "Asset allocation has been deleted.", "success");
       }
@@ -219,15 +220,16 @@ export default function AssetAllocation() {
   };
 
   // Filter data based on search and filters
+  console.log("Assets data:", getDisplayData());
   const filteredData = getDisplayData().filter((item) => {
-    const matchesSearch = searchQuery === "" || 
-      (item.employee_name && item.employee_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (item.asset_name && item.asset_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    const matchesSearch = searchQuery === "" ||
+      (item.employee?.emp_name && item.employee.emp_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.asset?.asset_name && item.asset.asset_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (item.username && item.username.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+
     const matchesStatus = statusFilter === "" || item.status === statusFilter;
     const matchesDepartment = departmentFilter === "" || item.department_id == departmentFilter;
-    
+
     return matchesSearch && matchesStatus && matchesDepartment;
   });
 
@@ -260,7 +262,7 @@ export default function AssetAllocation() {
           <AddForm onClick={handleClose} />
         </Box>
       </Modal>
-      
+
       <Modal
         open={editopen}
         onClose={handleEditClose}
@@ -288,7 +290,7 @@ export default function AssetAllocation() {
           placeholder="Search by employee name, asset name, or username..."
           sx={{ minWidth: 300 }}
         />
-        
+
         <FormControl size="small" sx={{ minWidth: 120 }}>
           <InputLabel>Status</InputLabel>
           <Select
@@ -357,11 +359,11 @@ export default function AssetAllocation() {
               : filteredData
             ).map((row) => (
               <TableRow key={row.id}>
-                <TableCell>{row.employee_name || row.username || "N/A"}</TableCell>
-                <TableCell>{row.asset_name || row.asset_id || "N/A"}</TableCell>
-                <TableCell>{row.category_name || row.asset_category || "N/A"}</TableCell>
+                <TableCell>{row.employee?.emp_name || row.username || "N/A"}</TableCell>
+                <TableCell>{row.asset?.asset_name || "N/A"}</TableCell>
+                <TableCell>{row.asset?.asset_category?.category || "N/A"}</TableCell>
                 {(emp_type === "Admin" || emp_type === "Asset Admin") && (
-                  <TableCell>{row.department_name || row.department_id || "N/A"}</TableCell>
+                  <TableCell>{row.department?.department_name || "N/A"}</TableCell>
                 )}
                 <TableCell>
                   {row.allocation_date ? moment(row.allocation_date).format("DD-MM-YYYY") : "N/A"}
@@ -380,7 +382,7 @@ export default function AssetAllocation() {
                       fontWeight: "bold",
                     }}
                   >
-                    {row.status}
+                    {row.status || "N/A"}
                   </Box>
                 </TableCell>
                 {(canEdit || canDelete) && (
@@ -442,8 +444,8 @@ export default function AssetAllocation() {
       {filteredData.length === 0 && (
         <Box sx={{ textAlign: "center", mt: 4 }}>
           <Typography variant="h6" color="textSecondary">
-            {emp_type === "Employee" 
-              ? "No assets allocated to you yet" 
+            {emp_type === "Employee"
+              ? "No assets allocated to you yet"
               : "No asset allocations found"}
           </Typography>
         </Box>
