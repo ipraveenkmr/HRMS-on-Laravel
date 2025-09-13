@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Payslip;
+use App\Models\Employee;
 use App\Models\FinancialYear;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
@@ -189,11 +190,13 @@ class PayslipController extends Controller
         return response()->json(['message' => 'Payslip deleted successfully']);
     }
 
-    public function getEmployeePayslips($employeeId): JsonResponse
+    public function getEmployeePayslips($username): JsonResponse
     {
-        $payslips = Payslip::with(['department'])
-            ->where('employee_id', $employeeId)
-            ->orderBy('created_at')
+        $payslips = Payslip::with(['employee', 'department'])
+            ->whereHas('employee', function($query) use ($username) {
+                $query->where('username', $username);
+            })
+            ->orderBy('created_at', 'desc')
             ->get();
         
         return response()->json($payslips);
