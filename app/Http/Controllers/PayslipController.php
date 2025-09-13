@@ -77,7 +77,7 @@ class PayslipController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'month_year' => 'nullable|string|max:99|unique:payslips',
+            'month_year' => 'nullable|string|max:99',
             'username' => 'nullable|string|max:200',
             'employee_id' => 'required|exists:employees,id',
             'department_id' => 'required|exists:departments,id',
@@ -115,6 +115,20 @@ class PayslipController extends Controller
         // Auto-generate month_year if not provided
         if (empty($validated['month_year'])) {
             $validated['month_year'] = $this->generateMonthYear($validated['date'] ?? null);
+        }
+
+        // Check for duplicate payslip for this employee and month
+        $existingPayslip = Payslip::where('employee_id', $validated['employee_id'])
+            ->where('month_year', $validated['month_year'])
+            ->first();
+
+        if ($existingPayslip) {
+            return response()->json([
+                'message' => 'Payslip already exists for this employee for ' . $validated['month_year'],
+                'errors' => [
+                    'month_year' => ['A payslip for this employee already exists for ' . $validated['month_year']]
+                ]
+            ], 422);
         }
 
         $payslip = Payslip::create($validated);
@@ -168,6 +182,26 @@ class PayslipController extends Controller
             'esi_number' => 'nullable|string|max:200',
             'uan_number' => 'nullable|string|max:200',
         ]);
+
+        // Check for duplicate payslip if employee_id or month_year is being updated
+        if (isset($validated['employee_id']) || isset($validated['month_year'])) {
+            $employeeId = $validated['employee_id'] ?? $payslip->employee_id;
+            $monthYear = $validated['month_year'] ?? $payslip->month_year;
+            
+            $existingPayslip = Payslip::where('employee_id', $employeeId)
+                ->where('month_year', $monthYear)
+                ->where('id', '!=', $payslip->id) // Exclude current payslip
+                ->first();
+
+            if ($existingPayslip) {
+                return response()->json([
+                    'message' => 'Payslip already exists for this employee for ' . $monthYear,
+                    'errors' => [
+                        'month_year' => ['A payslip for this employee already exists for ' . $monthYear]
+                    ]
+                ], 422);
+            }
+        }
 
         $payslip->update($validated);
         
