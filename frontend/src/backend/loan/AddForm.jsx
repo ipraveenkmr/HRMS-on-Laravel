@@ -110,7 +110,7 @@ export default function AddForm({ onClick }) {
   const loanApi = async () => {
     // starting
     await axios
-      .get(baseURL + "loans/")
+      .get(baseURL + "loans")
       .then(function (response) {
         console.log("Loans: " + JSON.stringify(response.data));
         updateLoan(response.data);

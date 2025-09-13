@@ -193,7 +193,7 @@ export default function Loan() {
   const loanApi = async () => {
     // starting
     await axios
-      .get(baseURL + "loans/")
+      .get(baseURL + "loans")
       .then(function (response) {
         updateLoan(response.data);
       })

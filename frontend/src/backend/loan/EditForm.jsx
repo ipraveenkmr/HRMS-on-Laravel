@@ -47,7 +47,7 @@ export default function EditForm({ onClick, eventid }) {
   const loanEditApi = async () => {
     // starting
     await axios
-      .get(baseURL + "loan/" + eventid + "/")
+      .get(baseURL + "loan/" + eventid)
       .then(function (response) {
         formdata.current = response.data[0];
         console.log("kcheckpost " + JSON.stringify(formdata.current));
@@ -144,7 +144,7 @@ export default function EditForm({ onClick, eventid }) {
   const loanApi = async () => {
     // starting
     await axios
-      .get(baseURL + "loans/")
+      .get(baseURL + "loans")
       .then(function (response) {
         console.log("Loans: " + JSON.stringify(response.data));
         updateLoan(response.data);

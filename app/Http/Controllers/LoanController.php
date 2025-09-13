@@ -5,10 +5,50 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Loan;
 use App\Models\LoanCalculator;
+use App\Models\FinancialYear;
 use Illuminate\Http\JsonResponse;
+use Carbon\Carbon;
 
 class LoanController extends Controller
 {
+    private function getCurrentFinancialYear()
+    {
+        $currentDate = Carbon::now();
+        $currentYear = $currentDate->year;
+        $currentMonth = $currentDate->month;
+        
+        // Financial year typically runs from April to March
+        // If current month is Jan-Mar, we're in the second year of the financial year
+        // If current month is Apr-Dec, we're in the first year of the financial year
+        if ($currentMonth >= 4) {
+            // April to December: FY starts from current year
+            $fyStart = $currentYear;
+            $fyEnd = $currentYear + 1;
+        } else {
+            // January to March: FY started from previous year
+            $fyStart = $currentYear - 1;
+            $fyEnd = $currentYear;
+        }
+        
+        // Try multiple possible formats for financial year string
+        $possibleFormats = [
+            $fyStart . '-' . $fyEnd,           // e.g., "2024-2025"
+            $fyStart . '-' . substr($fyEnd, 2), // e.g., "2024-25"
+            (string)$fyStart,                   // e.g., "2024"
+            (string)$fyEnd                      // e.g., "2025"
+        ];
+        
+        foreach ($possibleFormats as $format) {
+            $financialYear = FinancialYear::where('year', $format)->first();
+            if ($financialYear) {
+                return $financialYear;
+            }
+        }
+        
+        // If no specific financial year found, try to get any available financial year
+        return FinancialYear::first();
+    }
+
     public function index(): JsonResponse
     {
         $loans = Loan::with(['employee', 'department', 'financialYear'])
@@ -32,17 +72,45 @@ class LoanController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'financial_year_id' => 'required|exists:financial_years,id',
+            'financial_year_id' => 'sometimes|exists:financial_years,id',
             'username' => 'nullable|string|max:200',
             'employee_id' => 'required|exists:employees,id',
             'department_id' => 'required|exists:departments,id',
             'loan_amount' => 'required|numeric|min:0',
             'loan_period_in_month' => 'required|numeric|min:1',
-            'interest_rate' => 'required|numeric|min:0',
+            'interest_rate' => 'sometimes|numeric|min:0',
             'status' => 'nullable|string|max:99',
             'apply_date' => 'nullable|string|max:99',
             'purpose' => 'nullable|string',
         ]);
+
+        // Auto-populate financial year and interest rate if not provided
+        if (!isset($validated['financial_year_id']) || !isset($validated['interest_rate'])) {
+            $financialYear = $this->getCurrentFinancialYear();
+            
+            if (!$financialYear) {
+                // Get all available financial years for debugging
+                $allFinancialYears = FinancialYear::pluck('year')->toArray();
+                return response()->json([
+                    'message' => 'No active financial year found for the current date',
+                    'available_financial_years' => $allFinancialYears,
+                    'current_date' => Carbon::now()->format('Y-m-d'),
+                    'errors' => [
+                        'financial_year_id' => ['Please create a financial year record or ensure one exists for the current period']
+                    ]
+                ], 422);
+            }
+            
+            // Set financial year ID if not provided
+            if (!isset($validated['financial_year_id'])) {
+                $validated['financial_year_id'] = $financialYear->id;
+            }
+            
+            // Set interest rate from financial year if not provided
+            if (!isset($validated['interest_rate'])) {
+                $validated['interest_rate'] = $financialYear->loan_interest_rate;
+            }
+        }
 
         $loan = Loan::create($validated);
         

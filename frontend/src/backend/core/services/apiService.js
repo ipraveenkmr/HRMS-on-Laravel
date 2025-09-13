@@ -149,7 +149,7 @@ class ApiService {
     // Specific API methods (keeping the original method names for backward compatibility)
     async loanApi() {
         try {
-            const response = await this.get("loans/");
+            const response = await this.get("loans");
             this.updateStore("updateLoan", response.data);
         } catch (error) {
             console.error("loanApi error:", error);
