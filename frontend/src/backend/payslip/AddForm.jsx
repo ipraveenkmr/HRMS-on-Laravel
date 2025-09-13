@@ -174,7 +174,7 @@ export default function AddForm({ onClick }) {
       // console.log("Values: " + JSON.stringify(values));
 
       await axios
-        .post(baseURL + "payroll/", values)
+        .post(baseURL + "payroll", values)
         .then(function (response) {
           toast.success("Payslip created successfully!", {
             position: "top-right",
@@ -226,7 +226,7 @@ export default function AddForm({ onClick }) {
 
   const fetchEmployeeDetails = async (employeeId) => {
     try {
-      const response = await axios.get(baseURL + "employees/" + employeeId + "/");
+      const response = await axios.get(baseURL + "employees/" + employeeId);
       const employeeData = response.data[0];
       
       setSelectedEmployeeData(employeeData);
@@ -271,7 +271,7 @@ export default function AddForm({ onClick }) {
 
   const checkLoanApi = async () => {
     await axios
-      .get(baseURL + "loans/employee/" + uname.current + "/")
+      .get(baseURL + "loans/employee/" + uname.current)
       .then(function (response) {
         if (response.data.emi != null) {
           setAdvancePay(response.data.emi);
@@ -355,7 +355,7 @@ export default function AddForm({ onClick }) {
 
   const payslipApi = async () => {
     await axios
-      .get(baseURL + "payroll/")
+      .get(baseURL + "payroll")
       .then(function (response) {
         updatePayslip(response.data);
       })

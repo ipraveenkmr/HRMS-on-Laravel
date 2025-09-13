@@ -197,7 +197,7 @@ export default function Payslip() {
   const deleteApi = async (event) => {
     // starting
     await axios
-      .delete(baseURL + "payroll/" + event + "/", {})
+      .delete(baseURL + "payroll/" + event, {})
       .then(function (response) {
         Swal.fire("Deleted!", "Your file has been deleted.", "success");
         payslipApi();
@@ -214,7 +214,7 @@ export default function Payslip() {
 
     if (event.target.value) {
       await axios
-        .get(baseURL + "payroll/manager/" + event.target.value + "/")
+        .get(baseURL + "payroll/manager/" + event.target.value)
         .then(function (response) {
           updatePayslip(response.data);
         })

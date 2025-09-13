@@ -168,7 +168,7 @@ function PrintPayslip({ onClick, eventid, uname }) {
 
   const payslipEditApi = async () => {
     await axios
-      .get(baseURL + "payroll/" + eventid + "/")
+      .get(baseURL + "payroll/" + eventid)
       .then(function (response) {
         const payrollData = response.data[0];
         setBasic(payrollData["basic"]);

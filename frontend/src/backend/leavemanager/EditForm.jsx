@@ -28,7 +28,7 @@ export default function AddForm({ onClick, eventid, uname, eid }) {
   const leaveCalcApi = async () => {
     // starting
     await axios
-      .get(baseURL + "leave/calculator/" + uname)
+      .get(baseURL + "leave/calculator/username/" + uname)
       .then(function (response) {
         seRremainingClDays(response.data[0].remaining_CL_Days);
         setRemainingEiDays(response.data[0].remaining_EI_Days);
