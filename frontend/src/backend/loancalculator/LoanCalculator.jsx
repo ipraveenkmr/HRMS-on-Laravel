@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Typography, Button, Box, TextField } from "@mui/material";
+import { Typography, Button, Box, TextField, IconButton } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import Grid from "@mui/material/Grid";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -15,7 +16,7 @@ import Paper from "@mui/material/Paper";
 import FormControl from "@mui/material/FormControl";
 import axios from "axios";
 
-export default function LoanCalculator() {
+export default function LoanCalculator({ onClick }) {
   const updateMenustore = usecdotStore((state) => state.updateMenustore);
   const [amount, setAmount] = useState(0);
   const [interest, setInterest] = useState(0);
@@ -41,18 +42,18 @@ export default function LoanCalculator() {
 
   const emiApi = async () => {
     let values = {
-      "principal": principal,
-      "interest": interest,
-      "time": time
+      "loan_amount": principal,
+      "interest_rate": interest,
+      "loan_period_in_month": time
     };
     // starting
     await axios
-    .post(baseURL + "calculateemi/", values)
+    .post(baseURL + "loans/calculate-emi", values)
     .then(function (response) {
-      console.log("Task post: " + JSON.stringify(response.data));
-      setAmount(Math.round(response.data.amount));
+      console.log("EMI calculation response: " + JSON.stringify(response.data));
+      setAmount(Math.round(response.data.total_amount));
       setEmi(Math.round(response.data.emi));
-      setTotalinterest(Math.round(response.data.interest));
+      setTotalinterest(Math.round(response.data.total_interest));
     })
     .catch(function (error) {
       console.log("kcheckpost" + error); //return 429
@@ -91,14 +92,22 @@ export default function LoanCalculator() {
   return (
     <>
       <div style={{ overflowY: "auto" }}>
-        <Typography variant="h5" align="center">
-          Loan Calculator
-        </Typography>
+        <div style={{ position: "relative" }}>
+          <Typography variant="h5" align="center">
+            Loan Calculator
+          </Typography>
+          <IconButton
+            style={{ position: "absolute", top: "0", right: "0" }}
+            onClick={onClick}
+          >
+            <CloseIcon />
+          </IconButton>
+        </div>
         <Stack direction="row" spacing={2} className="my-2 mb-2">
           <Typography
             align="center"
             variant="h5"
-            onClick={openLoancalculator}
+            onClick={onClick}
             className="cursor-pointer"
           >
             <BiArrowBack />

@@ -24,6 +24,7 @@ import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import AddForm from "./AddForm";
 import EditForm from "./EditForm";
+import LoanCalculator from "../loancalculator/LoanCalculator";
 import { usecdotStore } from "../../components/cdotStore";
 import TableHead from "@mui/material/TableHead";
 import axios from "axios";
@@ -121,10 +122,13 @@ export default function Loan() {
   const [eventid, setEventid] = useState("");
   const [open, setOpen] = useState(false);
   const [editopen, setEditOpen] = useState(false);
+  const [calculatoropen, setCalculatorOpen] = useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const handleEditOpen = () => setEditOpen(true);
   const handleEditClose = () => setEditOpen(false);
+  const handleCalculatorOpen = () => setCalculatorOpen(true);
+  const handleCalculatorClose = () => setCalculatorOpen(false);
   const employees = usecdotStore((state) => state.employees);
   const updateLoan = usecdotStore((state) => state.updateLoan);
   const updateMenustore = usecdotStore((state) => state.updateMenustore);
@@ -164,7 +168,7 @@ export default function Loan() {
   };
 
   const openLoancalculator = () => {
-    updateMenustore("Calculator");
+    handleCalculatorOpen();
   };
 
   const editUser = (event) => {
@@ -272,6 +276,17 @@ export default function Loan() {
       >
         <Box sx={style}>
           <EditForm onClick={handleEditClose} eventid={eventid} />
+        </Box>
+      </Modal>
+      <Modal
+        open={calculatoropen}
+        onClose={handleCalculatorClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+        style={{ overflow: "auto" }}
+      >
+        <Box sx={style}>
+          <LoanCalculator onClick={handleCalculatorClose} />
         </Box>
       </Modal>
       <Stack direction="row" spacing={2} className="my-2 mb-2">
