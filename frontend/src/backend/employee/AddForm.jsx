@@ -134,6 +134,18 @@ export default function AddForm({ closeform, eventid }) {
   const st_refernece_email_if_any = useemployeeStore(
     (state) => state.st_refernece_email_if_any
   );
+  const st_pf_employer_percent = useemployeeStore(
+    (state) => state.st_pf_employer_percent
+  );
+  const st_pf_employee_percent = useemployeeStore(
+    (state) => state.st_pf_employee_percent
+  );
+  const st_esi_employer_percent = useemployeeStore(
+    (state) => state.st_esi_employer_percent
+  );
+  const st_esi_employee_percent = useemployeeStore(
+    (state) => state.st_esi_employee_percent
+  );
   const st_profile_pic = useemployeeStore((state) => state.st_profile_pic);
   const st_aadhar_pic = useemployeeStore((state) => state.st_aadhar_pic);
   const st_pan_pic = useemployeeStore((state) => state.st_pan_pic);
@@ -589,6 +601,10 @@ export default function AddForm({ closeform, eventid }) {
       pan_pic: st_pan_pic,
       isbasicpay: isbasicpay,
       uan_number: uannumber,
+      pf_employee_percent: st_pf_employer_percent,
+      pf_employer_percent: st_pf_employee_percent,
+      esi_employee_percent: st_esi_employee_percent,
+      esi_employer_percent: st_esi_employer_percent
     };
 
     await axios({

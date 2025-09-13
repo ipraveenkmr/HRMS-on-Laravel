@@ -228,6 +228,7 @@ export default function AddForm({ onClick }) {
     try {
       const response = await axios.get(baseURL + "employees/" + employeeId);
       const employeeData = response.data[0];
+      console.log("Employee Data: ", employeeData);
       
       setSelectedEmployeeData(employeeData);
       updateEmpusername(employeeData.username);
@@ -245,8 +246,8 @@ export default function AddForm({ onClick }) {
       setBankAccountNumber(employeeData.bank_account_number || "");
       
       // Set PF and ESI percentages from employee data
-      setPfEmployeePercent(employeeData.pf_employee_percent || 12);
-      setPfEmployerPercent(employeeData.pf_employer_percent || 12);
+      setPfEmployeePercent(employeeData.pf_employee_percent || 2);
+      setPfEmployerPercent(employeeData.pf_employer_percent || 2);
       setEsiEmployeePercent(employeeData.esi_employee_percent || 0.75);
       setEsiEmployerPercent(employeeData.esi_employer_percent || 3.25);
       

@@ -95,6 +95,11 @@ return new class extends Migration
             $table->string('esi_number', 200)->nullable();
             $table->string('uan_number', 200)->nullable();
             
+            $table->string('pf_employee_percent', 99)->nullable();
+            $table->string('pf_employer_percent', 99)->nullable();
+            $table->string('esi_employee_percent', 99)->nullable();
+            $table->string('esi_employer_percent', 99)->nullable();
+            
             $table->timestamps();
         });
     }

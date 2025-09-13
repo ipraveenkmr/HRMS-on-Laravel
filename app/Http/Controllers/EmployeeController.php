@@ -256,6 +256,10 @@ class EmployeeController extends Controller
             'isbasicpay' => 'nullable|boolean',
             'uan_number' => 'nullable|string|max:99',
             'manager_id' => 'nullable|exists:employees,id',
+            'pf_employee_percent' => 'nullable',
+            'pf_employer_percent' => 'nullable',
+            'esi_employee_percent' => 'nullable',
+            'esi_employer_percent' => 'nullable',
         ]);
         // dd($validated);
         // Check if employee with username already exists
@@ -377,6 +381,10 @@ class EmployeeController extends Controller
             'isbasicpay' => 'nullable|boolean',
             'uan_number' => 'nullable|string|max:99',
             'manager_id' => 'nullable|exists:employees,id',
+            'pf_employee_percent' => 'nullable',
+            'pf_employer_percent' => 'nullable',
+            'esi_employee_percent' => 'nullable',
+            'esi_employer_percent' => 'nullable',
         ]);
 
         $employee->update($validated);

@@ -82,7 +82,12 @@ class Employee extends Model
         'isbasicpay',
         'esi_number',
         'uan_number',
-        'manager_id'
+        'manager_id',
+
+        'pf_employee_percent',
+        'pf_employer_percent',
+        'esi_employee_percent',
+        'esi_employer_percent'
     ];
 
     protected $attributes = [
