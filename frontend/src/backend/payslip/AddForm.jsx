@@ -96,8 +96,142 @@ export default function AddForm({ onClick }) {
   const [esiAccountNo, setEsiAccountNo] = useState("");
   const [uanNo, setUanNo] = useState("");
 
+  // Tax calculation related states
+  const [taxRegime, setTaxRegime] = useState("old"); // "old" or "new"
+  const [section80C, setSection80C] = useState(0);
+  const [hraReceived, setHraReceived] = useState(0);
+  const [rentPaid, setRentPaid] = useState(0);
+  const [isMetroCity, setIsMetroCity] = useState(false);
+  const [otherDeductions, setOtherDeductions] = useState(0);
+  const [calculatedTax, setCalculatedTax] = useState(0);
+
   const apay = useRef(0);
   const uname = useRef("");
+
+  // Comprehensive Income Tax Calculation Function
+  const calculateIncomeTax = (annualSalary, regime = "old") => {
+    let taxableIncome = annualSalary;
+    let tax = 0;
+    let cess = 0;
+
+    // Standard deduction (applicable to both regimes)
+    const standardDeduction = Math.min(50000, annualSalary);
+    taxableIncome -= standardDeduction;
+
+    if (regime === "old") {
+      // Old tax regime with deductions
+      
+      // HRA Exemption Calculation
+      const hraExemption = calculateHRAExemption(
+        annualSalary, 
+        hraReceived * 12, 
+        rentPaid * 12, 
+        isMetroCity
+      );
+      taxableIncome -= hraExemption;
+
+      // Section 80C deduction (max 1.5 lakh)
+      const section80CDeduction = Math.min(section80C, 150000);
+      taxableIncome -= section80CDeduction;
+
+      // Other deductions
+      taxableIncome -= otherDeductions;
+
+      // Ensure taxable income is not negative
+      taxableIncome = Math.max(0, taxableIncome);
+
+      // Old regime tax slabs for FY 2024-25
+      if (taxableIncome <= 250000) {
+        tax = 0;
+      } else if (taxableIncome <= 500000) {
+        tax = (taxableIncome - 250000) * 0.05;
+      } else if (taxableIncome <= 1000000) {
+        tax = 12500 + (taxableIncome - 500000) * 0.20;
+      } else {
+        tax = 12500 + 100000 + (taxableIncome - 1000000) * 0.30;
+      }
+
+    } else {
+      // New tax regime (no deductions except standard deduction)
+      
+      // Ensure taxable income is not negative
+      taxableIncome = Math.max(0, taxableIncome);
+
+      // New regime tax slabs for FY 2024-25
+      if (taxableIncome <= 300000) {
+        tax = 0;
+      } else if (taxableIncome <= 600000) {
+        tax = (taxableIncome - 300000) * 0.05;
+      } else if (taxableIncome <= 900000) {
+        tax = 15000 + (taxableIncome - 600000) * 0.10;
+      } else if (taxableIncome <= 1200000) {
+        tax = 15000 + 30000 + (taxableIncome - 900000) * 0.15;
+      } else if (taxableIncome <= 1500000) {
+        tax = 15000 + 30000 + 45000 + (taxableIncome - 1200000) * 0.20;
+      } else {
+        tax = 15000 + 30000 + 45000 + 60000 + (taxableIncome - 1500000) * 0.30;
+      }
+    }
+
+    // Add Health and Education Cess (4% on tax amount)
+    cess = tax * 0.04;
+    const totalTax = tax + cess;
+
+    // Rebate under section 87A (for old regime only)
+    let rebate = 0;
+    if (regime === "old" && taxableIncome <= 500000) {
+      rebate = Math.min(totalTax, 12500);
+    } else if (regime === "new" && taxableIncome <= 700000) {
+      rebate = Math.min(totalTax, 25000);
+    }
+
+    const finalTax = Math.max(0, totalTax - rebate);
+    
+    return {
+      taxableIncome: Math.round(taxableIncome),
+      taxBeforeCess: Math.round(tax),
+      cess: Math.round(cess),
+      rebate: Math.round(rebate),
+      totalTax: Math.round(finalTax),
+      monthlyTDS: Math.round(finalTax / 12),
+      standardDeduction: standardDeduction,
+      hraExemption: regime === "old" ? Math.round(calculateHRAExemption(annualSalary, hraReceived * 12, rentPaid * 12, isMetroCity)) : 0,
+      section80CDeduction: regime === "old" ? Math.min(section80C, 150000) : 0
+    };
+  };
+
+  // HRA Exemption Calculation
+  const calculateHRAExemption = (annualBasic, annualHRA, annualRent, isMetro) => {
+    if (annualHRA === 0 || annualRent === 0) return 0;
+    
+    const basicSalary = annualBasic;
+    const hraReceived = annualHRA;
+    const rentPaid = annualRent;
+    
+    // HRA exemption is minimum of:
+    // 1. Actual HRA received
+    // 2. 50% of basic salary (metro) or 40% of basic salary (non-metro)
+    // 3. Rent paid minus 10% of basic salary
+    
+    const metroPercentage = isMetro ? 0.50 : 0.40;
+    const exemption1 = hraReceived;
+    const exemption2 = basicSalary * metroPercentage;
+    const exemption3 = Math.max(0, rentPaid - (basicSalary * 0.10));
+    
+    return Math.min(exemption1, exemption2, exemption3);
+  };
+
+  // Auto calculate tax when relevant values change
+  useEffect(() => {
+    if (ctcAmount > 0) {
+      const annualSalary = ctcAmount;
+      const taxCalculation = calculateIncomeTax(annualSalary, taxRegime);
+      setCalculatedTax(taxCalculation.monthlyTDS);
+      
+      // Auto-update income tax field
+      setIncometax(taxCalculation.monthlyTDS);
+    }
+  }, [ctcAmount, taxRegime, section80C, hraReceived, rentPaid, isMetroCity, otherDeductions]);
 
   useEffect(() => {
     if (incometax && basic) {
@@ -251,6 +385,9 @@ export default function AddForm({ onClick }) {
       setEsiEmployeePercent(employeeData.esi_employee_percent || 0.75);
       setEsiEmployerPercent(employeeData.esi_employer_percent || 3.25);
       
+      // Set HRA received as monthly HRA from salary breakdown
+      // This will be calculated when salary components are set
+      
       return employeeData;
     } catch (error) {
       console.log("Employee API Error: " + error);
@@ -338,10 +475,7 @@ export default function AddForm({ onClick }) {
             const medicalSalary = (parseFloat(paygrade.medical) / 100) * monthlyCTC;
             setMedical(Math.round(medicalSalary));
           }
-          if (paygrade.income_tax != null) {
-            const itSalary = (parseFloat(paygrade.income_tax) / 100) * monthlyCTC;
-            setIncometax(Math.round(itSalary));
-          }
+          // Income tax will be calculated automatically based on tax regime
         }
       });
     }
@@ -388,6 +522,9 @@ export default function AddForm({ onClick }) {
     setSa(Math.round(s_sa));
     setEdu(Math.round(s_edu));
     setMedical(Math.round(s_medical));
+    
+    // Set HRA received for tax calculation (monthly amount)
+    setHraReceived(Math.round(s_hra));
 
     // Calculate LWP
     const lwpDays = tdays - pdays;
@@ -883,6 +1020,157 @@ export default function AddForm({ onClick }) {
                 />
               </Grid>
             </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Tax Configuration Section */}
+        <Card elevation={3} sx={{ mt: 3 }}>
+          <CardHeader
+            title="Income Tax Configuration"
+            sx={{ bgcolor: "secondary.dark", color: "white", py: 1 }}
+            titleTypographyProps={{ variant: "subtitle1", fontWeight: "bold" }}
+          />
+          <CardContent>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Tax Regime</InputLabel>
+                  <Select
+                    value={taxRegime}
+                    onChange={(e) => setTaxRegime(e.target.value)}
+                    label="Tax Regime"
+                  >
+                    <MenuItem value="old">Old Regime</MenuItem>
+                    <MenuItem value="new">New Regime</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={2}>
+                <TextField
+                  label="Section 80C"
+                  type="number"
+                  value={section80C}
+                  onChange={(e) => setSection80C(Number(e.target.value))}
+                  fullWidth
+                  size="small"
+                  disabled={taxRegime === "new"}
+                  inputProps={{ min: 0, max: 150000 }}
+                  helperText="Max ₹1.5L"
+                />
+              </Grid>
+              <Grid item xs={12} md={2}>
+                <TextField
+                  label="Monthly Rent"
+                  type="number"
+                  value={rentPaid}
+                  onChange={(e) => setRentPaid(Number(e.target.value))}
+                  fullWidth
+                  size="small"
+                  disabled={taxRegime === "new"}
+                  inputProps={{ min: 0 }}
+                />
+              </Grid>
+              <Grid item xs={12} md={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>City Type</InputLabel>
+                  <Select
+                    value={isMetroCity}
+                    onChange={(e) => setIsMetroCity(e.target.value)}
+                    label="City Type"
+                    disabled={taxRegime === "new"}
+                  >
+                    <MenuItem value={false}>Non-Metro</MenuItem>
+                    <MenuItem value={true}>Metro</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={2}>
+                <TextField
+                  label="Other Deductions"
+                  type="number"
+                  value={otherDeductions}
+                  onChange={(e) => setOtherDeductions(Number(e.target.value))}
+                  fullWidth
+                  size="small"
+                  disabled={taxRegime === "new"}
+                  inputProps={{ min: 0 }}
+                  helperText="80D, etc."
+                />
+              </Grid>
+              <Grid item xs={12} md={2}>
+                <TextField
+                  label="Calculated TDS"
+                  type="number"
+                  value={calculatedTax}
+                  InputProps={{ readOnly: true }}
+                  fullWidth
+                  size="small"
+                  sx={{ bgcolor: "action.hover" }}
+                />
+              </Grid>
+            </Grid>
+            
+            {/* Tax Breakdown Display */}
+            {ctcAmount > 0 && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: "grey.50", borderRadius: 1 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Tax Calculation Breakdown (Annual):
+                </Typography>
+                <Grid container spacing={1}>
+                  {(() => {
+                    const taxCalc = calculateIncomeTax(ctcAmount, taxRegime);
+                    return (
+                      <>
+                        <Grid item xs={6} sm={3}>
+                          <Typography variant="body2">
+                            <strong>Gross Income:</strong> ₹{ctcAmount.toLocaleString()}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                          <Typography variant="body2">
+                            <strong>Taxable Income:</strong> ₹{taxCalc.taxableIncome.toLocaleString()}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                          <Typography variant="body2">
+                            <strong>Tax + Cess:</strong> ₹{taxCalc.totalTax.toLocaleString()}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                          <Typography variant="body2">
+                            <strong>Monthly TDS:</strong> ₹{taxCalc.monthlyTDS.toLocaleString()}
+                          </Typography>
+                        </Grid>
+                        {taxRegime === "old" && (
+                          <>
+                            <Grid item xs={6} sm={3}>
+                              <Typography variant="body2">
+                                <strong>Standard Deduction:</strong> ₹{taxCalc.standardDeduction.toLocaleString()}
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={6} sm={3}>
+                              <Typography variant="body2">
+                                <strong>HRA Exemption:</strong> ₹{taxCalc.hraExemption.toLocaleString()}
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={6} sm={3}>
+                              <Typography variant="body2">
+                                <strong>80C Deduction:</strong> ₹{taxCalc.section80CDeduction.toLocaleString()}
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={6} sm={3}>
+                              <Typography variant="body2">
+                                <strong>Rebate:</strong> ₹{taxCalc.rebate.toLocaleString()}
+                              </Typography>
+                            </Grid>
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
+                </Grid>
+              </Box>
+            )}
           </CardContent>
         </Card>
 
