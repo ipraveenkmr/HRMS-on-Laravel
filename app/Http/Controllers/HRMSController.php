@@ -207,16 +207,16 @@ class HRMSController extends Controller
     {
         $validated = $request->validate([
             'grade' => 'required|integer|unique:pay_grades,grade',
-            'min_gross_range' => 'required|integer|min:0',
-            'max_gross_range' => 'required|integer|min:0|gt:min_gross_range',
-            'basic' => 'required|integer|min:0',
-            'hra' => 'required|integer|min:0',
-            'ta' => 'required|integer|min:0',
-            'com' => 'required|integer|min:0',
-            'medical' => 'required|integer|min:0',
-            'edu' => 'required|integer|min:0',
-            'sa' => 'required|integer|min:0',
-            'income_tax' => 'required|integer|min:0'
+            'min_gross_range' => 'required|numeric|min:0',
+            'max_gross_range' => 'required|numeric|min:0|gt:min_gross_range',
+            'basic' => 'required|numeric|min:0',
+            'hra' => 'required|numeric|min:0',
+            'ta' => 'required|numeric|min:0',
+            'com' => 'required|numeric|min:0',
+            'medical' => 'required|numeric|min:0',
+            'edu' => 'required|numeric|min:0',
+            'sa' => 'required|numeric|min:0',
+            'income_tax' => 'required|numeric|min:0'
         ]);
 
         $payGrade = PayGrade::create($validated);
@@ -249,16 +249,16 @@ class HRMSController extends Controller
                 'integer',
                 Rule::unique('pay_grades', 'grade')->ignore($paygrade_id)
             ],
-            'min_gross_range' => 'sometimes|integer|min:0',
-            'max_gross_range' => 'sometimes|integer|min:0',
-            'basic' => 'sometimes|integer|min:0',
-            'hra' => 'sometimes|integer|min:0',
-            'ta' => 'sometimes|integer|min:0',
-            'com' => 'sometimes|integer|min:0',
-            'medical' => 'sometimes|integer|min:0',
-            'edu' => 'sometimes|integer|min:0',
-            'sa' => 'sometimes|integer|min:0',
-            'income_tax' => 'sometimes|integer|min:0'
+            'min_gross_range' => 'sometimes|numeric|min:0',
+            'max_gross_range' => 'sometimes|numeric|min:0',
+            'basic' => 'sometimes|numeric|min:0',
+            'hra' => 'sometimes|numeric|min:0',
+            'ta' => 'sometimes|numeric|min:0',
+            'com' => 'sometimes|numeric|min:0',
+            'medical' => 'sometimes|numeric|min:0',
+            'edu' => 'sometimes|numeric|min:0',
+            'sa' => 'sometimes|numeric|min:0',
+            'income_tax' => 'sometimes|numeric|min:0'
         ]);
 
         $payGrade->update($validated);

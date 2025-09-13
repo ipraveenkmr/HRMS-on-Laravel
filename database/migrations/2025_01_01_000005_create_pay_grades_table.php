@@ -11,16 +11,16 @@ return new class extends Migration
         Schema::create('pay_grades', function (Blueprint $table) {
             $table->id();
             $table->integer('grade')->unique();
-            $table->bigInteger('min_gross_range')->default(0);
-            $table->bigInteger('max_gross_range')->default(0);
-            $table->bigInteger('basic')->default(0);
-            $table->bigInteger('hra')->default(0);
-            $table->bigInteger('ta')->default(0);
-            $table->bigInteger('com')->default(0);
-            $table->bigInteger('medical')->default(0);
-            $table->bigInteger('edu')->default(0);
-            $table->bigInteger('sa')->default(0);
-            $table->bigInteger('income_tax')->default(0);
+            $table->decimal('min_gross_range', 15, 2)->default(0);
+            $table->decimal('max_gross_range', 15, 2)->default(0);
+            $table->decimal('basic', 15, 2)->default(0);
+            $table->decimal('hra', 15, 2)->default(0);
+            $table->decimal('ta', 15, 2)->default(0);
+            $table->decimal('com', 15, 2)->default(0);
+            $table->decimal('medical', 15, 2)->default(0);
+            $table->decimal('edu', 15, 2)->default(0);
+            $table->decimal('sa', 15, 2)->default(0);
+            $table->decimal('income_tax', 15, 2)->default(0);
             $table->timestamps();
         });
     }

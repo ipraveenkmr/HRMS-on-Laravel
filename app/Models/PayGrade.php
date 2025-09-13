@@ -25,16 +25,16 @@ class PayGrade extends Model
 
     protected $casts = [
         'grade' => 'integer',
-        'min_gross_range' => 'integer',
-        'max_gross_range' => 'integer',
-        'basic' => 'integer',
-        'hra' => 'integer',
-        'ta' => 'integer',
-        'com' => 'integer',
-        'medical' => 'integer',
-        'edu' => 'integer',
-        'sa' => 'integer',
-        'income_tax' => 'integer',
+        'min_gross_range' => 'float',
+        'max_gross_range' => 'float',
+        'basic' => 'float',
+        'hra' => 'float',
+        'ta' => 'float',
+        'com' => 'float',
+        'medical' => 'float',
+        'edu' => 'float',
+        'sa' => 'float',
+        'income_tax' => 'float',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];

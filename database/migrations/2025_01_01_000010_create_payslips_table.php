@@ -17,37 +17,37 @@ return new class extends Migration
             $table->string('date', 99)->nullable();
             
             // Earnings
-            $table->bigInteger('basic')->default(0);
-            $table->bigInteger('hra')->default(0);
-            $table->bigInteger('ta')->default(0);
-            $table->bigInteger('com')->default(0);
-            $table->bigInteger('medical')->default(0);
-            $table->bigInteger('edu')->default(0);
-            $table->bigInteger('sa')->default(0);
+            $table->decimal('basic', 15, 2)->default(0);
+            $table->decimal('hra', 15, 2)->default(0);
+            $table->decimal('ta', 15, 2)->default(0);
+            $table->decimal('com', 15, 2)->default(0);
+            $table->decimal('medical', 15, 2)->default(0);
+            $table->decimal('edu', 15, 2)->default(0);
+            $table->decimal('sa', 15, 2)->default(0);
             
             // Deductions
-            $table->bigInteger('pf')->nullable();
-            $table->bigInteger('esi')->nullable();
-            $table->bigInteger('income_tax')->default(0);
-            $table->bigInteger('cl_taken')->default(0);
-            $table->bigInteger('ei_taken')->default(0);
-            $table->bigInteger('lwp_taken')->default(0);
+            $table->decimal('pf', 15, 2)->nullable();
+            $table->decimal('esi', 15, 2)->nullable();
+            $table->decimal('income_tax', 15, 2)->default(0);
+            $table->decimal('cl_taken', 15, 2)->default(0);
+            $table->decimal('ei_taken', 15, 2)->default(0);
+            $table->decimal('lwp_taken', 15, 2)->default(0);
             
             // Reimbursements
-            $table->bigInteger('advance_pay')->nullable()->default(0);
-            $table->bigInteger('leave_travel_allowance')->nullable()->default(0);
-            $table->bigInteger('telephone_expense')->nullable()->default(0);
-            $table->bigInteger('fuel_and_maint_two_wheeler')->nullable()->default(0);
-            $table->bigInteger('fuel_and_maint_four_wheeler')->nullable()->default(0);
-            $table->bigInteger('other_expense')->nullable()->default(0);
+            $table->decimal('advance_pay', 15, 2)->nullable()->default(0);
+            $table->decimal('leave_travel_allowance', 15, 2)->nullable()->default(0);
+            $table->decimal('telephone_expense', 15, 2)->nullable()->default(0);
+            $table->decimal('fuel_and_maint_two_wheeler', 15, 2)->nullable()->default(0);
+            $table->decimal('fuel_and_maint_four_wheeler', 15, 2)->nullable()->default(0);
+            $table->decimal('other_expense', 15, 2)->nullable()->default(0);
             
             // Summary
             $table->integer('paid_days')->nullable()->default(0);
             $table->integer('total_days')->nullable()->default(0);
-            $table->bigInteger('total_earning')->nullable()->default(0);
-            $table->bigInteger('total_deduction')->nullable()->default(0);
-            $table->bigInteger('total_reimbursement')->nullable()->default(0);
-            $table->bigInteger('net_current_salary')->nullable()->default(0);
+            $table->decimal('total_earning', 15, 2)->nullable()->default(0);
+            $table->decimal('total_deduction', 15, 2)->nullable()->default(0);
+            $table->decimal('total_reimbursement', 15, 2)->nullable()->default(0);
+            $table->decimal('net_current_salary', 15, 2)->nullable()->default(0);
             $table->string('salary_status', 99)->nullable();
             $table->string('esi_number', 200)->nullable();
             $table->string('uan_number', 200)->nullable();
