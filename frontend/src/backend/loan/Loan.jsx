@@ -206,7 +206,7 @@ export default function Loan() {
   const deleteApi = async (event) => {
     // starting
     await axios
-      .delete(baseURL + "delete-loan/" + event + "/", {})
+      .delete(baseURL + "loans/" + event, {})
       .then(function (response) {
         Swal.fire("Deleted!", "Your file has been deleted.", "success");
         loanApi();
@@ -234,7 +234,7 @@ export default function Loan() {
 
     if (event.target.value) {
       await axios
-        .get(baseURL + "loanbydept/" + event.target.value + "/")
+        .get(baseURL + "loans/department/" + event.target.value)
         .then(function (response) {
           console.log("loanbydept: " + JSON.stringify(response.data));
           updateLoan(response.data);

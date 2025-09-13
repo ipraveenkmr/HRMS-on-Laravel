@@ -47,9 +47,9 @@ export default function EditForm({ onClick, eventid }) {
   const loanEditApi = async () => {
     // starting
     await axios
-      .get(baseURL + "loan/" + eventid)
+      .get(baseURL + "loans/" + eventid)
       .then(function (response) {
-        formdata.current = response.data[0];
+        formdata.current = response.data;
         console.log("kcheckpost " + JSON.stringify(formdata.current));
         setApplydate(formdata.current.apply_date);
         setStatustype(formdata.current.status);
@@ -74,8 +74,8 @@ export default function EditForm({ onClick, eventid }) {
       employee_id: selectedemp,
       apply_date: applydate,
       department_id: empdepartment,
-      loan_amount: formdata.current.loan_amount,
-      loan_period_in_month: formdata.current.loan_period_in_month,
+      loan_amount: formdata.current?.loan_amount || 0,
+      loan_period_in_month: formdata.current?.loan_period_in_month || 0,
     },
 
     enableReinitialize: true,
@@ -88,7 +88,7 @@ export default function EditForm({ onClick, eventid }) {
 
       // starting
       await axios
-        .post(baseURL + "loans", values)
+        .put(baseURL + "loans/" + eventid, values)
         .then(function (response) {
           console.log("Loan post: " + JSON.stringify(response.data));
           toast.success("Your data is submitted!", {
