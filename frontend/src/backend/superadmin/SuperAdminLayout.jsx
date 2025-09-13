@@ -15,6 +15,7 @@ const SuperAdminLayout = () => {
     { id: 'asset-categories', label: 'Asset Categories', icon: '📂', path: '/superadmin/asset-categories' },
     { id: 'paygrade', label: 'PayGrade', icon: '💰', path: '/superadmin/paygrade' },
     { id: 'financial-years', label: 'Financial Years', icon: '📅', path: '/superadmin/financial-years' },
+    { id: 'leaves', label: 'Leave Management', icon: '🏖️', path: '/superadmin/leaves' },
     { id: 'employees', label: 'Employees', icon: '👥', path: '/superadmin/employees' },
     { id: 'users', label: 'User Management', icon: '🔐', path: '/superadmin/users' },
   ];

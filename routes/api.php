@@ -110,6 +110,15 @@ Route::prefix('/leave')->group(function () {
     Route::put('/calculator/{calculator_id}', [LeaveController::class, 'updateLeaveCalculator']);
 });
 
+// Leave Configuration routes (for Super Admin)
+Route::prefix('/leave-config')->group(function () {
+    Route::get('/', [LeaveController::class, 'indexLeaveConfig']);
+    Route::post('/', [LeaveController::class, 'storeLeaveConfig']);
+    Route::get('/{leave_id}', [LeaveController::class, 'showLeaveConfig']);
+    Route::put('/{leave_id}', [LeaveController::class, 'updateLeaveConfig']);
+    Route::delete('/{leave_id}', [LeaveController::class, 'destroyLeaveConfig']);
+});
+
 // Assets routes (protected)
 Route::prefix('/assets')->group(function () {
     Route::get('/', [AssetController::class, 'index']);

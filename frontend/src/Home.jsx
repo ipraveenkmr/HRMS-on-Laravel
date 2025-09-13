@@ -14,6 +14,7 @@ import PayGradeManagement from "./backend/superadmin/PayGradeManagement";
 import FinancialYearManagement from "./backend/superadmin/FinancialYearManagement";
 import EmployeeManagement from "./backend/superadmin/EmployeeManagement";
 import UserManagement from "./backend/superadmin/UserManagement";
+import LeaveManagement from "./backend/superadmin/LeaveManagement";
 import { ToastContainer } from "react-toastify";
 
 function Home() {
@@ -37,6 +38,7 @@ function Home() {
           <Route path="financial-years" element={<FinancialYearManagement />} />
           <Route path="employees" element={<EmployeeManagement />} />
           <Route path="users" element={<UserManagement />} />
+          <Route path="leaves" element={<LeaveManagement />} />
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>

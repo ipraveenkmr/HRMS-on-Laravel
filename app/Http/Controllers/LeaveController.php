@@ -343,4 +343,92 @@ class LeaveController extends Controller
             'leave' => $leave->load(['employee', 'department', 'financialYear'])
         ]);
     }
+
+    // Leave Configuration Management (for Super Admin)
+    public function indexLeaveConfig(): JsonResponse
+    {
+        $leaves = Leave::with(['financialYear'])
+            ->orderBy('financial_year_id')
+            ->get();
+        
+        return response()->json($leaves);
+    }
+
+    public function showLeaveConfig($id): JsonResponse
+    {
+        $leave = Leave::with(['financialYear'])->find($id);
+        
+        if (!$leave) {
+            return response()->json(['error' => 'Leave configuration not found'], 404);
+        }
+        
+        return response()->json($leave);
+    }
+
+    public function storeLeaveConfig(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'financial_year_id' => 'required|exists:financial_years,id|unique:leaves',
+            'cl_days' => 'nullable|numeric|min:0',
+            'cl_hours' => 'nullable|numeric|min:0',
+            'ei_days' => 'nullable|numeric|min:0',
+            'ei_hours' => 'nullable|numeric|min:0',
+            'lwp_days' => 'nullable|numeric|min:0',
+            'lwp_hours' => 'nullable|numeric|min:0',
+            'medical_leave_in_days' => 'nullable|numeric|min:0',
+            'medical_leave_in_hours' => 'nullable|numeric|min:0',
+            'other_leave_in_days' => 'nullable|numeric|min:0',
+            'other_leave_in_hours' => 'nullable|numeric|min:0',
+        ]);
+
+        $leave = Leave::create($validated);
+        
+        return response()->json([
+            'message' => 'Leave configuration created successfully',
+            'leave' => $leave->load(['financialYear'])
+        ], 201);
+    }
+
+    public function updateLeaveConfig(Request $request, $id): JsonResponse
+    {
+        $leave = Leave::find($id);
+        
+        if (!$leave) {
+            return response()->json(['error' => 'Leave configuration not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'financial_year_id' => 'sometimes|exists:financial_years,id|unique:leaves,financial_year_id,' . $leave->id,
+            'cl_days' => 'nullable|numeric|min:0',
+            'cl_hours' => 'nullable|numeric|min:0',
+            'ei_days' => 'nullable|numeric|min:0',
+            'ei_hours' => 'nullable|numeric|min:0',
+            'lwp_days' => 'nullable|numeric|min:0',
+            'lwp_hours' => 'nullable|numeric|min:0',
+            'medical_leave_in_days' => 'nullable|numeric|min:0',
+            'medical_leave_in_hours' => 'nullable|numeric|min:0',
+            'other_leave_in_days' => 'nullable|numeric|min:0',
+            'other_leave_in_hours' => 'nullable|numeric|min:0',
+        ]);
+
+        $leave->update($validated);
+        
+        return response()->json([
+            'message' => 'Leave configuration updated successfully',
+            'leave' => $leave->load(['financialYear'])
+        ]);
+    }
+
+    public function destroyLeaveConfig($id): JsonResponse
+    {
+        $leave = Leave::find($id);
+        
+        if (!$leave) {
+            return response()->json(['error' => 'Leave configuration not found'], 404);
+        }
+        
+        $leave->delete();
+        
+        return response()->json(['message' => 'Leave configuration deleted successfully']);
+    }
 }
