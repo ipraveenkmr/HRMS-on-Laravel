@@ -4,10 +4,55 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Payslip;
+use App\Models\FinancialYear;
 use Illuminate\Http\JsonResponse;
+use Carbon\Carbon;
 
 class PayslipController extends Controller
 {
+    private function getCurrentFinancialYear()
+    {
+        $currentDate = Carbon::now();
+        $currentYear = $currentDate->year;
+        $currentMonth = $currentDate->month;
+        
+        // Financial year typically runs from April to March
+        // If current month is Jan-Mar, we're in the second year of the financial year
+        // If current month is Apr-Dec, we're in the first year of the financial year
+        if ($currentMonth >= 4) {
+            // April to December: FY starts from current year
+            $fyStart = $currentYear;
+            $fyEnd = $currentYear + 1;
+        } else {
+            // January to March: FY started from previous year
+            $fyStart = $currentYear - 1;
+            $fyEnd = $currentYear;
+        }
+        
+        // Try multiple possible formats for financial year string
+        $possibleFormats = [
+            $fyStart . '-' . $fyEnd,           // e.g., "2024-2025"
+            $fyStart . '-' . substr($fyEnd, 2), // e.g., "2024-25"
+            (string)$fyStart,                   // e.g., "2024"
+            (string)$fyEnd                      // e.g., "2025"
+        ];
+        
+        foreach ($possibleFormats as $format) {
+            $financialYear = FinancialYear::where('year', $format)->first();
+            if ($financialYear) {
+                return $financialYear;
+            }
+        }
+        
+        // If no specific financial year found, try to get any available financial year
+        return FinancialYear::first();
+    }
+
+    private function generateMonthYear($date = null)
+    {
+        $payDate = $date ? Carbon::parse($date) : Carbon::now();
+        return $payDate->format('M-Y'); // e.g., "Sep-2025"
+    }
     public function index(): JsonResponse
     {
         $payslips = Payslip::with(['employee', 'department'])
@@ -31,7 +76,7 @@ class PayslipController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'month_year' => 'required|string|max:99|unique:payslips',
+            'month_year' => 'nullable|string|max:99|unique:payslips',
             'username' => 'nullable|string|max:200',
             'employee_id' => 'required|exists:employees,id',
             'department_id' => 'required|exists:departments,id',
@@ -65,6 +110,11 @@ class PayslipController extends Controller
             'esi_number' => 'nullable|string|max:200',
             'uan_number' => 'nullable|string|max:200',
         ]);
+
+        // Auto-generate month_year if not provided
+        if (empty($validated['month_year'])) {
+            $validated['month_year'] = $this->generateMonthYear($validated['date'] ?? null);
+        }
 
         $payslip = Payslip::create($validated);
         

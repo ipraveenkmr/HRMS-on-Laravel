@@ -170,7 +170,7 @@ function PrintPayslip({ onClick, eventid, uname }) {
     await axios
       .get(baseURL + "payroll/" + eventid)
       .then(function (response) {
-        const payrollData = response.data[0];
+        const payrollData = response.data;
         setBasic(payrollData["basic"]);
         setHra(payrollData["hra"]);
         sePaydate(payrollData["date"]);
@@ -197,8 +197,37 @@ function PrintPayslip({ onClick, eventid, uname }) {
         setTotalReimbursement(payrollData["total_reimbursement"]);
         setTotalDeduction(payrollData["total_deduction"]);
         setNetCurrentSalary(payrollData["net_current_salary"]);
-        // CTC will be calculated from employee data, not from payroll telephone_expense
-        // setCTC(payrollData["telephone_expense"]); // This was incorrect
+        
+        // Update employee details from payroll response
+        if (payrollData.employee) {
+          const empData = payrollData.employee;
+          setEmpname(empData.emp_name || "");
+          setEmpno(empData.emp_no || "");
+          setDesignation(empData.designation || "");
+          setPan(empData.pan || "");
+          setAadhaar(empData.aadhaar || "");
+          setBankaccounno(empData.bank_account_number || "");
+          setBankName(empData.bank_name || "");
+          setIfscCode(empData.ifsc_code || "");
+          setLocation(empData.city || "");
+          setGender(empData.gender || "");
+          setDoj(empData.emp_joining_date || empData.start_date || "");
+          setPfaccount(empData.pf_account_number_uan || "");
+          setEsiAccountNo(empData.esi_account_number || "");
+          setUanNo(empData.uan_number || "");
+          setEmployeeCtc(empData.ctc || 0);
+          setGrossSalary(empData.gross_salary || 0);
+          setCompany(empData.company_name_id || 1);
+          setPfEmployeePercent(empData.pf_employee_percent || 12);
+          setPfEmployerPercent(empData.pf_employer_percent || 12);
+          setEsiEmployeePercent(empData.esi_employee_percent || 0.75);
+          setEsiEmployerPercent(empData.esi_employer_percent || 3.25);
+        }
+        
+        // Update department details from payroll response
+        if (payrollData.department) {
+          setDepartment(payrollData.department.department_name || "");
+        }
 
         // Calculate employer PF (should be same as employee PF)
         setEmployerPf(payrollData["pf"]);
