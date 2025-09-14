@@ -430,7 +430,7 @@ export default function Employee() {
   const deleteApi = async (event) => {
     // starting
     await axios
-      .delete(baseURL + "delete-employee/" + event + "/", {
+      .delete(baseURL + "employees/" + event, {
         // headers: {
         //   "Access-Control-Allow-Origin": "*",
         //   "Content-type": "Application/json",

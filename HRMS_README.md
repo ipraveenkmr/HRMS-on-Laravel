@@ -94,7 +94,7 @@ The API will be available at `http://localhost:8000`
 | POST | `/api/create-employee` | Create new employee |
 | GET | `/api/employees/{id}` | Get employee details |
 | PUT | `/api/employees/{id}` | Update employee |
-| DELETE | `/api/delete-employee/{id}` | Delete employee |
+| DELETE | `/api/employees/{id}` | Delete employee |
 | GET | `/api/empbydept/{departmentId}` | Get employees by department |
 
 ### Attendance Management

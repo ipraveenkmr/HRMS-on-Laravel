@@ -10,6 +10,7 @@ use App\Models\BranchDetail;
 use App\Models\CompanyDetail;
 use App\Models\FinancialYear;
 use App\Models\LeaveCalculator;
+use App\Models\LeaveTracker;
 use App\Models\Leave;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
@@ -22,6 +23,44 @@ class EmployeeController extends Controller
     // File upload configuration
     private const UPLOAD_DIR = 'uploads';
     private const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+
+    private function getCurrentFinancialYear()
+    {
+        $currentDate = Carbon::now();
+        $currentYear = $currentDate->year;
+        $currentMonth = $currentDate->month;
+        
+        // Financial year typically runs from April to March
+        // If current month is Jan-Mar, we're in the second year of the financial year
+        // If current month is Apr-Dec, we're in the first year of the financial year
+        if ($currentMonth >= 4) {
+            // April to December: FY starts from current year
+            $fyStart = $currentYear;
+            $fyEnd = $currentYear + 1;
+        } else {
+            // January to March: FY started from previous year
+            $fyStart = $currentYear - 1;
+            $fyEnd = $currentYear;
+        }
+        
+        // Try multiple possible formats for financial year string
+        $possibleFormats = [
+            $fyStart . '-' . $fyEnd,           // e.g., "2024-2025"
+            $fyStart . '-' . substr($fyEnd, 2), // e.g., "2024-25"
+            (string)$fyStart,                   // e.g., "2024"
+            (string)$fyEnd                      // e.g., "2025"
+        ];
+        
+        foreach ($possibleFormats as $format) {
+            $financialYear = FinancialYear::where('year', $format)->first();
+            if ($financialYear) {
+                return $financialYear;
+            }
+        }
+        
+        // If no specific financial year found, try to get any available financial year
+        return FinancialYear::first();
+    }
 
     private function isValidImage($filename): bool
     {
@@ -272,8 +311,7 @@ class EmployeeController extends Controller
 
         // Create leave calculator data for the employee
         try {
-            $currentYear = Carbon::now()->year;
-            $financialYear = FinancialYear::where('year', (string)$currentYear)->first();
+            $financialYear = $this->getCurrentFinancialYear();
             if ($financialYear) {
                 $leaveData = Leave::where('financial_year_id', $financialYear->id)->first();
                 if ($leaveData) {
@@ -281,12 +319,27 @@ class EmployeeController extends Controller
                         'financial_year_id' => $financialYear->id,
                         'username' => $validated['username'],
                         'employee_id' => $employee->id,
-                        'remaining_CL_Days' => $leaveData->CL_Days ?? 0,
-                        'remaining_CL_Hours' => $leaveData->CL_Hours ?? 0,
-                        'remaining_EI_Days' => $leaveData->EI_Days ?? 0,
-                        'remaining_EI_Hours' => $leaveData->EI_Hours ?? 0,
-                        'remaining_LWP_Days' => $leaveData->LWP_Days ?? 0,
-                        'remaining_LWP_Hours' => $leaveData->LWP_Hours ?? 0,
+                        'remaining_cl_days' => $leaveData->cl_days ?? 0,
+                        'remaining_cl_hours' => $leaveData->cl_hours ?? 0,
+                        'remaining_ei_days' => $leaveData->ei_days ?? 0,
+                        'remaining_ei_hours' => $leaveData->ei_hours ?? 0,
+                        'remaining_lwp_days' => $leaveData->lwp_days ?? 0,
+                        'remaining_lwp_hours' => $leaveData->lwp_hours ?? 0,
+                        'remaining_medical_leave_in_days' => $leaveData->medical_leave_in_days ?? 0,
+                        'remaining_medical_leave_in_hours' => $leaveData->medical_leave_in_hours ?? 0,
+                        'remaining_other_leave_in_days' => $leaveData->other_leave_in_days ?? 0,
+                        'remaining_other_leave_in_hours' => $leaveData->other_leave_in_hours ?? 0,
+                    ]);
+                    LeaveTracker::create([
+                        'financial_year_id' => $financialYear->id,
+                        'username' => $validated['username'],
+                        'employee_id' => $employee->id,
+                        'remaining_cl_days' => $leaveData->cl_days ?? 0,
+                        'remaining_cl_hours' => $leaveData->cl_hours ?? 0,
+                        'remaining_ei_days' => $leaveData->ei_days ?? 0,
+                        'remaining_ei_hours' => $leaveData->ei_hours ?? 0,
+                        'remaining_lwp_days' => $leaveData->lwp_days ?? 0,
+                        'remaining_lwp_hours' => $leaveData->lwp_hours ?? 0,
                         'remaining_medical_leave_in_days' => $leaveData->medical_leave_in_days ?? 0,
                         'remaining_medical_leave_in_hours' => $leaveData->medical_leave_in_hours ?? 0,
                         'remaining_other_leave_in_days' => $leaveData->other_leave_in_days ?? 0,

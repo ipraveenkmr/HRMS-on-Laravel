@@ -30,9 +30,9 @@ export default function AddForm({ onClick, eventid, uname, eid }) {
     await axios
       .get(baseURL + "leave/calculator/username/" + uname)
       .then(function (response) {
-        seRremainingClDays(response.data[0].remaining_CL_Days);
-        setRemainingEiDays(response.data[0].remaining_EI_Days);
-        setRemainingLwpDays(response.data[0].remaining_LWP_Days);
+        seRremainingClDays(response.data[0].remaining_cl_days || response.data[0].remaining_CL_Days);
+        setRemainingEiDays(response.data[0].remaining_ei_days || response.data[0].remaining_EI_Days);
+        setRemainingLwpDays(response.data[0].remaining_lwp_days || response.data[0].remaining_LWP_Days);
         setRemainingOtherDays(response.data[0].remaining_other_leave_in_days);
         setShowform(true);
       })
@@ -54,20 +54,22 @@ export default function AddForm({ onClick, eventid, uname, eid }) {
       formik.values.id = eventid;
       formik.values.username = uname;
       formik.values.employee = eid;
-      formik.values.remaining_CL_Days = Number(remainingcldays);
-      formik.values.remaining_EI_Days = Number(remainingeidays);
-      formik.values.remaining_LWP_Days = Number(remaininglwpdays);
-      formik.values.remaining_other_leave_in_days = Number(remainingotherdays);
-      formik.values.remaining_CL_Hours = 0;
-      formik.values.remaining_EI_Hours = 0;
-      formik.values.remaining_LWP_Hours = 0;
-      formik.values.remaining_medical_leave_in_days = 0;
-      formik.values.remaining_medical_leave_in_hours = 0;
-      formik.values.remaining_other_leave_in_hours = 0;
+      const updateData = {
+        remaining_cl_days: Number(remainingcldays),
+        remaining_ei_days: Number(remainingeidays),
+        remaining_lwp_days: Number(remaininglwpdays),
+        remaining_other_leave_in_days: Number(remainingotherdays),
+        remaining_cl_hours: 0,
+        remaining_ei_hours: 0,
+        remaining_lwp_hours: 0,
+        remaining_medical_leave_in_days: 0,
+        remaining_medical_leave_in_hours: 0,
+        remaining_other_leave_in_hours: 0,
+      };
 
       // starting
       await axios
-        .post(baseURL + "create-leavemanager/", values)
+        .put(baseURL + "leave/calculator/" + eventid, updateData)
         .then(function (response) {
           console.log("Employee post: " + JSON.stringify(response.data));
           toast.success("Your data is submitted!", {

@@ -114,6 +114,9 @@ class LeaveController extends Controller
 
         $leave = LeaveTracker::create($validated);
         
+        // Update leave calculator when leave tracker is created
+        $this->updateLeaveCalculatorAfterCreation($leave);
+        
         return response()->json([
             'message' => 'Leave application created successfully',
             'leave' => $leave->load(['employee', 'department', 'financialYear'])
@@ -153,7 +156,13 @@ class LeaveController extends Controller
             'leave_to_year' => 'nullable|string|max:99',
         ]);
 
+        $oldStatus = $leave->leave_status;
         $leave->update($validated);
+        
+        // Update leave calculator if status changed to/from Approved
+        if (isset($validated['leave_status']) && $oldStatus !== $validated['leave_status']) {
+            $this->updateLeaveCalculatorAfterStatusChange($leave, $oldStatus, $validated['leave_status']);
+        }
         
         return response()->json([
             'message' => 'Leave record updated successfully',
@@ -251,7 +260,31 @@ class LeaveController extends Controller
             return response()->json(['error' => 'Leave calculator not found for username: ' . $username], 404);
         }
         
-        return response()->json($leaveCalculator);
+        // Format data to match frontend expectations
+        $formattedData = $leaveCalculator->map(function ($calculator) {
+            return [
+                'id' => $calculator->id,
+                'employee_id' => $calculator->employee_id,
+                'username' => $calculator->username,
+                'remaining_cl_days' => $calculator->remaining_cl_days ?? 0,
+                'remaining_ei_days' => $calculator->remaining_ei_days ?? 0,
+                'remaining_lwp_days' => $calculator->remaining_lwp_days ?? 0,
+                'remaining_other_leave_in_days' => $calculator->remaining_other_leave_in_days ?? 0,
+                'remaining_cl_hours' => $calculator->remaining_cl_hours ?? 0,
+                'remaining_ei_hours' => $calculator->remaining_ei_hours ?? 0,
+                'remaining_lwp_hours' => $calculator->remaining_lwp_hours ?? 0,
+                'remaining_medical_leave_in_days' => $calculator->remaining_medical_leave_in_days ?? 0,
+                'remaining_medical_leave_in_hours' => $calculator->remaining_medical_leave_in_hours ?? 0,
+                'remaining_other_leave_in_hours' => $calculator->remaining_other_leave_in_hours ?? 0,
+                'financial_year_id' => $calculator->financial_year_id,
+                // Legacy format for compatibility
+                'remaining_CL_Days' => $calculator->remaining_cl_days ?? 0,
+                'remaining_EI_Days' => $calculator->remaining_ei_days ?? 0,
+                'remaining_LWP_Days' => $calculator->remaining_lwp_days ?? 0,
+            ];
+        });
+        
+        return response()->json($formattedData);
     }
 
     public function createLeaveCalculator(Request $request): JsonResponse
@@ -314,12 +347,32 @@ class LeaveController extends Controller
 
     public function getManageLeave(): JsonResponse
     {
-        $pendingLeaves = LeaveTracker::with(['employee', 'department', 'financialYear'])
-            ->where('leave_status', 'Pending')
+        $leaveCalculators = LeaveCalculator::with(['employee', 'financialYear'])
             ->orderBy('created_at')
             ->get();
         
-        return response()->json($pendingLeaves);
+        // Format data to match frontend expectations
+        $formattedData = $leaveCalculators->map(function ($calculator) {
+            return [
+                'id' => $calculator->id,
+                'employee_id' => $calculator->employee_id,
+                'username' => $calculator->username,
+                'employee' => $calculator->employee_id,
+                'remaining_CL_Days' => $calculator->remaining_cl_days ?? 0,
+                'remaining_EI_Days' => $calculator->remaining_ei_days ?? 0,
+                'remaining_LWP_Days' => $calculator->remaining_lwp_days ?? 0,
+                'remaining_other_leave_in_days' => $calculator->remaining_other_leave_in_days ?? 0,
+                'remaining_cl_hours' => $calculator->remaining_cl_hours ?? 0,
+                'remaining_ei_hours' => $calculator->remaining_ei_hours ?? 0,
+                'remaining_lwp_hours' => $calculator->remaining_lwp_hours ?? 0,
+                'remaining_medical_leave_in_days' => $calculator->remaining_medical_leave_in_days ?? 0,
+                'remaining_medical_leave_in_hours' => $calculator->remaining_medical_leave_in_hours ?? 0,
+                'remaining_other_leave_in_hours' => $calculator->remaining_other_leave_in_hours ?? 0,
+                'financial_year_id' => $calculator->financial_year_id,
+            ];
+        });
+        
+        return response()->json($formattedData);
     }
 
     public function createLeaveManager(Request $request): JsonResponse
@@ -336,7 +389,13 @@ class LeaveController extends Controller
             return response()->json(['error' => 'Leave record not found'], 404);
         }
 
+        $oldStatus = $leave->leave_status;
         $leave->update(['leave_status' => $validated['status']]);
+        
+        // Update leave calculator if status changed
+        if ($oldStatus !== $validated['status']) {
+            $this->updateLeaveCalculatorAfterStatusChange($leave, $oldStatus, $validated['status']);
+        }
 
         return response()->json([
             'message' => 'Leave status updated successfully',
@@ -430,5 +489,122 @@ class LeaveController extends Controller
         $leave->delete();
         
         return response()->json(['message' => 'Leave configuration deleted successfully']);
+    }
+
+    private function updateLeaveCalculatorAfterCreation(LeaveTracker $leave)
+    {
+        // Find the leave calculator for this employee and financial year
+        $leaveCalculator = LeaveCalculator::where('employee_id', $leave->employee_id)
+            ->where('financial_year_id', $leave->financial_year_id)
+            ->first();
+        
+        // If no leave calculator exists, create one with leave totals from Leave config
+        if (!$leaveCalculator) {
+            // Get leave config for this financial year
+            $leaveConfig = Leave::where('financial_year_id', $leave->financial_year_id)->first();
+            
+            if ($leaveConfig) {
+                $leaveCalculator = LeaveCalculator::create([
+                    'financial_year_id' => $leave->financial_year_id,
+                    'username' => $leave->username,
+                    'employee_id' => $leave->employee_id,
+                    'remaining_cl_days' => $leaveConfig->cl_days,
+                    'remaining_cl_hours' => $leaveConfig->cl_hours,
+                    'remaining_ei_days' => $leaveConfig->ei_days,
+                    'remaining_ei_hours' => $leaveConfig->ei_hours,
+                    'remaining_lwp_days' => $leaveConfig->lwp_days,
+                    'remaining_lwp_hours' => $leaveConfig->lwp_hours,
+                    'remaining_medical_leave_in_days' => $leaveConfig->medical_leave_in_days,
+                    'remaining_medical_leave_in_hours' => $leaveConfig->medical_leave_in_hours,
+                    'remaining_other_leave_in_days' => $leaveConfig->other_leave_in_days,
+                    'remaining_other_leave_in_hours' => $leaveConfig->other_leave_in_hours,
+                ]);
+            } else {
+                // Create with defaults if no config exists
+                $leaveCalculator = LeaveCalculator::create([
+                    'financial_year_id' => $leave->financial_year_id,
+                    'username' => $leave->username,
+                    'employee_id' => $leave->employee_id,
+                ]);
+            }
+        }
+        
+        // Only deduct leave if the status is approved
+        if ($leave->leave_status === 'Approved') {
+            // Update remaining leave counts by subtracting the used leave
+            $leaveCalculator->update([
+                'remaining_cl_days' => max(0, $leaveCalculator->remaining_cl_days - ($leave->cl_days ?? 0)),
+                'remaining_cl_hours' => max(0, $leaveCalculator->remaining_cl_hours - ($leave->cl_hours ?? 0)),
+                'remaining_ei_days' => max(0, $leaveCalculator->remaining_ei_days - ($leave->ei_days ?? 0)),
+                'remaining_ei_hours' => max(0, $leaveCalculator->remaining_ei_hours - ($leave->ei_hours ?? 0)),
+                'remaining_lwp_days' => max(0, $leaveCalculator->remaining_lwp_days - ($leave->lwp_days ?? 0)),
+                'remaining_lwp_hours' => max(0, $leaveCalculator->remaining_lwp_hours - ($leave->lwp_hours ?? 0)),
+                'remaining_medical_leave_in_days' => max(0, $leaveCalculator->remaining_medical_leave_in_days - ($leave->medical_leave_in_days ?? 0)),
+                'remaining_medical_leave_in_hours' => max(0, $leaveCalculator->remaining_medical_leave_in_hours - ($leave->medical_leave_in_hours ?? 0)),
+                'remaining_other_leave_in_days' => max(0, $leaveCalculator->remaining_other_leave_in_days - ($leave->other_leave_in_days ?? 0)),
+                'remaining_other_leave_in_hours' => max(0, $leaveCalculator->remaining_other_leave_in_hours - ($leave->other_leave_in_hours ?? 0)),
+            ]);
+        }
+    }
+
+    private function updateLeaveCalculatorAfterStatusChange(LeaveTracker $leave, $oldStatus, $newStatus)
+    {
+        $leaveCalculator = LeaveCalculator::where('employee_id', $leave->employee_id)
+            ->where('financial_year_id', $leave->financial_year_id)
+            ->first();
+        
+        if (!$leaveCalculator) {
+            return;
+        }
+        
+        // If changing from non-approved to approved, deduct leave
+        if ($oldStatus !== 'Approved' && $newStatus === 'Approved') {
+            $leaveCalculator->update([
+                'remaining_cl_days' => max(0, $leaveCalculator->remaining_cl_days - ($leave->cl_days ?? 0)),
+                'remaining_cl_hours' => max(0, $leaveCalculator->remaining_cl_hours - ($leave->cl_hours ?? 0)),
+                'remaining_ei_days' => max(0, $leaveCalculator->remaining_ei_days - ($leave->ei_days ?? 0)),
+                'remaining_ei_hours' => max(0, $leaveCalculator->remaining_ei_hours - ($leave->ei_hours ?? 0)),
+                'remaining_lwp_days' => max(0, $leaveCalculator->remaining_lwp_days - ($leave->lwp_days ?? 0)),
+                'remaining_lwp_hours' => max(0, $leaveCalculator->remaining_lwp_hours - ($leave->lwp_hours ?? 0)),
+                'remaining_medical_leave_in_days' => max(0, $leaveCalculator->remaining_medical_leave_in_days - ($leave->medical_leave_in_days ?? 0)),
+                'remaining_medical_leave_in_hours' => max(0, $leaveCalculator->remaining_medical_leave_in_hours - ($leave->medical_leave_in_hours ?? 0)),
+                'remaining_other_leave_in_days' => max(0, $leaveCalculator->remaining_other_leave_in_days - ($leave->other_leave_in_days ?? 0)),
+                'remaining_other_leave_in_hours' => max(0, $leaveCalculator->remaining_other_leave_in_hours - ($leave->other_leave_in_hours ?? 0)),
+            ]);
+        }
+        // If changing from approved to non-approved, add leave back
+        elseif ($oldStatus === 'Approved' && $newStatus !== 'Approved') {
+            // Get the original leave config to check max limits
+            $leaveConfig = Leave::where('financial_year_id', $leave->financial_year_id)->first();
+            
+            $updates = [
+                'remaining_cl_days' => $leaveCalculator->remaining_cl_days + ($leave->cl_days ?? 0),
+                'remaining_cl_hours' => $leaveCalculator->remaining_cl_hours + ($leave->cl_hours ?? 0),
+                'remaining_ei_days' => $leaveCalculator->remaining_ei_days + ($leave->ei_days ?? 0),
+                'remaining_ei_hours' => $leaveCalculator->remaining_ei_hours + ($leave->ei_hours ?? 0),
+                'remaining_lwp_days' => $leaveCalculator->remaining_lwp_days + ($leave->lwp_days ?? 0),
+                'remaining_lwp_hours' => $leaveCalculator->remaining_lwp_hours + ($leave->lwp_hours ?? 0),
+                'remaining_medical_leave_in_days' => $leaveCalculator->remaining_medical_leave_in_days + ($leave->medical_leave_in_days ?? 0),
+                'remaining_medical_leave_in_hours' => $leaveCalculator->remaining_medical_leave_in_hours + ($leave->medical_leave_in_hours ?? 0),
+                'remaining_other_leave_in_days' => $leaveCalculator->remaining_other_leave_in_days + ($leave->other_leave_in_days ?? 0),
+                'remaining_other_leave_in_hours' => $leaveCalculator->remaining_other_leave_in_hours + ($leave->other_leave_in_hours ?? 0),
+            ];
+            
+            // Cap at original allocation if config exists
+            if ($leaveConfig) {
+                $updates['remaining_cl_days'] = min($updates['remaining_cl_days'], $leaveConfig->cl_days ?? 0);
+                $updates['remaining_cl_hours'] = min($updates['remaining_cl_hours'], $leaveConfig->cl_hours ?? 0);
+                $updates['remaining_ei_days'] = min($updates['remaining_ei_days'], $leaveConfig->ei_days ?? 0);
+                $updates['remaining_ei_hours'] = min($updates['remaining_ei_hours'], $leaveConfig->ei_hours ?? 0);
+                $updates['remaining_lwp_days'] = min($updates['remaining_lwp_days'], $leaveConfig->lwp_days ?? 0);
+                $updates['remaining_lwp_hours'] = min($updates['remaining_lwp_hours'], $leaveConfig->lwp_hours ?? 0);
+                $updates['remaining_medical_leave_in_days'] = min($updates['remaining_medical_leave_in_days'], $leaveConfig->medical_leave_in_days ?? 0);
+                $updates['remaining_medical_leave_in_hours'] = min($updates['remaining_medical_leave_in_hours'], $leaveConfig->medical_leave_in_hours ?? 0);
+                $updates['remaining_other_leave_in_days'] = min($updates['remaining_other_leave_in_days'], $leaveConfig->other_leave_in_days ?? 0);
+                $updates['remaining_other_leave_in_hours'] = min($updates['remaining_other_leave_in_hours'], $leaveConfig->other_leave_in_hours ?? 0);
+            }
+            
+            $leaveCalculator->update($updates);
+        }
     }
 }

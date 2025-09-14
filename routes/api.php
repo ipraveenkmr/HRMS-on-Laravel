@@ -110,6 +110,9 @@ Route::prefix('/leave')->group(function () {
     Route::put('/calculator/{calculator_id}', [LeaveController::class, 'updateLeaveCalculator']);
 });
 
+// Leave Management route
+Route::get('/manageleave', [LeaveController::class, 'getManageLeave']);
+
 // Leave Configuration routes (for Super Admin)
 Route::prefix('/leave-config')->group(function () {
     Route::get('/', [LeaveController::class, 'indexLeaveConfig']);
