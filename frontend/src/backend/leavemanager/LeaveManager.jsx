@@ -135,15 +135,17 @@ export default function LeaveManager() {
 
   const manageleaveApi = async () => {
     // starting
-    await axios
-      .get(baseURL + "manageleave/")
-      .then(function (response) {
-        updateManageLeave(response.data);
-        SetEmprecord(response.data);
-      })
-      .catch(function (error) {
-        console.log("kcheckpost" + error); //return 429
-      });
+    try {
+      const response = await axios.get(baseURL + "manageleave/");
+      console.log("ManageLeave API response:", response.data);
+      updateManageLeave(response.data);
+      SetEmprecord(response.data);
+    } catch (error) {
+      console.error("ManageLeave API error:", error);
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+      }
+    }
     // ending
   };
 
@@ -236,21 +238,19 @@ export default function LeaveManager() {
             ).map((row) => (
               <TableRow key={row.id}>
                 <TableCell style={{ width: 160 }}>
-                  {employees.map((item, index) => {
-                    return <>{item.id === row.employee_id && item.emp_name}</>;
-                  })}
+                  {employees.find(item => item.id === row.employee_id)?.emp_name || 'Unknown Employee'}
                 </TableCell>
                 <TableCell style={{ width: 160 }}>
-                  {row.remaining_CL_Days}
+                  {row.remaining_CL_Days || row.remaining_cl_days || 0}
                 </TableCell>
                 <TableCell style={{ width: 160 }}>
-                  {row.remaining_EI_Days}
+                  {row.remaining_EI_Days || row.remaining_ei_days || 0}
                 </TableCell>
                 <TableCell style={{ width: 160 }}>
-                  {row.remaining_LWP_Days}
+                  {row.remaining_LWP_Days || row.remaining_lwp_days || 0}
                 </TableCell>
                 <TableCell style={{ width: 160 }}>
-                  {row.remaining_other_leave_in_days}
+                  {row.remaining_other_leave_in_days || 0}
                 </TableCell>
                 <TableCell style={{ width: 20 }}>
                   <Stack spacing={2} direction="row">

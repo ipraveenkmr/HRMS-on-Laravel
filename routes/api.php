@@ -112,6 +112,7 @@ Route::prefix('/leave')->group(function () {
 
 // Leave Management route
 Route::get('/manageleave', [LeaveController::class, 'getManageLeave']);
+Route::post('/initialize-leave-calculators', [LeaveController::class, 'initializeAllEmployeeLeaveCalculators']);
 
 // Leave Configuration routes (for Super Admin)
 Route::prefix('/leave-config')->group(function () {

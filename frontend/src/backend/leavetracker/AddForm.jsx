@@ -319,7 +319,7 @@ export default function AddForm({ onClick }) {
     await axios
       .get(baseURL + "leave")
       .then(function (response) {
-        console.log("leaves: " + JSON.stringify(response.data));
+        // console.log("leaves: " + JSON.stringify(response.data));
         updateLeave(response.data);
       })
       .catch(function (error) {

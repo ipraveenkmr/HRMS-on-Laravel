@@ -491,6 +491,57 @@ class LeaveController extends Controller
         return response()->json(['message' => 'Leave configuration deleted successfully']);
     }
 
+    public function initializeAllEmployeeLeaveCalculators(): JsonResponse
+    {
+        $financialYear = $this->getCurrentFinancialYear();
+        if (!$financialYear) {
+            return response()->json(['error' => 'No active financial year found'], 400);
+        }
+
+        $leaveConfig = Leave::where('financial_year_id', $financialYear->id)->first();
+        if (!$leaveConfig) {
+            return response()->json(['error' => 'No leave configuration found for current financial year'], 400);
+        }
+
+        $employees = \App\Models\Employee::all();
+        $created = 0;
+        $skipped = 0;
+
+        foreach ($employees as $employee) {
+            $existingCalculator = LeaveCalculator::where('employee_id', $employee->id)
+                ->where('financial_year_id', $financialYear->id)
+                ->first();
+
+            if (!$existingCalculator) {
+                LeaveCalculator::create([
+                    'financial_year_id' => $financialYear->id,
+                    'username' => $employee->username,
+                    'employee_id' => $employee->id,
+                    'remaining_cl_days' => $leaveConfig->cl_days ?? 0,
+                    'remaining_cl_hours' => $leaveConfig->cl_hours ?? 0,
+                    'remaining_ei_days' => $leaveConfig->ei_days ?? 0,
+                    'remaining_ei_hours' => $leaveConfig->ei_hours ?? 0,
+                    'remaining_lwp_days' => $leaveConfig->lwp_days ?? 0,
+                    'remaining_lwp_hours' => $leaveConfig->lwp_hours ?? 0,
+                    'remaining_medical_leave_in_days' => $leaveConfig->medical_leave_in_days ?? 0,
+                    'remaining_medical_leave_in_hours' => $leaveConfig->medical_leave_in_hours ?? 0,
+                    'remaining_other_leave_in_days' => $leaveConfig->other_leave_in_days ?? 0,
+                    'remaining_other_leave_in_hours' => $leaveConfig->other_leave_in_hours ?? 0,
+                ]);
+                $created++;
+            } else {
+                $skipped++;
+            }
+        }
+
+        return response()->json([
+            'message' => 'Leave calculator initialization completed',
+            'created' => $created,
+            'skipped' => $skipped,
+            'total_employees' => $employees->count()
+        ]);
+    }
+
     private function updateLeaveCalculatorAfterCreation(LeaveTracker $leave)
     {
         // Find the leave calculator for this employee and financial year

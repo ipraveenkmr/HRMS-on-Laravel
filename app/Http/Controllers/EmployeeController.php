@@ -330,21 +330,6 @@ class EmployeeController extends Controller
                         'remaining_other_leave_in_days' => $leaveData->other_leave_in_days ?? 0,
                         'remaining_other_leave_in_hours' => $leaveData->other_leave_in_hours ?? 0,
                     ]);
-                    LeaveTracker::create([
-                        'financial_year_id' => $financialYear->id,
-                        'username' => $validated['username'],
-                        'employee_id' => $employee->id,
-                        'remaining_cl_days' => $leaveData->cl_days ?? 0,
-                        'remaining_cl_hours' => $leaveData->cl_hours ?? 0,
-                        'remaining_ei_days' => $leaveData->ei_days ?? 0,
-                        'remaining_ei_hours' => $leaveData->ei_hours ?? 0,
-                        'remaining_lwp_days' => $leaveData->lwp_days ?? 0,
-                        'remaining_lwp_hours' => $leaveData->lwp_hours ?? 0,
-                        'remaining_medical_leave_in_days' => $leaveData->medical_leave_in_days ?? 0,
-                        'remaining_medical_leave_in_hours' => $leaveData->medical_leave_in_hours ?? 0,
-                        'remaining_other_leave_in_days' => $leaveData->other_leave_in_days ?? 0,
-                        'remaining_other_leave_in_hours' => $leaveData->other_leave_in_hours ?? 0,
-                    ]);
                 }
             }
         } catch (\Exception $e) {

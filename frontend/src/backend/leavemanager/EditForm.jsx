@@ -27,18 +27,30 @@ export default function AddForm({ onClick, eventid, uname, eid }) {
 
   const leaveCalcApi = async () => {
     // starting
-    await axios
-      .get(baseURL + "leave/calculator/username/" + uname)
-      .then(function (response) {
-        seRremainingClDays(response.data[0].remaining_cl_days || response.data[0].remaining_CL_Days);
-        setRemainingEiDays(response.data[0].remaining_ei_days || response.data[0].remaining_EI_Days);
-        setRemainingLwpDays(response.data[0].remaining_lwp_days || response.data[0].remaining_LWP_Days);
-        setRemainingOtherDays(response.data[0].remaining_other_leave_in_days);
+    try {
+      const response = await axios.get(baseURL + "leave/calculator/username/" + uname);
+      console.log("Leave calculator API response:", response.data);
+      
+      if (response.data && response.data.length > 0) {
+        const data = response.data[0];
+        seRremainingClDays(data.remaining_cl_days || data.remaining_CL_Days || 0);
+        setRemainingEiDays(data.remaining_ei_days || data.remaining_EI_Days || 0);
+        setRemainingLwpDays(data.remaining_lwp_days || data.remaining_LWP_Days || 0);
+        setRemainingOtherDays(data.remaining_other_leave_in_days || 0);
         setShowform(true);
-      })
-      .catch(function (error) {
-        console.log("kcheckpost" + error); //return 429
-      });
+      } else {
+        console.error("No leave calculator data found for user:", uname);
+        toast.error("No leave data found for this employee");
+      }
+    } catch (error) {
+      console.error("Leave calculator API error:", error);
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        toast.error(error.response.data.error || "Failed to load leave data");
+      } else {
+        toast.error("Failed to connect to server");
+      }
+    }
     // ending
   };
 
@@ -68,36 +80,48 @@ export default function AddForm({ onClick, eventid, uname, eid }) {
       };
 
       // starting
-      await axios
-        .put(baseURL + "leave/calculator/" + eventid, updateData)
-        .then(function (response) {
-          console.log("Employee post: " + JSON.stringify(response.data));
-          toast.success("Your data is submitted!", {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: true,
-            toastId: "id",
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-          });
-          manageleaveApi();
-          onClick();
-        })
-        .catch(function (error) {
-          console.log("kcheckpost" + error); //return 429
-          toast.error("Something went wrong!", {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: true,
-            toastId: "id",
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-          });
+      try {
+        const response = await axios.put(baseURL + "leave/calculator/" + eventid, updateData);
+        console.log("Update response:", response.data);
+        toast.success("Leave data updated successfully!", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: true,
+          toastId: "id",
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
         });
+        manageleaveApi();
+        onClick();
+      } catch (error) {
+        console.error("Update error:", error);
+        if (error.response) {
+          console.error("Error response:", error.response.data);
+          toast.error(error.response.data.message || "Failed to update leave data", {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            toastId: "id",
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          });
+        } else {
+          toast.error("Failed to connect to server", {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            toastId: "id",
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          });
+        }
+      }
       // ending
       // formik.resetForm();
     },
