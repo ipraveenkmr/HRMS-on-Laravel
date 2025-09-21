@@ -39,7 +39,7 @@ class _LeavePageState extends State<LeavePage> {
   getLeave() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('username').toString();
-    var response = await Dio().get(link + "leave/calculator/" + username + "/");
+    var response = await Dio().get(link + "leave/calculator/" + username);
     print('Leave: ' + response.data[0]['remaining_CL_Days'].toString());
     setState(() {
       remaining_CL_Days = response.data[0]['remaining_CL_Days'].toString();
@@ -53,7 +53,7 @@ class _LeavePageState extends State<LeavePage> {
   getUsers() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('username').toString();
-    var response = await Dio().get(link + "leave/employee/" + username + "/");
+    var response = await Dio().get(link + "leave/employee/" + username);
     return response.data;
   }
 

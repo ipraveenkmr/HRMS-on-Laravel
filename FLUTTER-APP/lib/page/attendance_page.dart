@@ -67,7 +67,7 @@ class _AttendancePageState extends State<AttendancePage> {
   getUsers() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String uname = prefs.getString('username').toString();
-    var response = await Dio().get(link + "attendance/employee/" + uname + "/");
+    var response = await Dio().get(link + "attendance/employee/" + uname);
     return response.data;
   }
 
@@ -296,7 +296,7 @@ class _AttendancePageState extends State<AttendancePage> {
 
     if (workmode == 'Field') {
       try {
-        var response = await Dio().post(link + 'attendance/', data: {
+        var response = await Dio().post(link + 'attendance', data: {
           'employee_id': e_id,
           'attendance_date': login_year + "-" + login_month + "-" + login_date,
           'username': username,
@@ -328,7 +328,7 @@ class _AttendancePageState extends State<AttendancePage> {
     } else if (workmode == 'Office') {
       if (companylongitude?.substring(0, 5) == longitude.substring(0, 5)) {
         try {
-          var response = await Dio().post(link + 'attendance/', data: {
+          var response = await Dio().post(link + 'attendance', data: {
             'employee_id': e_id,
             'attendance_date':
                 login_year + "-" + login_month + "-" + login_date,

@@ -32,7 +32,7 @@ class _AssetPageState extends State<AssetPage> {
   getUsers() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('username').toString();
-    var response = await Dio().get(link + "assets/allocations/employee/" + username + "/");
+    var response = await Dio().get(link + "assets-allocations/employee/" + username);
     return response.data;
   }
 

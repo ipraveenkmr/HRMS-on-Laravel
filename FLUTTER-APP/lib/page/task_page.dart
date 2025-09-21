@@ -31,7 +31,7 @@ class _TaskPageState extends State<TaskPage> {
   getUsers() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('username').toString();
-    var response = await Dio().get(link + "tasks/employee/" + username + "/");
+    var response = await Dio().get(link + "tasks/employee/" + username);
     return response.data;
   }
 

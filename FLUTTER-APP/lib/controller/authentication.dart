@@ -23,7 +23,7 @@ String login_year = "";
 
 Future<String> getCompanyDetails() async {
   try {
-    var response = await Dio().get(link + 'companies/companies/');
+    var response = await Dio().get(link + 'companies');
     if (response.statusCode == 200) {
       print('company details' + response.data[0]['company_name'].toString());
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -50,7 +50,7 @@ Future<String> applyLoan(String amount, String period, String purpose) async {
   String? empid = prefs.getString('empid');
 
   try {
-    var response = await Dio().post(link + 'loans/', data: {
+    var response = await Dio().post(link + 'loans', data: {
       'employee_id': int.parse(empid!),
       'department_id': empdepartment,
       'username': uname,
@@ -80,7 +80,7 @@ Future<String> dailyTask(
   String? empid = prefs.getString('empid');
 
   try {
-    var response = await Dio().post(link + 'daily-tasks/', data: {
+    var response = await Dio().post(link + 'daily-tasks', data: {
       'employee_id': int.parse(empid!),
       'department_id': empdepartment,
       'username': uname,
@@ -142,7 +142,7 @@ Future<String> applyLeave(String from, String to, String reason) async {
   String? empdepartment = prefs.getString('empdepartment');
 
   try {
-    var response = await Dio().post(link + 'leave/', data: {
+    var response = await Dio().post(link + 'leave', data: {
       'employee_id': empid,
       'username': uname,
       'department_id': empdepartment,
@@ -197,7 +197,7 @@ Future<String> updateAttendance(String logoutAt, String login_year,
 
   if (workmode == 'Field') {
     try {
-      var response = await Dio().post(link + 'attendance/', data: {
+      var response = await Dio().post(link + 'attendance', data: {
         'id': aid,
         'employee_id': e_id,
         'attendance_date': adate,
@@ -225,7 +225,7 @@ Future<String> updateAttendance(String logoutAt, String login_year,
         companylongitude.length >= 5 && longitude.length >= 5 &&
         companylongitude.substring(0, 5) == longitude.substring(0, 5)) {
       try {
-        var response = await Dio().post(link + 'attendance/', data: {
+        var response = await Dio().post(link + 'attendance', data: {
           'id': aid,
           'employee_id': e_id,
           'attendance_date': adate,
@@ -258,7 +258,7 @@ Future<String> updateAttendance(String logoutAt, String login_year,
 
 Future<String> userlogin(String email, String password) async {
   try {
-    var response = await Dio().post(link + 'auth/token/', data: {
+    var response = await Dio().post(link + 'auth/token', data: {
       'username': email,
       'password': password,
     });
@@ -277,7 +277,7 @@ Future<String> userlogin(String email, String password) async {
 
 Future<String> getUserDetails(String email) async {
   try {
-    var response = await Dio().get(link + 'employees/username/' + email + "/");
+    var response = await Dio().get(link + 'employees/username/' + email);
     if (response.statusCode == 200) {
       print(response.data[0]['longitude'].toString());
       print(response.data[0]['latitude'].toString());
@@ -310,7 +310,7 @@ Future<String> getUserDetails(String email) async {
 
 Future<String> checkUserDetails(String email) async {
   try {
-    var response = await Dio().get(link + 'employees/username/' + email + "/");
+    var response = await Dio().get(link + 'employees/username/' + email);
     if (response.statusCode == 200) {
       print(response.data[0]['id'].toString());
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -343,7 +343,7 @@ Future<String> checkAttendance(String uname, String login_year,
   print('adate: ' + adate);
   try {
     var response = await Dio()
-        .get(link + 'attendance/' + adate + "/" + uname + "/");
+        .get(link + 'attendance/check/' + adate + "/" + uname);
     if (response.statusCode == 200) {
       aid = response.data[0]['id'];
       e_id = response.data[0]['employee'].toString();
