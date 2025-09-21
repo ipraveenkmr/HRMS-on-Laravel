@@ -338,7 +338,13 @@ const EmployeeManagement = () => {
     };
 
     const getManagerEmployees = () => {
-        return employees.filter((emp) => emp.emp_type === "Manager");
+        // Show employees who can be managers: Manager, Admin, or any employee
+        // Exclude the employee being edited from being their own manager
+        return employees.filter((emp) => {
+            const canBeManager = emp.emp_type === "Manager" || emp.emp_type === "Admin" || emp.emp_type === "Employee";
+            const isNotSelf = !editingEmployee || emp.id !== editingEmployee.id;
+            return canBeManager && isNotSelf;
+        });
     };
 
     return (
