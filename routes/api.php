@@ -132,7 +132,7 @@ Route::prefix('/assets')->group(function () {
     Route::delete('/{asset_id}', [AssetController::class, 'destroy']);
     Route::get('/employee/{username}', [AssetController::class, 'getEmployeeAssets']);
     Route::get('/department/{dept_id}', [AssetController::class, 'getAssetsByDepartment']);
-    Route::get('/manager/{manager_id}', [AssetController::class, 'getAssetsByManager']);
+    Route::get('/manager/{manager_id}', [AssetController::class, 'getAllocationsByManager']);
     Route::get('/category/{category_id}', [AssetController::class, 'getAssetsByCategory']);
 });
 
