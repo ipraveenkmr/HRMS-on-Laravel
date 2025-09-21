@@ -29,7 +29,7 @@ class EmployeeController extends Controller
         $currentDate = Carbon::now();
         $currentYear = $currentDate->year;
         $currentMonth = $currentDate->month;
-        
+
         // Financial year typically runs from April to March
         // If current month is Jan-Mar, we're in the second year of the financial year
         // If current month is Apr-Dec, we're in the first year of the financial year
@@ -42,7 +42,7 @@ class EmployeeController extends Controller
             $fyStart = $currentYear - 1;
             $fyEnd = $currentYear;
         }
-        
+
         // Try multiple possible formats for financial year string
         $possibleFormats = [
             $fyStart . '-' . $fyEnd,           // e.g., "2024-2025"
@@ -50,14 +50,14 @@ class EmployeeController extends Controller
             (string)$fyStart,                   // e.g., "2024"
             (string)$fyEnd                      // e.g., "2025"
         ];
-        
+
         foreach ($possibleFormats as $format) {
             $financialYear = FinancialYear::where('year', $format)->first();
             if ($financialYear) {
                 return $financialYear;
             }
         }
-        
+
         // If no specific financial year found, try to get any available financial year
         return FinancialYear::first();
     }
@@ -443,17 +443,77 @@ class EmployeeController extends Controller
             'emp_name' => 'sometimes|string|max:200',
             'company_name_id' => 'sometimes|exists:company_details,id',
             'branch_name_id' => 'sometimes|exists:branch_details,id',
-            'emp_email' => 'nullable|email|max:99',
-            'gender' => ['nullable', Rule::in(['Male', 'Female', 'Other'])],
+            'longitude' => 'nullable|string|max:99',
+            'latitude' => 'nullable|string|max:99',
             'work_mode' => ['nullable', Rule::in(['Office', 'Field'])],
-            'qualification' => ['nullable', Rule::in(['Under Graduate', 'Graduate', 'Post Graduate'])],
+            'emp_email' => 'nullable|email|max:99',
+            'emp_phone' => 'nullable|string|max:99',
+            'emp_emergency_phone' => 'nullable|string|max:99',
+            'gender' => ['nullable', Rule::in(['Male', 'Female', 'Other'])],
+            'father_husband_name' => 'nullable|string|max:99',
+            'mothers_name' => 'nullable|string|max:99',
+            'permanent_address' => 'nullable|string',
+            'present_address' => 'nullable|string',
+            'city' => 'nullable|string|max:99',
+            'state' => 'nullable|string|max:99',
+            'pincode' => 'nullable|string|max:99',
+            'pan' => 'nullable|string|max:99',
+            'aadhaar' => 'nullable|string|max:99',
+            'dob' => 'nullable|date',
+            'emp_no' => 'nullable|string|max:99',
             'department_id' => 'sometimes|exists:departments,id',
+            'designation' => 'nullable|string|max:99',
             'emp_type' => ['nullable', Rule::in(['Employee', 'Manager', 'Asset Admin', 'Admin'])],
             'job_type' => ['nullable', Rule::in(['Permanent', 'Contractual'])],
+            'probation_period_in_month' => 'nullable|integer|min:0',
+            'emp_file_no' => 'nullable|string|max:99',
+            'pf_account_number_uan' => 'nullable',
+            'esi_account_number' => 'nullable',
             'emp_status' => ['nullable', Rule::in(['Working', 'Resigned', 'Notice Period'])],
+            'full_and_final_settlement' => 'nullable',
+            'emp_joining_date' => 'nullable|date',
+            'emp_resignation_date' => 'nullable|date',
+            'emp_last_working_date' => 'nullable|date',
             'pay_grade_id' => 'sometimes|exists:pay_grades,id',
             'gross_salary' => 'nullable|integer|min:0',
+            'ctc' => 'nullable',
+            'pf' => 'nullable',
+            'esi' => 'nullable',
+            'bank_name' => 'nullable|string|max:99',
+            'bank_account_number' => 'nullable|string|max:99',
+            'ifsc_code' => 'nullable|string|max:99',
+            'bank_branch' => 'nullable|string|max:99',
+            'bank_city' => 'nullable|string|max:99',
+            'qualification' => ['nullable', Rule::in(['Under Graduate', 'Graduate', 'Post Graduate'])],
+            'specialization' => 'nullable|string|max:99',
+            'board_university' => 'nullable|string|max:99',
+            'name_of_course' => 'nullable|string|max:99',
+            'passing_year' => 'nullable|string|max:99',
+            'employer' => 'nullable|string|max:99',
+            'job_title' => 'nullable|string|max:99',
+            'comment' => 'nullable|string',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'reference_name' => 'nullable|string|max:99',
+            'reference_designation' => 'nullable|string|max:99',
+            'reference_department' => 'nullable|string|max:99',
+            'reference_contact' => 'nullable|string|max:99',
+            'reference_email' => 'nullable|email|max:99',
+            'reference_name_if_any' => 'nullable|string|max:99',
+            'reference_designation_if_any' => 'nullable|string|max:99',
+            'reference_department_if_any' => 'nullable|string|max:99',
+            'reference_contact_if_any' => 'nullable|string|max:99',
+            'reference_email_if_any' => 'nullable|email|max:99',
+            'photo' => 'nullable|string',
+            'aadhaar_pic' => 'nullable|string',
+            'pan_pic' => 'nullable|string',
+            'isbasicpay' => 'nullable|boolean',
+            'uan_number' => 'nullable|string|max:99',
             'manager_id' => 'nullable|exists:employees,id',
+            'pf_employee_percent' => 'nullable',
+            'pf_employer_percent' => 'nullable',
+            'esi_employee_percent' => 'nullable',
+            'esi_employer_percent' => 'nullable',
         ]);
 
         $employee->update($validated);

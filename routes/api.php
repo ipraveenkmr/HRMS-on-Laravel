@@ -40,6 +40,7 @@ Route::prefix('/employees')->group(function () {
     Route::get('/', [EmployeeController::class, 'index']);
     Route::post('/', [EmployeeController::class, 'store']);
     Route::get('/username/{username}', [EmployeeController::class, 'getEmployeeByUsername']);
+    Route::put('/username/{username}', [EmployeeController::class, 'updateByUsername']);
     Route::get('/department/{dept_id}', [EmployeeController::class, 'getEmployeesByDepartment']);
     Route::get('/manager/{manager_id}', [EmployeeController::class, 'getEmployeesByManager']);
     Route::post('/upload-profile-picture', [EmployeeController::class, 'uploadProfilePicture']);
