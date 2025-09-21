@@ -297,7 +297,7 @@ export default function Attendance() {
 
     if (event.target.value) {
       await axios
-        .get(baseURL + "attendance/manager/" + event.target.value + "/")
+        .get(baseURL + "attendance/manager/" + event.target.value)
         .then(function (response) {
           updateAttendance(response.data);
         })

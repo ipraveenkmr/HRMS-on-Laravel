@@ -153,7 +153,7 @@ export default function Attendance() {
   const attendanceApi = async () => {
     // starting
     await axios
-      .get(baseURL + "attendance/manager/" + emp_id + "/")
+      .get(baseURL + "attendance/manager/" + emp_id)
       .then(function (response) {
         console.log("attendance: " + JSON.stringify(response.data));
         updateAttendance(response.data);
@@ -223,7 +223,7 @@ export default function Attendance() {
 
     if (event.target.value) {
       await axios
-        .get(baseURL + "attendance/manager/" + emp_id + "/")
+        .get(baseURL + "attendance/manager/" + emp_id)
         .then(function (response) {
           console.log("taskbydept: " + JSON.stringify(response.data));
           updateAttendance(response.data);
