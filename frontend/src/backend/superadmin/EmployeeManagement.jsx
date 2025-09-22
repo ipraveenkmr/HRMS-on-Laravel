@@ -44,6 +44,7 @@ const EmployeeManagement = () => {
         pay_grade_id: "",
         manager_id: "",
         emp_type: "Employee",
+        is_edit: false, // ✅ New PF checkbox field
     });
 
     const baseURL = process.env.REACT_APP_API_URL;
@@ -196,6 +197,7 @@ const EmployeeManagement = () => {
             pay_grade_id: "",
             manager_id: "",
             emp_type: "Employee",
+            is_edit: false, // ✅ reset PF field
         });
     };
 
@@ -222,6 +224,7 @@ const EmployeeManagement = () => {
                 : "",
             manager_id: employee.manager_id || "",
             emp_type: employee.emp_type || "Employee",
+            is_edit: employee.is_edit || false, // ✅ load PF
         });
         setIsAddModalOpen(true);
     };
@@ -341,7 +344,10 @@ const EmployeeManagement = () => {
         // Show employees who can be managers: Manager, Admin, or any employee
         // Exclude the employee being edited from being their own manager
         return employees.filter((emp) => {
-            const canBeManager = emp.emp_type === "Manager" || emp.emp_type === "Admin" || emp.emp_type === "Employee";
+            const canBeManager =
+                emp.emp_type === "Manager" ||
+                emp.emp_type === "Admin" ||
+                emp.emp_type === "Employee";
             const isNotSelf = !editingEmployee || emp.id !== editingEmployee.id;
             return canBeManager && isNotSelf;
         });
@@ -767,6 +773,25 @@ const EmployeeManagement = () => {
                                             )}
                                         </select>
                                     </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <label className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            name="is_edit"
+                                            checked={formData.is_edit}
+                                            onChange={(e) =>
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    is_edit: e.target.checked,
+                                                }))
+                                            }
+                                        />
+                                        <span className="text-sm">
+                                            Lock Form Editing
+                                        </span>
+                                    </label>
                                 </div>
 
                                 <div className="flex gap-2 pt-4">

@@ -75,6 +75,7 @@ class Employee extends Model
         'bank_branch',
         'bank_city',
         'pf',
+        'is_edit',
         'esi',
         'photo',
         'aadhaar_pic',

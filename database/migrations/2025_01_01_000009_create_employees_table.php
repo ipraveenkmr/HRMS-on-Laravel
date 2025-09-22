@@ -21,6 +21,7 @@ return new class extends Migration
             $table->enum('gender', ['Male', 'Female', 'Other'])->default('Male');
             $table->string('father_husband_name', 99)->nullable();
             $table->string('mothers_name', 99)->nullable();
+            $table->string('is_edit', 99)->nullable();
             $table->text('permanent_address')->nullable();
             $table->text('present_address')->nullable();
             $table->string('city', 99)->nullable();
