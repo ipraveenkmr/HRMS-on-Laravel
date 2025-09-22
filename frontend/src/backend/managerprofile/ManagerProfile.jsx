@@ -134,6 +134,7 @@ export default function ManagerProfile() {
   const updateStPfAccountNo = useemployeeStore((state) => state.updateStPfAccountNo);
   const updateStEsiAccountNo = useemployeeStore((state) => state.updateStEsiAccountNo);
   const updateUanNumber = useemployeeStore((state) => state.updateUanNumber);
+  const updateIsEdit = useemployeeStore((state) => state.updateIsEdit);
   const updateStStatus = useemployeeStore((state) => state.updateStStatus);
   const updateStFullNfinal = useemployeeStore((state) => state.updateStFullNfinal);
   const updateStJoiningdate = useemployeeStore((state) => state.updateStJoiningdate);
@@ -184,6 +185,7 @@ export default function ManagerProfile() {
       const response = await axios.get(baseURL + "employees/username/" + username);
       if (response.data && response.data.length > 0) {
         const emp = response.data[0];
+        console.log('emp00 ', emp);
         // Populate employee store with current data
         updateStUsername(emp.username || "");
         updateStCompany(emp.company_name_id || "");
@@ -214,6 +216,7 @@ export default function ManagerProfile() {
         updateStPfAccountNo(emp.pf_account_number_uan || "");
         updateStEsiAccountNo(emp.esi_account_number || "");
         updateUanNumber(emp.uan_number || "");
+        updateIsEdit(emp.is_edit || "");
         updateStStatus(emp.emp_status || "");
         updateStFullNfinal(emp.full_and_final || "");
         updateStJoiningdate(emp.start_date || "");
@@ -445,7 +448,7 @@ export default function ManagerProfile() {
         My Details - Manager Profile
       </Typography>
       
-      {!isEditMode && is_edit === 0 ? (
+      {!isEditMode && is_edit === "0" ? (
         <Box sx={{ textAlign: 'center', mb: 1 }}>
           <Typography variant="body1" sx={{ mb: 1 }}>
             View and update your personal information
