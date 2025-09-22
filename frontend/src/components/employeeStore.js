@@ -75,6 +75,7 @@ let employeeStore = (set) => ({
   st_longitude: "",
   st_latitude: "",
   st_company: "",
+  is_edit: 0,
   isbasicpay: false,
   uannumber: "",
   updateUanNumber: (uannumber) => set((state) => ({ uannumber: uannumber })),
@@ -208,6 +209,7 @@ let employeeStore = (set) => ({
   updateStAadharPic: (st_aadhar_pic) =>
     set((state) => ({ st_aadhar_pic: st_aadhar_pic })),
   updateStPanPic: (st_pan_pic) => set((state) => ({ st_pan_pic: st_pan_pic })),
+  updateIsEdit: (is_edit) => set((state) => ({ is_edit: is_edit })),
 });
 
 employeeStore = persist(employeeStore, { name: "cdot_empstore_api" });
