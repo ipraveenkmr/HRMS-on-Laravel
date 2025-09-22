@@ -102,6 +102,7 @@ export default function ManagerProfile() {
   const st_profile_pic = useemployeeStore((state) => state.st_profile_pic);
   const st_aadhar_pic = useemployeeStore((state) => state.st_aadhar_pic);
   const st_pan_pic = useemployeeStore((state) => state.st_pan_pic);
+  const is_edit = useemployeeStore((state) => state.is_edit);
 
   // Employee store actions
   const updateStUsername = useemployeeStore((state) => state.updateStUsername);
@@ -444,7 +445,7 @@ export default function ManagerProfile() {
         My Details - Manager Profile
       </Typography>
       
-      {!isEditMode ? (
+      {!isEditMode && is_edit === 0 ? (
         <Box sx={{ textAlign: 'center', mb: 1 }}>
           <Typography variant="body1" sx={{ mb: 1 }}>
             View and update your personal information
