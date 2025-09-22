@@ -357,6 +357,8 @@ const TravelExpenseList = ({
         </Box>
       </Box>
 
+      {isAdmin && (
+      <>
       {/* Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={2.4}>
@@ -420,6 +422,8 @@ const TravelExpenseList = ({
           </Card>
         </Grid>
       </Grid>
+      </>
+      )}
 
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>
