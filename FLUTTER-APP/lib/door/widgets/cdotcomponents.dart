@@ -56,7 +56,7 @@ class CdotComponents{
               ),
               child: Container(
                 alignment: Alignment.bottomLeft,
-                child: Text("HAION",
+                child: Text("CodingMSTR",
                   style: TextStyle(fontSize: 25,color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
