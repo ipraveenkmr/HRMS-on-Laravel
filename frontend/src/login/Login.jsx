@@ -268,7 +268,6 @@ export default function Login() {
                             order: { xs: 2, md: 1 },
                             alignSelf: { xs: "stretch", md: "flex-start" },
                         }}
-                        style={{ marginTop: "100px" }}
                     >
                         <Box
                             sx={{

@@ -21,40 +21,183 @@ class DatabaseSeeder extends Seeder
     {
         // Create basic master data first
         $this->createMasterData();
-        
+
+        // Create financial years and leaves
+        $this->call([
+            FinancialYearSeeder::class,
+            LeaveSeeder::class,
+        ]);
+
+        // Create asset categories and assets
+        $this->call([
+            AssetCategorySeeder::class,
+            AssetSeeder::class,
+        ]);
+
         // Create the specific users as requested
         $this->createDefaultUsers();
-        
+
         // Create generic role-based users
         $this->createGenericRoleUsers();
-        
+
         // Create additional employees (22 more to total 25)
         $this->createAdditionalEmployees();
-        
+
         // Create additional employee details
         EmployeeDetails::factory(10)->create();
     }
 
     private function createMasterData()
     {
-        // Create Company
-        $company = CompanyDetail::create([
-            'company_name' => 'TrickuWeb Technologies',
-            'company_address' => 'Tech Park, Bangalore, Karnataka, India',
-            'support_email' => 'support@trickuweb.com',
-            'longitude' => 77.5946,
-            'latitude' => 12.9716,
-            'status' => 'Active'
-        ]);
+        // Create Companies
+        $companies = [
+            [
+                'company_name' => 'TrickuWeb Technologies',
+                'company_address' => 'Tech Park, Bangalore, Karnataka, India',
+                'support_email' => 'support@trickuweb.com',
+                'longitude' => 77.5946,
+                'latitude' => 12.9716,
+                'status' => 'Active'
+            ],
+            [
+                'company_name' => 'InnovateSoft Solutions',
+                'company_address' => 'IT Hub, Hyderabad, Telangana, India',
+                'support_email' => 'support@innovatesoft.com',
+                'longitude' => 78.4867,
+                'latitude' => 17.3850,
+                'status' => 'Active'
+            ],
+            [
+                'company_name' => 'TechForward India',
+                'company_address' => 'Cyber City, Pune, Maharashtra, India',
+                'support_email' => 'help@techforward.in',
+                'longitude' => 73.8567,
+                'latitude' => 18.5204,
+                'status' => 'Active'
+            ],
+            [
+                'company_name' => 'Digital Dynamics Corp',
+                'company_address' => 'Software Park, Chennai, Tamil Nadu, India',
+                'support_email' => 'contact@digitaldynamics.com',
+                'longitude' => 80.2707,
+                'latitude' => 13.0827,
+                'status' => 'Active'
+            ],
+            [
+                'company_name' => 'NextGen Systems',
+                'company_address' => 'Tech Valley, Noida, Uttar Pradesh, India',
+                'support_email' => 'info@nextgensys.com',
+                'longitude' => 77.3910,
+                'latitude' => 28.5355,
+                'status' => 'Active'
+            ]
+        ];
 
-        // Create Branch
-        $branch = BranchDetail::create([
-            'company_name_id' => $company->id,
-            'branch_name' => 'Bangalore Main Branch',
-            'branch_address' => 'Tech Park, Bangalore, Karnataka, India',
-            'longitude' => 77.5946,
-            'latitude' => 12.9716
-        ]);
+        $createdCompanies = [];
+        foreach ($companies as $companyData) {
+            $createdCompanies[] = CompanyDetail::create($companyData);
+        }
+
+        // Get the main company for backwards compatibility
+        $company = $createdCompanies[0];
+
+        // Create Branches for all companies
+        $branches = [
+            // TrickuWeb Technologies branches
+            [
+                'company_name_id' => $createdCompanies[0]->id,
+                'branch_name' => 'Bangalore Main Branch',
+                'branch_address' => 'Tech Park, Bangalore, Karnataka, India',
+                'longitude' => 77.5946,
+                'latitude' => 12.9716
+            ],
+            [
+                'company_name_id' => $createdCompanies[0]->id,
+                'branch_name' => 'Bangalore North Branch',
+                'branch_address' => 'Manyata Tech Park, Bangalore, Karnataka, India',
+                'longitude' => 77.6211,
+                'latitude' => 13.0389
+            ],
+            [
+                'company_name_id' => $createdCompanies[0]->id,
+                'branch_name' => 'Mumbai Branch',
+                'branch_address' => 'BKC, Mumbai, Maharashtra, India',
+                'longitude' => 72.8777,
+                'latitude' => 19.0760
+            ],
+
+            // InnovateSoft Solutions branches
+            [
+                'company_name_id' => $createdCompanies[1]->id,
+                'branch_name' => 'Hyderabad Main Branch',
+                'branch_address' => 'HITEC City, Hyderabad, Telangana, India',
+                'longitude' => 78.4867,
+                'latitude' => 17.3850
+            ],
+            [
+                'company_name_id' => $createdCompanies[1]->id,
+                'branch_name' => 'Hyderabad Gachibowli Branch',
+                'branch_address' => 'Gachibowli, Hyderabad, Telangana, India',
+                'longitude' => 78.3682,
+                'latitude' => 17.4399
+            ],
+
+            // TechForward India branches
+            [
+                'company_name_id' => $createdCompanies[2]->id,
+                'branch_name' => 'Pune Main Branch',
+                'branch_address' => 'Hinjewadi Phase 1, Pune, Maharashtra, India',
+                'longitude' => 73.7279,
+                'latitude' => 18.5912
+            ],
+            [
+                'company_name_id' => $createdCompanies[2]->id,
+                'branch_name' => 'Pune Magarpatta Branch',
+                'branch_address' => 'Magarpatta City, Pune, Maharashtra, India',
+                'longitude' => 73.9297,
+                'latitude' => 18.5157
+            ],
+
+            // Digital Dynamics Corp branches
+            [
+                'company_name_id' => $createdCompanies[3]->id,
+                'branch_name' => 'Chennai Main Branch',
+                'branch_address' => 'OMR, Chennai, Tamil Nadu, India',
+                'longitude' => 80.2482,
+                'latitude' => 12.8406
+            ],
+            [
+                'company_name_id' => $createdCompanies[3]->id,
+                'branch_name' => 'Chennai Thoraipakkam Branch',
+                'branch_address' => 'Thoraipakkam, Chennai, Tamil Nadu, India',
+                'longitude' => 80.2410,
+                'latitude' => 12.9398
+            ],
+
+            // NextGen Systems branches
+            [
+                'company_name_id' => $createdCompanies[4]->id,
+                'branch_name' => 'Noida Main Branch',
+                'branch_address' => 'Sector 62, Noida, Uttar Pradesh, India',
+                'longitude' => 77.3674,
+                'latitude' => 28.6273
+            ],
+            [
+                'company_name_id' => $createdCompanies[4]->id,
+                'branch_name' => 'Gurgaon Branch',
+                'branch_address' => 'Cyber Hub, Gurgaon, Haryana, India',
+                'longitude' => 77.0688,
+                'latitude' => 28.4595
+            ]
+        ];
+
+        $createdBranches = [];
+        foreach ($branches as $branchData) {
+            $createdBranches[] = BranchDetail::create($branchData);
+        }
+
+        // Get the main branch for backwards compatibility
+        $branch = $createdBranches[0];
 
         // Create Departments
         $departments = [
