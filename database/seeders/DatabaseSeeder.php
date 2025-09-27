@@ -50,6 +50,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AttendanceSeeder::class,
         ]);
+
+        // Create comprehensive HR data
+        $this->call([
+            ComprehensiveDataSeeder::class,
+        ]);
     }
 
     private function createMasterData()
