@@ -13,6 +13,7 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\BranchController;
+use App\Http\Middleware\DemoRestriction;
 
 // Root route
 Route::get('/', [HRMSController::class, 'index']);
@@ -22,21 +23,24 @@ Route::get('/health', function () {
     return response()->json(['status' => 'healthy']);
 });
 
-// Authentication routes (public)
+// Authentication routes (public) - Login allowed, others protected
 Route::prefix('/auth')->group(function () {
-    Route::post('/signup', [AuthController::class, 'signup']);
+    // Login route - allowed for demo authentication
     Route::post('/token', [AuthController::class, 'login']);
     Route::get('/users', [AuthController::class, 'getUsers']);
-    Route::put('/users/{user_id}', [AuthController::class, 'updateUser']);
-    Route::put('/users/username/{username}', [AuthController::class, 'updateUserByUsername']);
-    Route::post('/users/{user_id}/reset-password', [AuthController::class, 'resetUserPassword']);
-    Route::post('/users/username/{username}/reset-password', [AuthController::class, 'resetPasswordByUsername']);
-    Route::delete('/users/{user_id}', [AuthController::class, 'deleteUser']);
+    
+    // Other auth routes - protected by demo restriction
+    Route::post('/signup', [AuthController::class, 'signup'])->middleware(DemoRestriction::class);
+    Route::put('/users/{user_id}', [AuthController::class, 'updateUser'])->middleware(DemoRestriction::class);
+    Route::put('/users/username/{username}', [AuthController::class, 'updateUserByUsername'])->middleware(DemoRestriction::class);
+    Route::post('/users/{user_id}/reset-password', [AuthController::class, 'resetUserPassword'])->middleware(DemoRestriction::class);
+    Route::post('/users/username/{username}/reset-password', [AuthController::class, 'resetPasswordByUsername'])->middleware(DemoRestriction::class);
+    Route::delete('/users/{user_id}', [AuthController::class, 'deleteUser'])->middleware(DemoRestriction::class);
 });
 
 // Employee routes (protected)
-Route::prefix('/employees')->group(function () {
-// Route::prefix('/employees')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/employees')->middleware(DemoRestriction::class)->group(function () {
+    // Route::prefix('/employees')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [EmployeeController::class, 'index']);
     Route::post('/', [EmployeeController::class, 'store']);
     Route::get('/username/{username}', [EmployeeController::class, 'getEmployeeByUsername']);
@@ -57,7 +61,7 @@ Route::prefix('/employees')->group(function () {
 });
 
 // Attendance routes (protected)
-Route::prefix('/attendance')->group(function () {
+Route::prefix('/attendance')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [AttendanceController::class, 'index']);
     Route::post('/', [AttendanceController::class, 'store']);
     Route::get('/{attendance_id}', [AttendanceController::class, 'show']);
@@ -72,7 +76,7 @@ Route::prefix('/attendance')->group(function () {
 });
 
 // Tasks routes (protected)
-Route::prefix('/tasks')->group(function () {
+Route::prefix('/tasks')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [TaskController::class, 'index']);
     Route::post('/', [TaskController::class, 'store']);
     Route::get('/{task_id}', [TaskController::class, 'show']);
@@ -84,7 +88,7 @@ Route::prefix('/tasks')->group(function () {
 });
 
 // Daily Tasks routes (protected)
-Route::prefix('/daily-tasks')->group(function () {
+Route::prefix('/daily-tasks')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [TaskController::class, 'indexDailyTasks']);
     Route::post('/', [TaskController::class, 'storeDailyTask']);
     Route::get('/{task_id}', [TaskController::class, 'showDailyTask']);
@@ -96,7 +100,7 @@ Route::prefix('/daily-tasks')->group(function () {
 });
 
 // Leave routes (protected)
-Route::prefix('/leave')->group(function () {
+Route::prefix('/leave')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [LeaveController::class, 'index']);
     Route::post('/', [LeaveController::class, 'store']);
     Route::get('/{leave_id}', [LeaveController::class, 'show']);
@@ -113,10 +117,10 @@ Route::prefix('/leave')->group(function () {
 
 // Leave Management route
 Route::get('/manageleave', [LeaveController::class, 'getManageLeave']);
-Route::post('/initialize-leave-calculators', [LeaveController::class, 'initializeAllEmployeeLeaveCalculators']);
+Route::post('/initialize-leave-calculators', [LeaveController::class, 'initializeAllEmployeeLeaveCalculators'])->middleware(DemoRestriction::class);
 
 // Leave Configuration routes (for Super Admin)
-Route::prefix('/leave-config')->group(function () {
+Route::prefix('/leave-config')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [LeaveController::class, 'indexLeaveConfig']);
     Route::post('/', [LeaveController::class, 'storeLeaveConfig']);
     Route::get('/{leave_id}', [LeaveController::class, 'showLeaveConfig']);
@@ -125,7 +129,7 @@ Route::prefix('/leave-config')->group(function () {
 });
 
 // Assets routes (protected)
-Route::prefix('/assets')->group(function () {
+Route::prefix('/assets')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [AssetController::class, 'index']);
     Route::post('/', [AssetController::class, 'store']);
     Route::get('/{asset_id}', [AssetController::class, 'show']);
@@ -138,7 +142,7 @@ Route::prefix('/assets')->group(function () {
 });
 
 // Asset Allocations routes (protected)
-Route::prefix('/asset-allocations')->group(function () {
+Route::prefix('/asset-allocations')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [AssetController::class, 'indexAllocations']);
     Route::post('/', [AssetController::class, 'storeAllocation']);
     Route::get('/{allocation_id}', [AssetController::class, 'showAllocation']);
@@ -149,7 +153,7 @@ Route::prefix('/asset-allocations')->group(function () {
 });
 
 // Asset Categories routes (protected)
-Route::prefix('/asset-categories')->group(function () {
+Route::prefix('/asset-categories')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [AssetController::class, 'indexCategories']);
     Route::post('/', [AssetController::class, 'storeCategory']);
     Route::get('/{category_id}', [AssetController::class, 'showCategory']);
@@ -158,7 +162,7 @@ Route::prefix('/asset-categories')->group(function () {
 });
 
 // Payroll routes (protected)
-Route::prefix('/payroll')->group(function () {
+Route::prefix('/payroll')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [PayslipController::class, 'index']);
     Route::post('/', [PayslipController::class, 'store']);
     Route::get('/{payslip_id}', [PayslipController::class, 'show']);
@@ -170,7 +174,7 @@ Route::prefix('/payroll')->group(function () {
 });
 
 // Loans routes (protected)
-Route::prefix('/loans')->group(function () {
+Route::prefix('/loans')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [LoanController::class, 'index']);
     Route::post('/', [LoanController::class, 'store']);
     Route::get('/{loan_id}', [LoanController::class, 'show']);
@@ -191,7 +195,7 @@ Route::prefix('/dashboard')->group(function () {
 });
 
 // Companies routes (protected)
-Route::prefix('/companies')->group(function () {
+Route::prefix('/companies')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [CompanyController::class, 'index']);
     Route::post('/', [CompanyController::class, 'store']);
     Route::post('/upload-logo', [CompanyController::class, 'uploadLogo']);
@@ -201,7 +205,7 @@ Route::prefix('/companies')->group(function () {
 });
 
 // Branches routes (protected)
-Route::prefix('/branches')->group(function () {
+Route::prefix('/branches')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [BranchController::class, 'index']);
     Route::post('/', [BranchController::class, 'store']);
     Route::get('/{branch_id}', [BranchController::class, 'show']);
@@ -211,7 +215,7 @@ Route::prefix('/branches')->group(function () {
 });
 
 // Departments routes (protected)
-Route::prefix('/departments')->group(function () {
+Route::prefix('/departments')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [HRMSController::class, 'getDepartments']);
     Route::post('/', [HRMSController::class, 'storeDepartment']);
     Route::get('/{dept_id}', [HRMSController::class, 'showDepartment']);
@@ -220,7 +224,7 @@ Route::prefix('/departments')->group(function () {
 });
 
 // Paygrade routes (protected)
-Route::prefix('/paygrade')->group(function () {
+Route::prefix('/paygrade')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [HRMSController::class, 'getPayGrades']);
     Route::post('/', [HRMSController::class, 'storePayGrade']);
     Route::get('/{paygrade_id}', [HRMSController::class, 'showPayGrade']);
@@ -229,7 +233,7 @@ Route::prefix('/paygrade')->group(function () {
 });
 
 // Financial Years routes (protected)
-Route::prefix('/financial-years')->group(function () {
+Route::prefix('/financial-years')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [HRMSController::class, 'getFinancialYears']);
     Route::post('/', [HRMSController::class, 'storeFinancialYear']);
     Route::get('/{year_id}', [HRMSController::class, 'showFinancialYear']);
@@ -238,7 +242,7 @@ Route::prefix('/financial-years')->group(function () {
 });
 
 // Travel Expenses routes (protected)
-Route::prefix('/travel-expenses')->group(function () {
+Route::prefix('/travel-expenses')->middleware(DemoRestriction::class)->group(function () {
     Route::get('/', [HRMSController::class, 'getTravelExpenses']);
     Route::post('/', [HRMSController::class, 'storeTravelExpense']);
     Route::get('/stats/summary', [HRMSController::class, 'getTravelExpensesSummary']);
