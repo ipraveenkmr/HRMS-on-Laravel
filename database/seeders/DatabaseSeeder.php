@@ -45,6 +45,11 @@ class DatabaseSeeder extends Seeder
 
         // Create additional employee details
         EmployeeDetails::factory(10)->create();
+
+        // Create attendance records for last 10 days
+        $this->call([
+            AttendanceSeeder::class,
+        ]);
     }
 
     private function createMasterData()
