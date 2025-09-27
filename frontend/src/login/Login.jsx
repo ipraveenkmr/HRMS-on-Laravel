@@ -294,7 +294,7 @@ export default function Login() {
 
                         <RoleButton
                             onClick={() =>
-                                fillCredentials("Employee", "Employee@123")
+                                fillCredentials("rahul", "Employee@123")
                             }
                         >
                             <Typography
@@ -304,13 +304,13 @@ export default function Login() {
                                 👤 Login as Employee
                             </Typography>
                             <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                                Username: Employee | Password: Employee@123
+                                Username: Rahul | Password: Employee@123
                             </Typography>
                         </RoleButton>
 
                         <RoleButton
                             onClick={() =>
-                                fillCredentials("Manager", "Manager@123")
+                                fillCredentials("priyanka", "Priyanka@123")
                             }
                         >
                             <Typography
@@ -320,13 +320,13 @@ export default function Login() {
                                 👔 Login as Manager
                             </Typography>
                             <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                                Username: Manager | Password: Manager@123
+                                Username: priyanka | Password: Priyanka@123
                             </Typography>
                         </RoleButton>
 
                         <RoleButton
                             onClick={() =>
-                                fillCredentials("Admin", "Admin@123")
+                                fillCredentials("praveen", "Praveen@123")
                             }
                         >
                             <Typography
@@ -336,7 +336,7 @@ export default function Login() {
                                 ⚡ Login as Admin
                             </Typography>
                             <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                                Username: Admin | Password: Admin@123
+                                Username: praveen | Password: Praveen@123
                             </Typography>
                         </RoleButton>
                     </DemoCard>
