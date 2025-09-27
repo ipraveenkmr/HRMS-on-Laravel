@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000', 'http://localhost:4321', 'https://codingmstr.com', 'https://seller.codingmstr.com', 'https://idea.codingmstr.com', 'https://backend.codingmstr.com'],
+    'allowed_origins' => ['http://localhost:3000', 'https://hrms.trickuweb.com'],
 
     'allowed_origins_patterns' => [],
 
