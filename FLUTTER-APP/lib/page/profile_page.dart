@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:hrms/door/widgets/header_widget.dart';
 import 'package:location/location.dart' as loc;
 import 'package:shared_preferences/shared_preferences.dart';
-
+import '../constants.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -24,8 +24,8 @@ class _ProfilePageState extends State<ProfilePage> {
   String e_phone = "";
   String e_email = "";
   String e_type = "";
-  String e_dob = "";
-  String e_address = "";
+  String e_workmode = "";
+  String e_department = "";
 
   @override
   void initState() {
@@ -33,110 +33,215 @@ class _ProfilePageState extends State<ProfilePage> {
     _getUserData();
   }
 
-
   _getUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      e_id = prefs.getString('empid').toString();
-      username = prefs.getString('username')!;
-      e_name = prefs.getString('empname')!;
-      e_phone = prefs.getString('empphone')!;
-      e_email = prefs.getString('empemail')!;
-      // e_address = prefs.getString('address')!;
-    });
-    print('data: ' + prefs.getString('empname')!);
+    if (mounted) {
+      setState(() {
+        e_id = prefs.getString('empid')?.toString() ?? '101';
+        username = prefs.getString('username') ?? 'admin@company.com';
+        e_name = prefs.getString('empname') ?? 'John Administrator';
+        e_phone = prefs.getString('empphone') ?? '+91 9876543210';
+        e_email = prefs.getString('empemail') ?? 'admin@company.com';
+        e_type = prefs.getString('emptype') ?? 'Permanent';
+        e_workmode = prefs.getString('empworkmode') ?? 'Office';
+        e_department = prefs.getString('empdepartment') ?? 'IT Operations';
+      });
+    }
   }
 
+  String _getInitials(String name) {
+    if (name.isEmpty) return "HR";
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name[0].toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).primaryColor;
+    final accentColor = Theme.of(context).colorScheme.secondary;
+    final initials = _getInitials(e_name);
+
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         title: Text(
           "My Profile",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.normal),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        elevation: 0.5,
+        elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
         flexibleSpace: Container(
           decoration: BoxDecoration(
-              gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: <Color>[
-                Theme.of(context).primaryColor,
-                Theme.of(context).colorScheme.secondary,
-              ])),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [primaryColor, accentColor],
+            ),
+          ),
         ),
       ),
       drawer: CdotComponents.sidenav(),
       body: SingleChildScrollView(
-        child: Stack(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
           children: [
+            // Upper Profile Header Card
             Container(
-              height: 100,
-              child: HeaderWidget(100, false, Icons.house_rounded),
-            ),
-            Container(
-              alignment: Alignment.center,
-              margin: EdgeInsets.fromLTRB(25, 10, 25, 10),
-              padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [primaryColor, accentColor],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 30),
               child: Column(
                 children: [
-                  SizedBox(
-                    height: 150,
-                  ),
+                  // Circular initials avatar
                   Container(
-                    padding: EdgeInsets.all(10),
-                    child: Column(
-                      children: <Widget>[
-                        Card(
-                          child: Container(
-                            alignment: Alignment.topLeft,
-                            padding: EdgeInsets.all(15),
-                            child: Column(
-                              children: <Widget>[
-                                Column(
-                                  children: <Widget>[
-                                    ...ListTile.divideTiles(
-                                      color: Colors.grey,
-                                      tiles: [
-                                        ListTile(
-                                          contentPadding: EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 4),
-                                          leading: Icon(Icons.person),
-                                          title: Text("Name"),
-                                          subtitle: Text(e_name),
-                                        ),
-                                        ListTile(
-                                          leading: Icon(Icons.email),
-                                          title: Text("Email"),
-                                          subtitle: Text(e_email),
-                                        ),
-                                        ListTile(
-                                          leading: Icon(Icons.phone),
-                                          title: Text("Phone"),
-                                          subtitle: Text(e_phone),
-                                        ),
-                                        // ListTile(
-                                        //   leading: Icon(Icons.location_city),
-                                        //   title: Text("Branch"),
-                                        //   subtitle: Text(e_address),
-                                        // ),
-                                      ],
-                                    ),
-                                  ],
-                                )
-                              ],
-                            ),
-                          ),
-                        )
-                      ],
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
                     ),
-                  )
+                    child: Center(
+                      child: Text(
+                        initials,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Text(
+                    e_name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      "$e_workmode Mode  •  $e_type",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            )
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Personal Info Card
+                  Text(
+                    "Contact Details",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Card(
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: Icon(Icons.email_outlined, color: primaryColor),
+                          title: const Text("Email Address", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          subtitle: Text(e_email, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
+                        ),
+                        Divider(height: 1, color: Colors.grey.shade100),
+                        ListTile(
+                          leading: Icon(Icons.phone_android_outlined, color: primaryColor),
+                          title: const Text("Phone Number", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          subtitle: Text(e_phone, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
+                        ),
+                        Divider(height: 1, color: Colors.grey.shade100),
+                        ListTile(
+                          leading: Icon(Icons.person_outline, color: primaryColor),
+                          title: const Text("User Name", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          subtitle: Text(username, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Job details Card
+                  Text(
+                    "Employment Details",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Card(
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: Icon(Icons.badge_outlined, color: primaryColor),
+                          title: const Text("Employee ID", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          subtitle: Text(e_id, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
+                        ),
+                        Divider(height: 1, color: Colors.grey.shade100),
+                        ListTile(
+                          leading: Icon(Icons.business_outlined, color: primaryColor),
+                          title: const Text("Department", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          subtitle: Text(e_department, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
+                        ),
+                        Divider(height: 1, color: Colors.grey.shade100),
+                        ListTile(
+                          leading: Icon(Icons.work_outline, color: primaryColor),
+                          title: const Text("Employment Type", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          subtitle: Text(e_type, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
           ],
         ),
       ),

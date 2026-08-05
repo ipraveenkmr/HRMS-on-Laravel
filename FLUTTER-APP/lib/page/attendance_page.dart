@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:hrms/door/widgets/cdotcomponents.dart';
 import 'package:hrms/page/update_dailytask.dart';
 import 'package:dio/dio.dart';
@@ -13,6 +14,14 @@ import 'package:location/location.dart' as loc;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controller/authentication.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import '../common/api_client.dart';
+import '../constants.dart';
+import 'leave_page.dart';
+import 'task_page.dart';
+import 'asset_page.dart';
+import 'apply_leave.dart';
+import 'apply_loan.dart';
+import 'profile_page.dart';
 
 class AttendancePage extends StatefulWidget {
   @override
@@ -36,49 +45,74 @@ class _AttendancePageState extends State<AttendancePage> {
   String attendance_date = "";
   String current_time = "";
   String office_mode = "Office Mode";
-  String shared_current_time = "";
-  String shared_office_mode = "Office Mode";
+  String shared_current_time = "Not checked in";
+  String shared_office_mode = "Select calendar card to punch";
   List users = [];
+
+  Timer? _clockTimer;
+  String _currentTimeString = "";
 
   @override
   void initState() {
     super.initState();
-    getUsers();
-    getUsersData();
+    _currentTimeString = DateFormat('hh:mm:ss a').format(DateTime.now());
+    _clockTimer = Timer.periodic(Duration(seconds: 1), (Timer t) => _updateClock());
+    
+    getUsersData().then((_) {
+      getUsers().then((data) {
+        if (mounted) {
+          setState(() {
+            users = data ?? [];
+            print('Data: ' + data.toString());
+          });
+        }
+      });
+    });
     getCurrentDate();
     _requestPermission();
     location.changeSettings(interval: 300, accuracy: loc.LocationAccuracy.high);
     location.enableBackgroundMode(enable: true);
-    getUsers().then((data) {
+  }
+
+  void _updateClock() {
+    if (mounted) {
       setState(() {
-        users = data;
-        print('Data: ' + data.toString());
+        _currentTimeString = DateFormat('hh:mm:ss a').format(DateTime.now());
       });
-    });
+    }
+  }
+
+  @override
+  void dispose() {
+    _clockTimer?.cancel();
+    super.dispose();
   }
 
   Widget buildText(String text) => Center(
         child: Text(
           text,
-          style: TextStyle(fontSize: 24, color: Colors.black87),
+          style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
         ),
       );
 
   getUsers() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String uname = prefs.getString('username').toString();
-    var response = await Dio().get(link + "attendance/employee/" + uname);
+    String uname = prefs.getString('username')?.toString() ?? '';
+    if (uname.isEmpty) return [];
+    var response = await ApiClient.client.get(link + "attendance/employee/" + uname);
     return response.data;
   }
 
-  getUsersData() async {
+  Future<void> getUsersData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      username = prefs.getString('username').toString();
-      e_id = prefs.getString('empid').toString();
-      shared_office_mode = prefs.getString('shared_office_mode')!;
-      shared_current_time = prefs.getString('shared_current_time')!;
-    });
+    if (mounted) {
+      setState(() {
+        username = prefs.getString('username')?.toString() ?? 'User';
+        e_id = prefs.getString('empid')?.toString() ?? '';
+        shared_office_mode = prefs.getString('shared_office_mode') ?? 'Select calendar card to punch';
+        shared_current_time = prefs.getString('shared_current_time') ?? 'Not checked in';
+      });
+    }
   }
 
   getCurrentDate() {
@@ -287,23 +321,17 @@ class _AttendancePageState extends State<AttendancePage> {
     String? empdepartment = prefs.getString('empdepartment');
 
     String deviceid = '';
-    // var deviceInfo = DeviceInfoPlugin();
-    // if (Platform.isAndroid) {
-    //   var androidDeviceInfo = await deviceInfo.androidInfo;
-    //   deviceid =
-    //   '${androidDeviceInfo.model}:${androidDeviceInfo.id}'; // unique ID on Android
-    // }
 
     if (workmode == 'Field') {
       try {
-        var response = await Dio().post(link + 'attendance', data: {
+        var response = await ApiClient.client.post(link + 'attendance', data: {
           'employee_id': e_id,
           'attendance_date': login_year + "-" + login_month + "-" + login_date,
           'username': username,
           'department_id': empdepartment,
           'longitude': longitude,
           'latitude': latitude,
-          'attendance': 'Absent',
+          'attendance': 'Present',
           'login_at': login_at,
           'logout_at': logout_at,
           'device': deviceid,
@@ -316,6 +344,14 @@ class _AttendancePageState extends State<AttendancePage> {
           prefs.setString(
               'shared_current_time', 'Last login time: ' + current_time);
           prefs.setString('shared_office_mode', 'You are now signed in!');
+          await getUsersData();
+          
+          // Refresh list
+          var refreshedData = await getUsers();
+          setState(() {
+            users = refreshedData ?? [];
+          });
+          
           _showMyDialog();
         }
         if (response.statusCode == 401) {
@@ -326,9 +362,9 @@ class _AttendancePageState extends State<AttendancePage> {
         print(e);
       }
     } else if (workmode == 'Office') {
-      if (companylongitude?.substring(0, 5) == longitude.substring(0, 5)) {
+      if (AppConstants.dummyMode || (companylongitude != null && companylongitude.length >= 5 && longitude.length >= 5 && companylongitude.substring(0, 5) == longitude.substring(0, 5))) {
         try {
-          var response = await Dio().post(link + 'attendance', data: {
+          var response = await ApiClient.client.post(link + 'attendance', data: {
             'employee_id': e_id,
             'attendance_date':
                 login_year + "-" + login_month + "-" + login_date,
@@ -337,7 +373,7 @@ class _AttendancePageState extends State<AttendancePage> {
             'longitude': longitude,
             'device': deviceid,
             'latitude': latitude,
-            'attendance': 'Absent',
+            'attendance': 'Present',
             'login_at': login_at,
             'logout_at': logout_at,
             'login_date': login_year + "-" + login_month + "-" + login_date,
@@ -345,6 +381,21 @@ class _AttendancePageState extends State<AttendancePage> {
             'login_year': login_year,
           });
           print('response.statusCode ' + response.statusCode.toString());
+          if (response.statusCode == 200) {
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            prefs.setString(
+                'shared_current_time', 'Last login time: ' + current_time);
+            prefs.setString('shared_office_mode', 'You are now signed in!');
+            await getUsersData();
+            
+            // Refresh list
+            var refreshedData = await getUsers();
+            setState(() {
+              users = refreshedData ?? [];
+            });
+            
+            _showMyDialog();
+          }
           if (response.statusCode == 401) {
             Get.snackbar("Error while creating!", "Please try again..");
           }
@@ -394,195 +445,389 @@ class _AttendancePageState extends State<AttendancePage> {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).primaryColor;
+    final accentColor = Theme.of(context).colorScheme.secondary;
+    final isPunchedIn = shared_office_mode.contains('signed in');
+
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         title: Text(
-          "Attendance",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.normal),
+          "Dashboard",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        elevation: 0.5,
+        elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
         flexibleSpace: Container(
           decoration: BoxDecoration(
-              gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: <Color>[
-                Theme.of(context).primaryColor,
-                Theme.of(context).colorScheme.secondary,
-              ])),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [primaryColor, accentColor],
+            ),
+          ),
         ),
       ),
       drawer: CdotComponents.sidenav(),
-      body: Stack(
-        children: [
-          Container(
-            height: 100,
-            child: HeaderWidget(100, false, Icons.house_rounded),
-          ),
-          Container(
-            alignment: Alignment.center,
-            margin: EdgeInsets.fromLTRB(25, 10, 25, 10),
-            padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
-            child: Column(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    confirmAttendance();
-                  },
-                  child: Container(
-                    child: CdotComponents.buildFooterLogo(),
-                    // child: Icon(Icons.calendar_month, size: 80, color: Colors.grey.shade300,),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Hello banner
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 25),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [primaryColor, accentColor],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Welcome Back,",
+                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            username.split('@').first.toUpperCase(),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (AppConstants.dummyMode)
+                        Chip(
+                          backgroundColor: Colors.amber.shade400,
+                          label: Text(
+                            "TEST MODE",
+                            style: TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10),
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-                Text(
-                  'Tap on Calendar',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.normal),
-                ),
-                SizedBox(
-                  height: 5,
-                ),
-                Text(
-                  shared_office_mode,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-                ),
-                SizedBox(
-                  height: 5,
-                ),
-                // if (shared_current_time.length > 2)
-                Text(
-                  shared_current_time,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-                ),
-                SizedBox(
-                  height: 20,
-                ),
-                SizedBox(height: 10),
-                Expanded(
-                  child: new FutureBuilder(
-                    future: getUsers(),
-                    builder: (context, AsyncSnapshot snapshot) {
-                      switch (snapshot.connectionState) {
-                        case ConnectionState.waiting:
-                          return Center(child: CircularProgressIndicator());
-                        default:
-                          if (snapshot.hasError) {
-                            print(snapshot.error);
-                            return buildText('Something Went Wrong Try later');
-                          } else {
-                            if (!snapshot.hasData) {
-                              return buildText('No Users Found');
-                            } else
-                              return ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: users.length,
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    return Card(
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: <Widget>[
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 18.0,
-                                                vertical: 15.0),
-                                            child: Column(children: <Widget>[
-                                              const SizedBox(height: 3),
-                                              Row(children: <Widget>[
-                                                Flexible(
-                                                  child: Text("Attendance: ",
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w600)),
-                                                ),
-                                                Flexible(
-                                                  child: Text(
-                                                      users[index]['attendance']
-                                                              .toString() ??
-                                                          'None',
-                                                      maxLines: 1),
-                                                ),
-                                              ]),
-                                              const SizedBox(height: 3),
-                                              Row(children: <Widget>[
-                                                Flexible(
-                                                  child: Text(
-                                                      "Attendance Date: ",
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w600)),
-                                                ),
-                                                Flexible(
-                                                  child: Text(
-                                                      users[index]['login_date']
-                                                              .toString() ??
-                                                          'None',
-                                                      maxLines: 1),
-                                                ),
-                                              ]),
-                                              const SizedBox(height: 3),
-                                              Row(children: <Widget>[
-                                                Flexible(
-                                                  child: Text("Login At: ",
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w600)),
-                                                ),
-                                                Flexible(
-                                                  child: Text(
-                                                      users[index]['login_at']
-                                                              .toString() ??
-                                                          'None',
-                                                      maxLines: 1),
-                                                ),
-                                              ]),
-                                              const SizedBox(height: 3),
-                                              Row(children: <Widget>[
-                                                Flexible(
-                                                  child: Text("Logout At: ",
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w600)),
-                                                ),
-                                                Flexible(
-                                                  child: Text(
-                                                      users[index]['logout_at']
-                                                              .toString() ??
-                                                          'None',
-                                                      maxLines: 1),
-                                                ),
-                                              ]),
-                                              const SizedBox(height: 3),
-                                              Row(children: <Widget>[
-                                                Flexible(
-                                                  child: Text("Log Time: ",
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w600)),
-                                                ),
-                                                Flexible(
-                                                  child: Text(
-                                                      users[index]['log_time']
-                                                              .toString() ??
-                                                          'None',
-                                                      maxLines: 1),
-                                                ),
-                                              ]),
-                                            ]),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  });
-                          }
-                      }
-                    },
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          )
-        ],
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Transform.translate(
+                offset: const Offset(0, -15),
+                child: Column(
+                  children: [
+                    // Punch card widget
+                    Card(
+                      elevation: 8,
+                      shadowColor: Colors.black12,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          children: [
+                            Text(
+                              DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now()),
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _currentTimeString,
+                              style: TextStyle(
+                                color: primaryColor,
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            // Interactive Punch Button
+                            GestureDetector(
+                              onTap: () {
+                                if (isPunchedIn) {
+                                  confirmAttendance();
+                                } else {
+                                  _getLocation();
+                                }
+                              },
+                              child: Container(
+                                width: 140,
+                                height: 140,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isPunchedIn ? Colors.red.shade50 : Colors.green.shade50,
+                                  border: Border.all(
+                                    color: isPunchedIn ? Colors.red.shade200 : Colors.green.shade200,
+                                    width: 4,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isPunchedIn 
+                                          ? Colors.red.withOpacity(0.2) 
+                                          : Colors.green.withOpacity(0.2),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 6),
+                                    )
+                                  ]
+                                ),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.fingerprint,
+                                        size: 56,
+                                        color: isPunchedIn ? Colors.red : Colors.green,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        isPunchedIn ? "PUNCH OUT" : "PUNCH IN",
+                                        style: TextStyle(
+                                          color: isPunchedIn ? Colors.red : Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            // Punch Status Details
+                            Divider(color: Colors.grey.shade200),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Column(
+                                  children: [
+                                    Text(
+                                      "Punch Time",
+                                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      shared_current_time.replaceAll('Last login time: ', ''),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Container(
+                                  height: 25,
+                                  width: 1,
+                                  color: Colors.grey.shade300,
+                                ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      "Status",
+                                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      isPunchedIn ? "Checked In" : "PUNCHED OUT",
+                                      style: TextStyle(
+                                        color: isPunchedIn ? Colors.green : Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+
+                    // Quick Actions Section
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Quick Actions",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    GridView.count(
+                      crossAxisCount: 3,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.95,
+                      children: [
+                        _buildQuickAction(context, "Apply Leave", Icons.time_to_leave, Colors.blue, () => Get.to(ApplyLeavePage())),
+                        _buildQuickAction(context, "My Leaves", Icons.holiday_village, Colors.teal, () => Get.to(LeavePage())),
+                        _buildQuickAction(context, "My Tasks", Icons.assignment_turned_in, Colors.purple, () => Get.to(TaskPage())),
+                        _buildQuickAction(context, "My Assets", Icons.laptop_mac, Colors.orange, () => Get.to(AssetPage())),
+                        _buildQuickAction(context, "Apply Loan", Icons.monetization_on, Colors.green, () => Get.to(ApplyLoanPage())),
+                        _buildQuickAction(context, "My Profile", Icons.account_circle, Colors.indigo, () => Get.to(ProfilePage())),
+                      ],
+                    ),
+                    const SizedBox(height: 25),
+
+                    // Recent History Section
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Recent Logs",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    
+                    FutureBuilder(
+                      future: getUsers(),
+                      builder: (context, AsyncSnapshot snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20.0),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        if (snapshot.hasError) {
+                          return buildText('Something Went Wrong Try later');
+                        }
+                        if (!snapshot.hasData || users.isEmpty) {
+                          return buildText('No Attendance History Found');
+                        }
+                        
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: users.length > 5 ? 5 : users.length, // Show recent 5 logs on dashboard
+                          itemBuilder: (BuildContext context, int index) {
+                            final log = users[index];
+                            final attendanceStr = log['attendance']?.toString() ?? 'Absent';
+                            final isPresent = attendanceStr == 'Present';
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: isPresent ? Colors.green.shade50 : Colors.red.shade50,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    isPresent ? Icons.check : Icons.close,
+                                    color: isPresent ? Colors.green : Colors.red,
+                                  ),
+                                ),
+                                title: Text(
+                                  log['login_date']?.toString() ?? 'Date Unknown',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                subtitle: Text(
+                                  "Login: ${log['login_at'] ?? 'N/A'}  •  Logout: ${log['logout_at']?.toString() == 'null' ? 'Active' : log['logout_at']}",
+                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                ),
+                                trailing: Text(
+                                  isPresent ? "Present" : "Absent",
+                                  style: TextStyle(
+                                    color: isPresent ? Colors.green : Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickAction(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

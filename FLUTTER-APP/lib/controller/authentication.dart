@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import '../common/api_client.dart';
 
 import '../constants.dart';
 
@@ -23,15 +24,17 @@ String login_year = "";
 
 Future<String> getCompanyDetails() async {
   try {
-    var response = await Dio().get(link + 'companies');
-    if (response.statusCode == 200) {
+    var response = await ApiClient.client.get(link + 'companies');
+    if (response.statusCode == 200 && response.data != null && (response.data as List).isNotEmpty) {
       print('company details' + response.data[0]['company_name'].toString());
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.setString('companyname', response.data[0]['company_name']);
-      prefs.setString('companyaddress', response.data[0]['company_address']);
-      prefs.setString('companylongitude', response.data[0]['longitude']);
-      prefs.setString('companylatitude', response.data[0]['latitude']);
+      prefs.setString('companyname', response.data[0]['company_name'] ?? '');
+      prefs.setString('companyaddress', response.data[0]['company_address'] ?? '');
+      prefs.setString('companylongitude', response.data[0]['longitude']?.toString() ?? '');
+      prefs.setString('companylatitude', response.data[0]['latitude']?.toString() ?? '');
       Get.offAll(AttendancePage());
+    } else {
+      Get.snackbar("Error", "No company details found.");
     }
     if (response.statusCode == 401) {
       Get.snackbar("Error while creating 401!", "Please try again..");
@@ -50,8 +53,8 @@ Future<String> applyLoan(String amount, String period, String purpose) async {
   String? empid = prefs.getString('empid');
 
   try {
-    var response = await Dio().post(link + 'loans', data: {
-      'employee_id': int.parse(empid!),
+    var response = await ApiClient.client.post(link + 'loans', data: {
+      'employee_id': int.tryParse(empid ?? '') ?? 0,
       'department_id': empdepartment,
       'username': uname,
       'status': 'Active',
@@ -80,8 +83,8 @@ Future<String> dailyTask(
   String? empid = prefs.getString('empid');
 
   try {
-    var response = await Dio().post(link + 'daily-tasks', data: {
-      'employee_id': int.parse(empid!),
+    var response = await ApiClient.client.post(link + 'daily-tasks', data: {
+      'employee_id': int.tryParse(empid ?? '') ?? 0,
       'department_id': empdepartment,
       'username': uname,
       'task': task, //should be int
@@ -142,13 +145,12 @@ Future<String> applyLeave(String from, String to, String reason) async {
   String? empdepartment = prefs.getString('empdepartment');
 
   try {
-    var response = await Dio().post(link + 'leave', data: {
+    var response = await ApiClient.client.post(link + 'leave', data: {
       'employee_id': empid,
       'username': uname,
       'department_id': empdepartment,
       'CL_Days': 0,
       'CL_Hours': 0,
-      'EI_Days': 0,
       'EI_Days': 0,
       'EI_Hours': 0,
       'LWP_Days': 0,
@@ -197,7 +199,7 @@ Future<String> updateAttendance(String logoutAt, String login_year,
 
   if (workmode == 'Field') {
     try {
-      var response = await Dio().post(link + 'attendance', data: {
+      var response = await ApiClient.client.post(link + 'attendance', data: {
         'id': aid,
         'employee_id': e_id,
         'attendance_date': adate,
@@ -221,11 +223,11 @@ Future<String> updateAttendance(String logoutAt, String login_year,
       print(e);
     }
   } else if (workmode == 'Office') {
-    if (companylongitude != null && longitude.isNotEmpty && 
+    if (AppConstants.dummyMode || (companylongitude != null && longitude.isNotEmpty && 
         companylongitude.length >= 5 && longitude.length >= 5 &&
-        companylongitude.substring(0, 5) == longitude.substring(0, 5)) {
+        companylongitude.substring(0, 5) == longitude.substring(0, 5))) {
       try {
-        var response = await Dio().post(link + 'attendance', data: {
+        var response = await ApiClient.client.post(link + 'attendance', data: {
           'id': aid,
           'employee_id': e_id,
           'attendance_date': adate,
@@ -258,7 +260,7 @@ Future<String> updateAttendance(String logoutAt, String login_year,
 
 Future<String> userlogin(String email, String password) async {
   try {
-    var response = await Dio().post(link + 'auth/token', data: {
+    var response = await ApiClient.client.post(link + 'auth/token', data: {
       'username': email,
       'password': password,
     });
@@ -277,26 +279,31 @@ Future<String> userlogin(String email, String password) async {
 
 Future<String> getUserDetails(String email) async {
   try {
-    var response = await Dio().get(link + 'employees/username/' + email);
-    if (response.statusCode == 200) {
+    var response = await ApiClient.client.get(link + 'employees/username/' + email);
+    if (response.statusCode == 200 && response.data != null && (response.data as List).isNotEmpty) {
       print(response.data[0]['longitude'].toString());
       print(response.data[0]['latitude'].toString());
       SharedPreferences prefs = await SharedPreferences.getInstance();
+      var emp = response.data[0];
       prefs.setString('loginemail', email);
-      prefs.setString('empid', response.data[0]['id']?.toString() ?? '');
-      prefs.setString('username', response.data[0]['username'] ?? '');
-      prefs.setString('empname', response.data[0]['emp_name'] ?? '');
-      prefs.setString('empphone', response.data[0]['emp_phone'] ?? '');
-      prefs.setString('empemail', response.data[0]['emp_email'] ?? '');
-      // prefs.setString('address', response.data[0]['branch_name']);
-      prefs.setString('emptype', response.data[0]['emp_type'] ?? '');
-      prefs.setString('empworkmode', response.data[0]['work_mode'] ?? '');
-      prefs.setString('companylongitude', response.data[0]['longitude'] ?? '');
-      prefs.setString('companylatitude', response.data[0]['latitude'] ?? '');
-      // prefs.setString('dob', response.data[0]['dob']);
-      prefs.setString(
-          'empdepartment', response.data[0]['department']?.toString() ?? '');
+      prefs.setString('empid', emp['id']?.toString() ?? '');
+      prefs.setString('username', emp['username'] ?? '');
+      prefs.setString('empname', emp['emp_name'] ?? '');
+      prefs.setString('empphone', emp['emp_phone'] ?? '');
+      prefs.setString('empemail', emp['emp_email'] ?? '');
+      prefs.setString('emptype', emp['emp_type'] ?? '');
+      prefs.setString('empworkmode', emp['work_mode'] ?? '');
+      prefs.setString('companylongitude', emp['longitude']?.toString() ?? '');
+      prefs.setString('companylatitude', emp['latitude']?.toString() ?? '');
+      prefs.setString('empdepartment', emp['department']?.toString() ?? '');
+      
+      // Initialize daily task / attendance logout states to safe defaults for the session
+      prefs.setString('shared_current_time', 'Not checked in');
+      prefs.setString('shared_office_mode', 'Select calendar card to punch');
+      
       Get.offAll(AttendancePage());
+    } else {
+      Get.snackbar("Error", "Employee details not found.");
     }
     if (response.statusCode == 401) {
       Get.snackbar("Error while creating 401!", "Please try again..");
@@ -310,22 +317,22 @@ Future<String> getUserDetails(String email) async {
 
 Future<String> checkUserDetails(String email) async {
   try {
-    var response = await Dio().get(link + 'employees/username/' + email);
-    if (response.statusCode == 200) {
+    var response = await ApiClient.client.get(link + 'employees/username/' + email);
+    if (response.statusCode == 200 && response.data != null && (response.data as List).isNotEmpty) {
       print(response.data[0]['id'].toString());
       SharedPreferences prefs = await SharedPreferences.getInstance();
+      var emp = response.data[0];
       prefs.setString('loginemail', email);
-      prefs.setString('empid', response.data[0]['id'].toString());
-      prefs.setString('username', response.data[0]['username']);
-      prefs.setString('empname', response.data[0]['emp_name']);
-      prefs.setString('empphone', response.data[0]['emp_phone']);
-      prefs.setString('empemail', response.data[0]['emp_email']);
-      // prefs.setString('address', response.data[0]['address']);
-      prefs.setString('emptype', response.data[0]['emp_type']);
-      prefs.setString('empworkmode', response.data[0]['work_mode']);
-      // prefs.setString('dob', response.data[0]['dob']);
-      prefs.setString(
-          'empdepartment', response.data[0]['department'].toString());
+      prefs.setString('empid', emp['id']?.toString() ?? '');
+      prefs.setString('username', emp['username'] ?? '');
+      prefs.setString('empname', emp['emp_name'] ?? '');
+      prefs.setString('empphone', emp['emp_phone'] ?? '');
+      prefs.setString('empemail', emp['emp_email'] ?? '');
+      prefs.setString('emptype', emp['emp_type'] ?? '');
+      prefs.setString('empworkmode', emp['work_mode'] ?? '');
+      prefs.setString('empdepartment', emp['department']?.toString() ?? '');
+      prefs.setString('companylongitude', emp['longitude']?.toString() ?? '');
+      prefs.setString('companylatitude', emp['latitude']?.toString() ?? '');
     }
     if (response.statusCode == 401) {
       Get.snackbar("Error while creating 401!", "Please try again..");
@@ -342,24 +349,25 @@ Future<String> checkAttendance(String uname, String login_year,
   String adate = login_year + "-" + login_month + "-" + login_date;
   print('adate: ' + adate);
   try {
-    var response = await Dio()
+    var response = await ApiClient.client
         .get(link + 'attendance/check/' + adate + "/" + uname);
-    if (response.statusCode == 200) {
-      aid = response.data[0]['id'];
-      e_id = response.data[0]['employee'].toString();
-      login_time = response.data[0]['login_time'].toString();
-      username = response.data[0]['username'].toString();
-      longitude = response.data[0]['longitude'].toString();
-      latitude = response.data[0]['latitude'].toString();
-      attendance = response.data[0]['attendance'].toString();
-      login_at = response.data[0]['login_at'].toString();
+    if (response.statusCode == 200 && response.data != null && (response.data as List).isNotEmpty) {
+      var record = response.data[0];
+      aid = record['id'] ?? 0;
+      e_id = record['employee']?.toString() ?? '';
+      login_time = record['login_time']?.toString() ?? '';
+      username = record['username']?.toString() ?? '';
+      longitude = record['longitude']?.toString() ?? '';
+      latitude = record['latitude']?.toString() ?? '';
+      attendance = record['attendance']?.toString() ?? '';
+      login_at = record['login_at']?.toString() ?? '';
 
-      String logoutTime = response.data[0]['logout_at']?.toString() ?? '';
+      String logoutTime = record['logout_at']?.toString() ?? '';
       print('logoutTime: ' + logoutTime);
       if (logoutTime.length > 3 && logoutTime != 'null') {
         return "loggedout";
       } else {
-        return response.data[0]['login_at']?.toString() ?? '';
+        return record['login_at']?.toString() ?? '';
       }
     }
   } catch (e) {
