@@ -23,7 +23,7 @@ class MockInterceptor extends Interceptor {
     if (path.endsWith('companies') && method == 'GET') {
       final responseData = List.generate(10, (index) => {
         "id": index + 1,
-        "company_name": index == 0 ? "Haion Corporate HQ" : "Haion Regional Office ${index}",
+        "company_name": index == 0 ? "HRMS Corporate HQ" : "HRMS Regional Office ${index}",
         "company_address": index == 0 ? "Sector 62, Noida, India" : "Tech Avenue, Block ${index + 1}",
         "longitude": "77.3689",
         "latitude": "28.6273",
@@ -493,7 +493,7 @@ class MockInterceptor extends Interceptor {
       "Steelcase Ergonomic Office Chair",
       "Smart Standing Desk with Motor",
       "YubiKey 5C NFC Security Key",
-      "Haion Corporate Access Card & ID Tag"
+      "HRMS Corporate Access Card & ID Tag"
     ];
 
     final descriptions = [
@@ -506,7 +506,7 @@ class MockInterceptor extends Interceptor {
       "Asset tag: STLC-99012, Condition: Used",
       "Asset tag: DSK-8812, Condition: Excellent",
       "Asset tag: YUBI-0128, Condition: Mint",
-      "Access code: HAION-AC-1004, Status: Active"
+      "Access code: HRMS-AC-1004, Status: Active"
     ];
 
     return List.generate(10, (index) {
