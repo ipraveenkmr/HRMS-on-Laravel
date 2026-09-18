@@ -25,13 +25,18 @@ String login_year = "";
 Future<String> getCompanyDetails() async {
   try {
     var response = await ApiClient.client.get(link + 'companies');
-    if (response.statusCode == 200 && response.data != null && (response.data as List).isNotEmpty) {
+    if (response.statusCode == 200 &&
+        response.data != null &&
+        (response.data as List).isNotEmpty) {
       print('company details' + response.data[0]['company_name'].toString());
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setString('companyname', response.data[0]['company_name'] ?? '');
-      prefs.setString('companyaddress', response.data[0]['company_address'] ?? '');
-      prefs.setString('companylongitude', response.data[0]['longitude']?.toString() ?? '');
-      prefs.setString('companylatitude', response.data[0]['latitude']?.toString() ?? '');
+      prefs.setString(
+          'companyaddress', response.data[0]['company_address'] ?? '');
+      prefs.setString(
+          'companylongitude', response.data[0]['longitude']?.toString() ?? '');
+      prefs.setString(
+          'companylatitude', response.data[0]['latitude']?.toString() ?? '');
       Get.offAll(AttendancePage());
     } else {
       Get.snackbar("Error", "No company details found.");
@@ -194,7 +199,7 @@ Future<String> updateAttendance(String logoutAt, String login_year,
   if (Platform.isAndroid) {
     var androidDeviceInfo = await deviceInfo.androidInfo;
     deviceid =
-    '${androidDeviceInfo.model}:${androidDeviceInfo.id}'; // unique ID on Android
+        '${androidDeviceInfo.model}:${androidDeviceInfo.id}'; // unique ID on Android
   }
 
   if (workmode == 'Field') {
@@ -223,9 +228,12 @@ Future<String> updateAttendance(String logoutAt, String login_year,
       print(e);
     }
   } else if (workmode == 'Office') {
-    if (AppConstants.dummyMode || (companylongitude != null && longitude.isNotEmpty && 
-        companylongitude.length >= 5 && longitude.length >= 5 &&
-        companylongitude.substring(0, 5) == longitude.substring(0, 5))) {
+    if (AppConstants.dummyMode ||
+        (companylongitude != null &&
+            longitude.isNotEmpty &&
+            companylongitude.length >= 5 &&
+            longitude.length >= 5 &&
+            companylongitude.substring(0, 5) == longitude.substring(0, 5))) {
       try {
         var response = await ApiClient.client.post(link + 'attendance', data: {
           'id': aid,
@@ -265,7 +273,12 @@ Future<String> userlogin(String email, String password) async {
       'password': password,
     });
     if (response.statusCode == 200) {
-      getUserDetails(email);
+      final prefs = await SharedPreferences.getInstance();
+      final token = response.data['access_token']?.toString();
+      if (token != null && token.isNotEmpty) {
+        await prefs.setString('access_token', token);
+      }
+      await getUserDetails(email);
     }
     if (response.statusCode == 401) {
       Get.snackbar("Error while login!", "Please try again..");
@@ -279,8 +292,11 @@ Future<String> userlogin(String email, String password) async {
 
 Future<String> getUserDetails(String email) async {
   try {
-    var response = await ApiClient.client.get(link + 'employees/username/' + email);
-    if (response.statusCode == 200 && response.data != null && (response.data as List).isNotEmpty) {
+    var response =
+        await ApiClient.client.get(link + 'employees/username/' + email);
+    if (response.statusCode == 200 &&
+        response.data != null &&
+        (response.data as List).isNotEmpty) {
       print(response.data[0]['longitude'].toString());
       print(response.data[0]['latitude'].toString());
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -293,14 +309,22 @@ Future<String> getUserDetails(String email) async {
       prefs.setString('empemail', emp['emp_email'] ?? '');
       prefs.setString('emptype', emp['emp_type'] ?? '');
       prefs.setString('empworkmode', emp['work_mode'] ?? '');
-      prefs.setString('companylongitude', emp['longitude']?.toString() ?? '');
-      prefs.setString('companylatitude', emp['latitude']?.toString() ?? '');
-      prefs.setString('empdepartment', emp['department']?.toString() ?? '');
-      
+      prefs.setString(
+          'companylongitude',
+          emp['company_detail']?['longitude']?.toString() ??
+              emp['longitude']?.toString() ??
+              '');
+      prefs.setString(
+          'companylatitude',
+          emp['company_detail']?['latitude']?.toString() ??
+              emp['latitude']?.toString() ??
+              '');
+      prefs.setString('empdepartment', emp['department_id']?.toString() ?? '');
+
       // Initialize daily task / attendance logout states to safe defaults for the session
       prefs.setString('shared_current_time', 'Not checked in');
       prefs.setString('shared_office_mode', 'Select calendar card to punch');
-      
+
       Get.offAll(AttendancePage());
     } else {
       Get.snackbar("Error", "Employee details not found.");
@@ -317,8 +341,11 @@ Future<String> getUserDetails(String email) async {
 
 Future<String> checkUserDetails(String email) async {
   try {
-    var response = await ApiClient.client.get(link + 'employees/username/' + email);
-    if (response.statusCode == 200 && response.data != null && (response.data as List).isNotEmpty) {
+    var response =
+        await ApiClient.client.get(link + 'employees/username/' + email);
+    if (response.statusCode == 200 &&
+        response.data != null &&
+        (response.data as List).isNotEmpty) {
       print(response.data[0]['id'].toString());
       SharedPreferences prefs = await SharedPreferences.getInstance();
       var emp = response.data[0];
@@ -330,9 +357,17 @@ Future<String> checkUserDetails(String email) async {
       prefs.setString('empemail', emp['emp_email'] ?? '');
       prefs.setString('emptype', emp['emp_type'] ?? '');
       prefs.setString('empworkmode', emp['work_mode'] ?? '');
-      prefs.setString('empdepartment', emp['department']?.toString() ?? '');
-      prefs.setString('companylongitude', emp['longitude']?.toString() ?? '');
-      prefs.setString('companylatitude', emp['latitude']?.toString() ?? '');
+      prefs.setString('empdepartment', emp['department_id']?.toString() ?? '');
+      prefs.setString(
+          'companylongitude',
+          emp['company_detail']?['longitude']?.toString() ??
+              emp['longitude']?.toString() ??
+              '');
+      prefs.setString(
+          'companylatitude',
+          emp['company_detail']?['latitude']?.toString() ??
+              emp['latitude']?.toString() ??
+              '');
     }
     if (response.statusCode == 401) {
       Get.snackbar("Error while creating 401!", "Please try again..");
@@ -351,10 +386,14 @@ Future<String> checkAttendance(String uname, String login_year,
   try {
     var response = await ApiClient.client
         .get(link + 'attendance/check/' + adate + "/" + uname);
-    if (response.statusCode == 200 && response.data != null && (response.data as List).isNotEmpty) {
+    if (response.statusCode == 200 &&
+        response.data != null &&
+        (response.data as List).isNotEmpty) {
       var record = response.data[0];
       aid = record['id'] ?? 0;
-      e_id = record['employee']?.toString() ?? '';
+      e_id = record['employee_id']?.toString() ??
+          record['employee']?.toString() ??
+          '';
       login_time = record['login_time']?.toString() ?? '';
       username = record['username']?.toString() ?? '';
       longitude = record['longitude']?.toString() ?? '';

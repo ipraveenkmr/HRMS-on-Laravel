@@ -51,24 +51,18 @@ class _AttendancePageState extends State<AttendancePage> {
 
   Timer? _clockTimer;
   String _currentTimeString = "";
+  late Future<List> _usersFuture;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _currentTimeString = DateFormat('hh:mm:ss a').format(DateTime.now());
-    _clockTimer = Timer.periodic(Duration(seconds: 1), (Timer t) => _updateClock());
-    
-    getUsersData().then((_) {
-      getUsers().then((data) {
-        if (mounted) {
-          setState(() {
-            users = data ?? [];
-            print('Data: ' + data.toString());
-          });
-        }
-      });
-    });
+    _clockTimer =
+        Timer.periodic(Duration(seconds: 1), (Timer t) => _updateClock());
+
     getCurrentDate();
+    _usersFuture = _loadAttendanceData();
     _requestPermission();
     location.changeSettings(interval: 300, accuracy: loc.LocationAccuracy.high);
     location.enableBackgroundMode(enable: true);
@@ -85,7 +79,54 @@ class _AttendancePageState extends State<AttendancePage> {
   @override
   void dispose() {
     _clockTimer?.cancel();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<List> _loadAttendanceData() async {
+    await getUsersData();
+    final data = await getUsers();
+    final attendanceRecords = data is List ? data : <dynamic>[];
+
+    // Restore today's punch state from the server if local state was lost.
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    Map? todayRecord;
+    for (final item in attendanceRecords) {
+      if (item is Map) {
+        final rawDate = item['login_date'] ?? item['attendance_date'];
+        final parsedDate = DateTime.tryParse(rawDate?.toString() ?? '');
+        if (parsedDate != null &&
+            DateFormat('yyyy-MM-dd').format(parsedDate) == today) {
+          todayRecord = item;
+          break;
+        }
+      }
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    if (todayRecord != null) {
+      final loginTime = todayRecord['login_at']?.toString() ?? '';
+      final logoutTime = todayRecord['logout_at']?.toString() ?? '';
+      final hasLoggedOut = logoutTime.isNotEmpty && logoutTime != 'null';
+
+      if (hasLoggedOut) {
+        shared_current_time = 'Last logout time: $logoutTime';
+        shared_office_mode = 'You are now logged out!';
+      } else if (loginTime.isNotEmpty && loginTime != 'null') {
+        shared_current_time = 'Last login time: $loginTime';
+        shared_office_mode = 'You are now signed in!';
+      }
+    } else {
+      shared_current_time = 'Not checked in';
+      shared_office_mode = 'Select calendar card to punch';
+    }
+    await prefs.setString('shared_current_time', shared_current_time);
+    await prefs.setString('shared_office_mode', shared_office_mode);
+
+    if (mounted) {
+      setState(() => users = attendanceRecords);
+    }
+    return attendanceRecords;
   }
 
   Widget buildText(String text) => Center(
@@ -99,7 +140,8 @@ class _AttendancePageState extends State<AttendancePage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String uname = prefs.getString('username')?.toString() ?? '';
     if (uname.isEmpty) return [];
-    var response = await ApiClient.client.get(link + "attendance/employee/" + uname);
+    var response =
+        await ApiClient.client.get(link + "attendance/employee/" + uname);
     return response.data;
   }
 
@@ -109,8 +151,10 @@ class _AttendancePageState extends State<AttendancePage> {
       setState(() {
         username = prefs.getString('username')?.toString() ?? 'User';
         e_id = prefs.getString('empid')?.toString() ?? '';
-        shared_office_mode = prefs.getString('shared_office_mode') ?? 'Select calendar card to punch';
-        shared_current_time = prefs.getString('shared_current_time') ?? 'Not checked in';
+        shared_office_mode = prefs.getString('shared_office_mode') ??
+            'Select calendar card to punch';
+        shared_current_time =
+            prefs.getString('shared_current_time') ?? 'Not checked in';
       });
     }
   }
@@ -247,9 +291,9 @@ class _AttendancePageState extends State<AttendancePage> {
         builder: (BuildContext context) {
           if (calculateTime(check.toString()) > 451) {
             return tryafter;
-          } else if (calculateTime(check.toString()) > 0){
+          } else if (calculateTime(check.toString()) > 0) {
             return timealert;
-          }else{
+          } else {
             return alert;
           }
         },
@@ -258,7 +302,6 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   int calculateTime(String loginTime) {
-
     final loginArray = loginTime.split(':');
     final logoutArray = current_time.split(':');
 
@@ -293,10 +336,8 @@ class _AttendancePageState extends State<AttendancePage> {
       setState(() {
         latitude = _locationResult.latitude.toString();
         longitude = _locationResult.longitude.toString();
-        shared_current_time = 'Last login time: ' + current_time;
-        shared_office_mode = 'You are now signed in!';
       });
-      makeAttendance(e_id, username, longitude, latitude, 'Absent',
+      await makeAttendance(e_id, username, longitude, latitude, 'Absent',
           current_time, '', login_date, login_month, login_year);
     } catch (e) {
       print(e);
@@ -341,17 +382,18 @@ class _AttendancePageState extends State<AttendancePage> {
         });
         if (response.statusCode == 200) {
           SharedPreferences prefs = await SharedPreferences.getInstance();
-          prefs.setString(
+          await prefs.setString(
               'shared_current_time', 'Last login time: ' + current_time);
-          prefs.setString('shared_office_mode', 'You are now signed in!');
+          await prefs.setString('shared_office_mode', 'You are now signed in!');
           await getUsersData();
-          
+
           // Refresh list
           var refreshedData = await getUsers();
           setState(() {
             users = refreshedData ?? [];
+            _usersFuture = Future.value(users);
           });
-          
+
           _showMyDialog();
         }
         if (response.statusCode == 401) {
@@ -362,9 +404,14 @@ class _AttendancePageState extends State<AttendancePage> {
         print(e);
       }
     } else if (workmode == 'Office') {
-      if (AppConstants.dummyMode || (companylongitude != null && companylongitude.length >= 5 && longitude.length >= 5 && companylongitude.substring(0, 5) == longitude.substring(0, 5))) {
+      if (AppConstants.dummyMode ||
+          (companylongitude != null &&
+              companylongitude.length >= 5 &&
+              longitude.length >= 5 &&
+              companylongitude.substring(0, 5) == longitude.substring(0, 5))) {
         try {
-          var response = await ApiClient.client.post(link + 'attendance', data: {
+          var response =
+              await ApiClient.client.post(link + 'attendance', data: {
             'employee_id': e_id,
             'attendance_date':
                 login_year + "-" + login_month + "-" + login_date,
@@ -383,17 +430,19 @@ class _AttendancePageState extends State<AttendancePage> {
           print('response.statusCode ' + response.statusCode.toString());
           if (response.statusCode == 200) {
             SharedPreferences prefs = await SharedPreferences.getInstance();
-            prefs.setString(
+            await prefs.setString(
                 'shared_current_time', 'Last login time: ' + current_time);
-            prefs.setString('shared_office_mode', 'You are now signed in!');
+            await prefs.setString(
+                'shared_office_mode', 'You are now signed in!');
             await getUsersData();
-            
+
             // Refresh list
             var refreshedData = await getUsers();
             setState(() {
               users = refreshedData ?? [];
+              _usersFuture = Future.value(users);
             });
-            
+
             _showMyDialog();
           }
           if (response.statusCode == 401) {
@@ -470,6 +519,8 @@ class _AttendancePageState extends State<AttendancePage> {
       ),
       drawer: CdotComponents.sidenav(),
       body: SingleChildScrollView(
+        controller: _scrollController,
+        key: const PageStorageKey<String>('attendance-page-scroll'),
         physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,7 +551,8 @@ class _AttendancePageState extends State<AttendancePage> {
                         children: [
                           Text(
                             "Welcome Back,",
-                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 14),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -549,7 +601,8 @@ class _AttendancePageState extends State<AttendancePage> {
                         child: Column(
                           children: [
                             Text(
-                              DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now()),
+                              DateFormat('EEEE, MMMM d, yyyy')
+                                  .format(DateTime.now()),
                               style: TextStyle(
                                 color: Colors.grey.shade600,
                                 fontSize: 14,
@@ -580,22 +633,25 @@ class _AttendancePageState extends State<AttendancePage> {
                                 width: 140,
                                 height: 140,
                                 decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isPunchedIn ? Colors.red.shade50 : Colors.green.shade50,
-                                  border: Border.all(
-                                    color: isPunchedIn ? Colors.red.shade200 : Colors.green.shade200,
-                                    width: 4,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: isPunchedIn 
-                                          ? Colors.red.withOpacity(0.2) 
-                                          : Colors.green.withOpacity(0.2),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 6),
-                                    )
-                                  ]
-                                ),
+                                    shape: BoxShape.circle,
+                                    color: isPunchedIn
+                                        ? Colors.red.shade50
+                                        : Colors.green.shade50,
+                                    border: Border.all(
+                                      color: isPunchedIn
+                                          ? Colors.red.shade200
+                                          : Colors.green.shade200,
+                                      width: 4,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: isPunchedIn
+                                            ? Colors.red.withOpacity(0.2)
+                                            : Colors.green.withOpacity(0.2),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 6),
+                                      )
+                                    ]),
                                 child: Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -603,13 +659,17 @@ class _AttendancePageState extends State<AttendancePage> {
                                       Icon(
                                         Icons.fingerprint,
                                         size: 56,
-                                        color: isPunchedIn ? Colors.red : Colors.green,
+                                        color: isPunchedIn
+                                            ? Colors.red
+                                            : Colors.green,
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
                                         isPunchedIn ? "PUNCH OUT" : "PUNCH IN",
                                         style: TextStyle(
-                                          color: isPunchedIn ? Colors.red : Colors.green,
+                                          color: isPunchedIn
+                                              ? Colors.red
+                                              : Colors.green,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12,
                                         ),
@@ -630,11 +690,13 @@ class _AttendancePageState extends State<AttendancePage> {
                                   children: [
                                     Text(
                                       "Punch Time",
-                                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                                      style: TextStyle(
+                                          color: Colors.grey, fontSize: 12),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      shared_current_time.replaceAll('Last login time: ', ''),
+                                      shared_current_time.replaceAll(
+                                          'Last login time: ', ''),
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
@@ -651,13 +713,18 @@ class _AttendancePageState extends State<AttendancePage> {
                                   children: [
                                     Text(
                                       "Status",
-                                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                                      style: TextStyle(
+                                          color: Colors.grey, fontSize: 12),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      isPunchedIn ? "Checked In" : "PUNCHED OUT",
+                                      isPunchedIn
+                                          ? "Checked In"
+                                          : "PUNCHED OUT",
                                       style: TextStyle(
-                                        color: isPunchedIn ? Colors.green : Colors.red,
+                                        color: isPunchedIn
+                                            ? Colors.green
+                                            : Colors.red,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
                                       ),
@@ -693,12 +760,42 @@ class _AttendancePageState extends State<AttendancePage> {
                       mainAxisSpacing: 12,
                       childAspectRatio: 0.95,
                       children: [
-                        _buildQuickAction(context, "Apply Leave", Icons.time_to_leave, Colors.blue, () => Get.to(ApplyLeavePage())),
-                        _buildQuickAction(context, "My Leaves", Icons.holiday_village, Colors.teal, () => Get.to(LeavePage())),
-                        _buildQuickAction(context, "My Tasks", Icons.assignment_turned_in, Colors.purple, () => Get.to(TaskPage())),
-                        _buildQuickAction(context, "My Assets", Icons.laptop_mac, Colors.orange, () => Get.to(AssetPage())),
-                        _buildQuickAction(context, "Apply Loan", Icons.monetization_on, Colors.green, () => Get.to(ApplyLoanPage())),
-                        _buildQuickAction(context, "My Profile", Icons.account_circle, Colors.indigo, () => Get.to(ProfilePage())),
+                        _buildQuickAction(
+                            context,
+                            "Apply Leave",
+                            Icons.time_to_leave,
+                            Colors.blue,
+                            () => Get.to(ApplyLeavePage())),
+                        _buildQuickAction(
+                            context,
+                            "My Leaves",
+                            Icons.holiday_village,
+                            Colors.teal,
+                            () => Get.to(LeavePage())),
+                        _buildQuickAction(
+                            context,
+                            "My Tasks",
+                            Icons.assignment_turned_in,
+                            Colors.purple,
+                            () => Get.to(TaskPage())),
+                        _buildQuickAction(
+                            context,
+                            "My Assets",
+                            Icons.laptop_mac,
+                            Colors.orange,
+                            () => Get.to(AssetPage())),
+                        _buildQuickAction(
+                            context,
+                            "Apply Loan",
+                            Icons.monetization_on,
+                            Colors.green,
+                            () => Get.to(ApplyLoanPage())),
+                        _buildQuickAction(
+                            context,
+                            "My Profile",
+                            Icons.account_circle,
+                            Colors.indigo,
+                            () => Get.to(ProfilePage())),
                       ],
                     ),
                     const SizedBox(height: 25),
@@ -716,11 +813,12 @@ class _AttendancePageState extends State<AttendancePage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    
+
                     FutureBuilder(
-                      future: getUsers(),
+                      future: _usersFuture,
                       builder: (context, AsyncSnapshot snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: 20.0),
                             child: Center(child: CircularProgressIndicator()),
@@ -732,14 +830,17 @@ class _AttendancePageState extends State<AttendancePage> {
                         if (!snapshot.hasData || users.isEmpty) {
                           return buildText('No Attendance History Found');
                         }
-                        
+
                         return ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: users.length > 5 ? 5 : users.length, // Show recent 5 logs on dashboard
+                          itemCount: users.length > 5
+                              ? 5
+                              : users.length, // Show recent 5 logs on dashboard
                           itemBuilder: (BuildContext context, int index) {
                             final log = users[index];
-                            final attendanceStr = log['attendance']?.toString() ?? 'Absent';
+                            final attendanceStr =
+                                log['attendance']?.toString() ?? 'Absent';
                             final isPresent = attendanceStr == 'Present';
                             return Container(
                               margin: const EdgeInsets.only(bottom: 10),
@@ -752,26 +853,35 @@ class _AttendancePageState extends State<AttendancePage> {
                                 leading: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: isPresent ? Colors.green.shade50 : Colors.red.shade50,
+                                    color: isPresent
+                                        ? Colors.green.shade50
+                                        : Colors.red.shade50,
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
                                     isPresent ? Icons.check : Icons.close,
-                                    color: isPresent ? Colors.green : Colors.red,
+                                    color:
+                                        isPresent ? Colors.green : Colors.red,
                                   ),
                                 ),
                                 title: Text(
-                                  log['login_date']?.toString() ?? 'Date Unknown',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  log['login_date']?.toString() ??
+                                      'Date Unknown',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14),
                                 ),
                                 subtitle: Text(
                                   "Login: ${log['login_at'] ?? 'N/A'}  •  Logout: ${log['logout_at']?.toString() == 'null' ? 'Active' : log['logout_at']}",
-                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600),
                                 ),
                                 trailing: Text(
                                   isPresent ? "Present" : "Absent",
                                   style: TextStyle(
-                                    color: isPresent ? Colors.green : Colors.red,
+                                    color:
+                                        isPresent ? Colors.green : Colors.red,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                   ),
@@ -792,7 +902,8 @@ class _AttendancePageState extends State<AttendancePage> {
     );
   }
 
-  Widget _buildQuickAction(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildQuickAction(BuildContext context, String label, IconData icon,
+      Color color, VoidCallback onTap) {
     return Card(
       elevation: 2,
       shadowColor: Colors.black12,
