@@ -26,6 +26,7 @@ Route::get('/health', function () {
 Route::prefix('/auth')->group(function () {
     Route::post('/signup', [AuthController::class, 'signup']);
     Route::post('/token', [AuthController::class, 'login']);
+    Route::get('/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
     Route::get('/users', [AuthController::class, 'getUsers']);
     Route::put('/users/{user_id}', [AuthController::class, 'updateUser']);
     Route::put('/users/username/{username}', [AuthController::class, 'updateUserByUsername']);
@@ -58,6 +59,8 @@ Route::prefix('/employees')->group(function () {
 
 // Attendance routes (protected)
 Route::prefix('/attendance')->group(function () {
+    Route::get('/log/filter', [AttendanceController::class, 'filteredLog'])->middleware('auth:sanctum');
+    Route::post('/punch', [AttendanceController::class, 'punch'])->middleware('auth:sanctum');
     Route::get('/', [AttendanceController::class, 'index']);
     Route::post('/', [AttendanceController::class, 'store']);
     Route::get('/{attendance_id}', [AttendanceController::class, 'show']);
@@ -84,7 +87,8 @@ Route::prefix('/tasks')->group(function () {
 });
 
 // Daily Tasks routes (protected)
-Route::prefix('/daily-tasks')->group(function () {
+Route::prefix('/daily-tasks')->middleware('auth:sanctum')->group(function () {
+    Route::get('/report/download', [TaskController::class, 'downloadDailyTaskReport'])->middleware('auth:sanctum');
     Route::get('/', [TaskController::class, 'indexDailyTasks']);
     Route::post('/', [TaskController::class, 'storeDailyTask']);
     Route::get('/{task_id}', [TaskController::class, 'showDailyTask']);
@@ -96,7 +100,7 @@ Route::prefix('/daily-tasks')->group(function () {
 });
 
 // Leave routes (protected)
-Route::prefix('/leave')->group(function () {
+Route::prefix('/leave')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [LeaveController::class, 'index']);
     Route::post('/', [LeaveController::class, 'store']);
     Route::get('/{leave_id}', [LeaveController::class, 'show']);
@@ -112,11 +116,11 @@ Route::prefix('/leave')->group(function () {
 });
 
 // Leave Management route
-Route::get('/manageleave', [LeaveController::class, 'getManageLeave']);
-Route::post('/initialize-leave-calculators', [LeaveController::class, 'initializeAllEmployeeLeaveCalculators']);
+Route::get('/manageleave', [LeaveController::class, 'getManageLeave'])->middleware('auth:sanctum');
+Route::post('/initialize-leave-calculators', [LeaveController::class, 'initializeAllEmployeeLeaveCalculators'])->middleware('auth:sanctum');
 
 // Leave Configuration routes (for Super Admin)
-Route::prefix('/leave-config')->group(function () {
+Route::prefix('/leave-config')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [LeaveController::class, 'indexLeaveConfig']);
     Route::post('/', [LeaveController::class, 'storeLeaveConfig']);
     Route::get('/{leave_id}', [LeaveController::class, 'showLeaveConfig']);

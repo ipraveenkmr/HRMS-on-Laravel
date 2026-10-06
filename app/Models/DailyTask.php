@@ -17,7 +17,8 @@ class DailyTask extends Model
         'manager',
         'submission_date',
         'document',
-        'description'
+        'description',
+        'status'
     ];
 
     protected $casts = [

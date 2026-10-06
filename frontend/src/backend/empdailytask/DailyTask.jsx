@@ -112,6 +112,9 @@ TablePaginationActions.propTypes = {
 };
 
 export default function EmpDailyTask() {
+  const [filters, setFilters] = useState({ from: '', to: '', status: '' });
+  const [reportPeriod, setReportPeriod] = useState('weekly');
+  const [reportDate, setReportDate] = useState(new Date().toISOString().slice(0, 10));
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [eventid, setEventid] = useState("");
@@ -125,7 +128,8 @@ export default function EmpDailyTask() {
   const employees = usecdotStore((state) => state.employees);
   const username = usecdotStore((state) => state.username);
   const emp_type = usecdotStore((state) => state.emp_type);
-  const dailytask = usecdotStore((state) => state.dailytask).sort((a, b) =>
+  const dailyTaskData = usecdotStore((state) => state.dailytask);
+  const dailytask = (Array.isArray(dailyTaskData) ? [...dailyTaskData] : []).sort((a, b) =>
     a.id > b.id ? -1 : 1
   );
 
@@ -136,19 +140,14 @@ export default function EmpDailyTask() {
     page > 0 ? Math.max(0, (1 + page) * rowsPerPage - dailytask.length) : 0;
 
   useEffect(() => {
-    if (emp_type == "Admin") {
-      dailytaskApi();
-    }
-    if (emp_type == "Employee") {
-      mydailytaskApi();
-    }
-  }, [emp_type]);
+    dailytaskApi();
+  }, [filters.from, filters.to, filters.status]);
 
 
   const dailytaskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "daily-tasks")
+      .get(baseURL + "daily-tasks", { params: filters })
       .then(function (response) {
         updateDailytask(response.data);
       })
@@ -210,7 +209,7 @@ export default function EmpDailyTask() {
   const dailyTaskApi = async () => {
     // starting
     await axios
-      .get(baseURL + "daily-tasks")
+      .get(baseURL + "daily-tasks", { params: filters })
       .then(function (response) {
         console.log("assets: " + JSON.stringify(response.data));
         updateDailytask(response.data);
@@ -234,6 +233,23 @@ export default function EmpDailyTask() {
         console.log("kcheckpost" + error); //return 429
       });
     // ending
+  };
+
+  const downloadReport = async (format) => {
+    try {
+      const response = await axios.get(baseURL + 'daily-tasks/report/download', {
+        params: { period: reportPeriod, date: reportDate, format, ...(filters.status ? { status: filters.status } : {}) },
+        responseType: 'blob',
+      });
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `daily-tasks-${reportPeriod}-${reportDate}.${format}`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      Swal.fire('Download failed', 'Please try again.', 'error');
+    }
   };
 
   return (
@@ -275,6 +291,18 @@ export default function EmpDailyTask() {
           Add
         </Button>
       </Stack>
+      <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: 'wrap' }}>
+        <label>From <input type="date" value={filters.from} onChange={(e) => { setPage(0); setFilters({ ...filters, from: e.target.value }); }} /></label>
+        <label>To <input type="date" min={filters.from} value={filters.to} onChange={(e) => { setPage(0); setFilters({ ...filters, to: e.target.value }); }} /></label>
+        <label>Status <select value={filters.status} onChange={(e) => { setPage(0); setFilters({ ...filters, status: e.target.value }); }}><option value="">All</option><option>Pending</option><option>In Progress</option><option>Completed</option></select></label>
+        <Button onClick={() => setFilters({ from: '', to: '', status: '' })}>Clear filters</Button>
+      </Stack>
+      <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: 'wrap' }}>
+        <label>Report <select value={reportPeriod} onChange={(e) => setReportPeriod(e.target.value)}><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
+        <label>Period date <input type="date" value={reportDate} onChange={(e) => setReportDate(e.target.value)} /></label>
+        <Button onClick={() => downloadReport('csv')}>Download CSV</Button>
+        <Button onClick={() => downloadReport('pdf')}>Download PDF</Button>
+      </Stack>
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 500 }} aria-label="custom pagination table">
           <TableHead>
@@ -285,6 +313,7 @@ export default function EmpDailyTask() {
               {/* <TableCell>Submission Date</TableCell> */}
               <TableCell>Description</TableCell>
               <TableCell>Created At</TableCell>
+              <TableCell>Status</TableCell>
               <TableCell>Action</TableCell>
             </TableRow>
           </TableHead>
@@ -313,6 +342,7 @@ export default function EmpDailyTask() {
                 <TableCell style={{ width: 160 }}>
                   {moment(row.created_at).format("DD-MM-YYYY")}
                 </TableCell>
+                <TableCell>{row.status || 'Pending'}</TableCell>
                 <TableCell style={{ width: 20 }}>
                   <Stack spacing={2} direction="row">
                     <FiEdit

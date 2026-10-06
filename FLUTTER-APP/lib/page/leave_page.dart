@@ -25,6 +25,55 @@ class _LeavePageState extends State<LeavePage> {
   String remaining_other_leave_in_days = "";
   String remaining_medical_leave_in_days = "";
 
+  Future<void> editLeave(Map leave) async {
+    final reason = TextEditingController(text: leave['leave_reason']?.toString() ?? '');
+    DateTime from = DateTime.tryParse(leave['leave_from_date']?.toString() ?? '') ?? DateTime.now();
+    DateTime to = DateTime.tryParse(leave['leave_to_date']?.toString() ?? '') ?? from;
+    String? selectedType = leave['leave_type']?.toString();
+    final saved = await showDialog<bool>(context: context, builder: (dialogContext) => StatefulBuilder(
+      builder: (context, update) => AlertDialog(
+        title: const Text('Edit pending leave'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: reason, decoration: const InputDecoration(labelText: 'Reason'), maxLength: 99),
+          DropdownButtonFormField<String>(value: selectedType, hint: const Text('Leave type'),
+            items: ['Casual Leave', 'Earned Leave', 'Medical Leave', 'Other Leave', 'Unpaid Leave']
+              .map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
+            onChanged: (value) => update(() => selectedType = value)),
+          TextButton(onPressed: () async {
+            final picked = await showDatePicker(context: context, initialDate: from, firstDate: DateTime(2020), lastDate: DateTime(2100));
+            if (picked != null) update(() => from = picked);
+          }, child: Text('From: ${from.year}-${from.month}-${from.day}')),
+          TextButton(onPressed: () async {
+            final picked = await showDatePicker(context: context, initialDate: to, firstDate: DateTime(2020), lastDate: DateTime(2100));
+            if (picked != null) update(() => to = picked);
+          }, child: Text('To: ${to.year}-${to.month}-${to.day}')),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () async {
+            if (reason.text.trim().isEmpty || to.isBefore(from)) {
+              ScaffoldMessenger.of(this.context).showSnackBar(const SnackBar(content: Text('Enter a reason and a valid date range.')));
+              return;
+            }
+            try {
+              final format = (DateTime value) => '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
+              await ApiClient.client.put('$link' 'leave/${leave['id']}', data: {
+                'leave_reason': reason.text.trim(), 'leave_from_date': format(from), 'leave_to_date': format(to),
+                if (selectedType != null) 'leave_type': selectedType,
+              });
+              if (dialogContext.mounted) Navigator.pop(dialogContext, true);
+            } on DioException catch (e) {
+              final detail = e.response?.data is Map ? e.response?.data['detail'] ?? e.response?.data['message'] : null;
+              if (mounted) ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(detail?.toString() ?? 'Could not update leave.')));
+            }
+          }, child: const Text('Save')),
+        ],
+      ),
+    ));
+    reason.dispose();
+    if (saved == true) setState(() { getLeave(); getUsers().then((data) { if (mounted) setState(() => users = data); }); });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -281,6 +330,10 @@ class _LeavePageState extends State<LeavePage> {
                                             color: Colors.grey.shade800),
                                       ),
                                     ],
+                                  ),
+                                  if (status == 'Pending') Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton.icon(onPressed: () => editLeave(leave), icon: const Icon(Icons.edit), label: const Text('Edit')),
                                   ),
                                 ],
                               ),

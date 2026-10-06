@@ -6,9 +6,20 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
+    public function me(Request $request)
+    {
+        $employee = $request->user()->employee;
+        return response()->json([
+            'username' => $request->user()->username,
+            'employee_id' => $employee?->id,
+            'department_id' => $employee?->department_id,
+            'role' => $employee?->emp_type,
+        ]);
+    }
     public function signup(Request $request)
     {
         $fields = $request->validate([
@@ -39,13 +50,19 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $fields = $request->validate([
-            'username' => 'required|string',
+            'username' => 'required|string|max:200',
             'password' => 'required|string',
         ]);
+
+        $key = 'login:'.strtolower($fields['username']).'|'.$request->ip();
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            return response()->json(['detail' => 'Too many login attempts. Please try again in '.RateLimiter::availableIn($key).' seconds.'], 429);
+        }
 
         $user = User::where('username', $fields['username'])->first();
 
         if (!$user || !Hash::check($fields['password'], $user->hashed_password)) {
+            RateLimiter::hit($key, 60);
             return response()->json([
                 'detail' => 'Incorrect username or password'
             ], 401);
@@ -56,6 +73,8 @@ class AuthController extends Controller
                 'detail' => 'User account is inactive'
             ], 401);
         }
+
+        RateLimiter::clear($key);
 
         $token = $user->createToken('hrms-token')->plainTextToken;
 

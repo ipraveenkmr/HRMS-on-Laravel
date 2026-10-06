@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../controller/authentication.dart';
 import '../door/widgets/cdotcomponents.dart';
 import 'LeaveModel.dart';
+import 'package:intl/intl.dart';
 
 class ApplyLeavePage extends StatefulWidget {
   @override
@@ -28,10 +29,17 @@ class _ApplyLeaveState extends State<ApplyLeavePage> {
   TextEditingController leavereasoncontroller = TextEditingController();
   TextEditingController leavefromcontroller = TextEditingController();
   TextEditingController leavetocontroller = TextEditingController();
+  String leaveType = 'Casual Leave';
 
   void applyLeavehere() {
+    final from = DateTime.tryParse(leavefromcontroller.text);
+    final to = DateTime.tryParse(leavetocontroller.text);
+    if (from == null || to == null || to.isBefore(from) || leavereasoncontroller.text.trim().isEmpty) {
+      Get.snackbar('Leave request', 'Enter a reason and a valid date range.');
+      return;
+    }
     applyLeave(leavefromcontroller.text, leavetocontroller.text,
-        leavereasoncontroller.text);
+        leavereasoncontroller.text.trim(), leaveType);
   }
 
   @override
@@ -46,27 +54,15 @@ class _ApplyLeaveState extends State<ApplyLeavePage> {
   }
 
   _dateString() {
-    if (_date == null) {
-      _date = DateTime.now();
-      leavefromcontroller.text = '${_date?.year}-${_date?.month}-${_date?.day}';
-      return '${_date?.year}-${_date?.month}-${_date?.day}';
-    } else {
-      leavefromcontroller.text = '${_date?.year}-${_date?.month}-${_date?.day}';
-      return '${_date?.year}-${_date?.month}-${_date?.day}';
-    }
+    _date ??= DateTime.now();
+    leavefromcontroller.text = DateFormat('yyyy-MM-dd').format(_date!);
+    return leavefromcontroller.text;
   }
 
   _dateToString() {
-    if (_dateto == null) {
-      _dateto = DateTime.now();
-      leavetocontroller.text =
-          '${_dateto?.year}-${_dateto?.month}-${_dateto?.day}';
-      return '${_dateto?.year}-${_dateto?.month}-${_dateto?.day}';
-    } else {
-      leavetocontroller.text =
-          '${_dateto?.year}-${_dateto?.month}-${_dateto?.day}';
-      return '${_dateto?.year}-${_dateto?.month}-${_dateto?.day}';
-    }
+    _dateto ??= DateTime.now();
+    leavetocontroller.text = DateFormat('yyyy-MM-dd').format(_dateto!);
+    return leavetocontroller.text;
   }
 
   @override
@@ -150,6 +146,15 @@ class _ApplyLeaveState extends State<ApplyLeavePage> {
                         ),
                         const SizedBox(height: 25.0),
                         
+                        DropdownButtonFormField<String>(
+                          value: leaveType,
+                          decoration: const InputDecoration(labelText: 'Leave type'),
+                          items: ['Casual Leave', 'Earned Leave', 'Medical Leave', 'Other Leave', 'Unpaid Leave']
+                              .map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
+                          onChanged: (value) => setState(() => leaveType = value ?? 'Casual Leave'),
+                        ),
+                        const SizedBox(height: 20),
+
                         // Leave From Date Selection
                         Text(
                           'Leave From:',

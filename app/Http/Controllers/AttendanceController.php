@@ -8,9 +8,86 @@ use App\Models\Employee;
 use App\Models\FinancialYear;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
+    public function filteredLog(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'from' => 'nullable|date_format:Y-m-d',
+            'to' => 'nullable|date_format:Y-m-d|after_or_equal:from',
+            'status' => 'nullable|string|max:99',
+            'employee_id' => 'nullable|integer|exists:employees,id',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+        if (isset($data['from'], $data['to']) && Carbon::parse($data['from'])->diffInDays(Carbon::parse($data['to'])) > 366) {
+            return response()->json(['errors' => ['to' => ['Choose a range of at most 366 days.']]], 422);
+        }
+        $actor = $request->user()->employee;
+        if (!$actor) return response()->json(['detail' => 'Employee profile not found'], 403);
+        $query = AttendanceRecord::query();
+        if (!in_array($actor->emp_type, ['Admin', 'Manager'], true)) {
+            $query->where('employee_id', $actor->id);
+        } elseif ($actor->emp_type === 'Manager') {
+            $team = Employee::where('manager_id', $actor->id)->pluck('id')->push($actor->id);
+            $query->whereIn('employee_id', $team);
+        }
+        if (isset($data['employee_id'])) $query->where('employee_id', $data['employee_id']);
+        if (isset($data['from'])) $query->where('attendance_date', '>=', $data['from']);
+        if (isset($data['to'])) $query->where('attendance_date', '<=', $data['to']);
+        if (isset($data['status'])) $query->where('attendance', $data['status']);
+        return response()->json($query->orderByDesc('attendance_date')->orderByDesc('id')->paginate($data['per_page'] ?? 20));
+    }
+
+    public function punch(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'action' => 'required|in:in,out',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'device' => 'nullable|string|max:99',
+        ]);
+        $employee = $request->user()->employee;
+        if (!$employee) return response()->json(['detail' => 'Employee profile not found'], 403);
+        $now = now();
+        $date = $now->toDateString();
+        $result = DB::transaction(function () use ($employee, $data, $now, $date) {
+            Employee::whereKey($employee->id)->lockForUpdate()->first();
+            $record = AttendanceRecord::where('employee_id', $employee->id)
+                ->where('attendance_date', $date)->lockForUpdate()->first();
+            if ($data['action'] === 'in') {
+                if ($record) return ['error' => 'You have already punched in for today.'];
+                $year = $this->getCurrentFinancialYear();
+                if (!$year) return ['error' => 'No financial year is configured.'];
+                $record = AttendanceRecord::create([
+                    'financial_year_id' => $year->id,
+                    'employee_id' => $employee->id,
+                    'department_id' => $employee->department_id,
+                    'username' => $employee->username,
+                    'attendance_date' => $date,
+                    'login_date' => $date,
+                    'login_month' => $now->format('m'),
+                    'login_year' => $now->format('Y'),
+                    'login_at' => $now->format('H:i'),
+                    'attendance' => 'Present',
+                    'latitude' => isset($data['latitude']) ? (string) $data['latitude'] : null,
+                    'longitude' => isset($data['longitude']) ? (string) $data['longitude'] : null,
+                    'device' => $data['device'] ?? null,
+                ]);
+            } else {
+                if (!$record || !$record->login_at) return ['error' => 'Punch in before punching out.'];
+                if ($record->logout_at) return ['error' => 'You have already punched out for today.'];
+                $record->logout_at = $now->format('H:i');
+                $record->log_time = max(0, round($record->created_at->diffInMinutes($now) / 60, 2));
+                $record->save();
+            }
+            return ['record' => $record];
+        });
+        if (isset($result['error'])) return response()->json(['detail' => $result['error']], 409);
+        return response()->json($result['record']);
+    }
     private function getCurrentFinancialYear()
     {
         $currentDate = Carbon::now();

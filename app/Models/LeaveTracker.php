@@ -25,6 +25,7 @@ class LeaveTracker extends Model
         'other_leave_in_days',
         'other_leave_in_hours',
         'leave_status',
+        'leave_type',
         'leave_reason',
         'leave_from_date',
         'leave_from_month',

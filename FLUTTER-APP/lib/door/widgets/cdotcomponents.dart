@@ -10,6 +10,7 @@ import '../../page/asset_page.dart';
 import '../../page/attendance_page.dart';
 import '../../page/stopwatch.dart';
 import '../../page/task_page.dart';
+import '../../page/daily_task_management.dart';
 import '../login.dart';
 
 class CdotComponents{
@@ -83,13 +84,11 @@ class CdotComponents{
             //     Get.to(AttendanceScreen());
             //   },
             // ),
-            // ListTile(
-            //   leading: Icon(Icons.task_alt, size: _drawerIconSize,color: _accentColor),
-            //   title: Text('Daily Task',style: TextStyle(fontSize: _drawerFontSize,color: _accentColor),),
-            //   onTap: () {
-            //     Get.to(DailyTaskPage());
-            //   },
-            // ),
+            ListTile(
+              leading: Icon(Icons.task_alt, size: _drawerIconSize, color: _accentColor),
+              title: Text('Daily Tasks', style: TextStyle(fontSize: _drawerFontSize, color: _accentColor)),
+              onTap: () => Get.to(const DailyTaskManagementPage()),
+            ),
             ListTile(
               leading: Icon(Icons.task, size: _drawerIconSize,color: _accentColor),
               title: Text('Task',style: TextStyle(fontSize: _drawerFontSize,color: _accentColor),),
@@ -152,4 +151,3 @@ class CdotComponents{
     );
   }
 }
-

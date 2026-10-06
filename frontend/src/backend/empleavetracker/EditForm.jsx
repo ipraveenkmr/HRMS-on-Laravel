@@ -130,7 +130,7 @@ export default function EditForm({ onClick, eventid }) {
 
       // starting
       await axios
-        .post(baseURL + "leave", values)
+        .put(baseURL + "leave/" + eventid, values)
         .then(function (response) {
           console.log("Employee post: " + JSON.stringify(response.data));
           toast.success("Your data is submitted!", {
@@ -148,7 +148,7 @@ export default function EditForm({ onClick, eventid }) {
         })
         .catch(function (error) {
           console.log("kcheckpost" + error); //return 429
-          toast.error("Something went wrong!", {
+          toast.error(error.response?.data?.detail || error.response?.data?.message || "Something went wrong!", {
             position: "top-right",
             autoClose: 5000,
             hideProgressBar: true,

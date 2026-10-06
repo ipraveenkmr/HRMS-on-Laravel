@@ -42,7 +42,7 @@ class MockInterceptor extends Interceptor {
     if (path.endsWith('auth/token') && method == 'POST') {
       handler.resolve(Response(
         requestOptions: options,
-        data: {"token": "dummy-jwt-token-xyz123"},
+        data: {"access_token": "dummy-jwt-token-xyz123"},
         statusCode: 200,
       ));
       return;

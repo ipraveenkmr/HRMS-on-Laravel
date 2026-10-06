@@ -7,6 +7,8 @@ use App\Models\AssignedJob;
 use App\Models\DailyTask;
 use App\Models\Employee;
 use Illuminate\Http\JsonResponse;
+use App\Support\TaskReportPdf;
+use Carbon\Carbon;
 
 class TaskController extends Controller
 {
@@ -145,18 +147,41 @@ class TaskController extends Controller
     }
 
     // Daily Tasks
-    public function indexDailyTasks(): JsonResponse
+    private function dailyTaskQuery(Request $request)
     {
-        $dailyTasks = DailyTask::with(['employee', 'department'])
-            ->orderBy('created_at')
-            ->get();
+        $actor = $request->user()?->employee;
+        if (!$actor) abort(403, 'Employee profile not found');
+        $query = DailyTask::query();
+        if ($actor->emp_type === 'Manager') {
+            $ids = Employee::where('manager_id', $actor->id)->pluck('id')->push($actor->id);
+            $query->whereIn('employee_id', $ids);
+        } elseif ($actor->emp_type !== 'Admin') {
+            $query->where('employee_id', $actor->id);
+        }
+        return $query;
+    }
+
+    public function indexDailyTasks(Request $request): JsonResponse
+    {
+        $filters = $request->validate([
+            'from' => 'nullable|date_format:Y-m-d',
+            'to' => 'nullable|date_format:Y-m-d|after_or_equal:from',
+            'status' => 'nullable|in:Pending,In Progress,Completed',
+            'employee_id' => 'nullable|integer|exists:employees,id',
+        ]);
+        $query = $this->dailyTaskQuery($request)->with(['employee', 'department']);
+        if (isset($filters['from'])) $query->where('submission_date', '>=', $filters['from']);
+        if (isset($filters['to'])) $query->where('submission_date', '<=', $filters['to']);
+        if (isset($filters['status'])) $query->where('status', $filters['status']);
+        if (isset($filters['employee_id'])) $query->where('employee_id', $filters['employee_id']);
+        $dailyTasks = $query->orderByDesc('submission_date')->orderByDesc('id')->get();
         
         return response()->json($dailyTasks);
     }
 
-    public function showDailyTask($id): JsonResponse
+    public function showDailyTask(Request $request, $id): JsonResponse
     {
-        $dailyTask = DailyTask::with(['employee', 'department'])->find($id);
+        $dailyTask = $this->dailyTaskQuery($request)->with(['employee', 'department'])->find($id);
         
         if (!$dailyTask) {
             return response()->json(['error' => 'Daily task not found'], 404);
@@ -168,15 +193,22 @@ class TaskController extends Controller
     public function storeDailyTask(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'task' => 'nullable|string',
+            'task' => 'required|string|max:2000',
             'username' => 'nullable|string|max:200',
             'employee_id' => 'required|exists:employees,id',
             'department_id' => 'required|exists:departments,id',
             'manager' => 'nullable|string|max:200',
-            'submission_date' => 'nullable|string|max:99',
+            'submission_date' => 'nullable|date',
             'document' => 'nullable|string|max:200',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:10000',
+            'status' => 'nullable|in:Pending,In Progress,Completed',
         ]);
+
+        $actor = $request->user()?->employee;
+        if (!$actor || $actor->id !== (int) $validated['employee_id']) return response()->json(['detail' => 'You can only create your own tasks.'], 403);
+        $validated['username'] = $actor->username;
+        $validated['department_id'] = $actor->department_id;
+        $validated['submission_date'] = isset($validated['submission_date']) ? Carbon::parse($validated['submission_date'])->toDateString() : now()->toDateString();
 
         $dailyTask = DailyTask::create($validated);
         
@@ -188,22 +220,28 @@ class TaskController extends Controller
 
     public function updateDailyTask(Request $request, $id): JsonResponse
     {
-        $dailyTask = DailyTask::find($id);
+        $dailyTask = $this->dailyTaskQuery($request)->find($id);
         
         if (!$dailyTask) {
             return response()->json(['error' => 'Daily task not found'], 404);
         }
 
         $validated = $request->validate([
-            'task' => 'nullable|string',
+            'task' => 'sometimes|required|string|max:2000',
             'username' => 'nullable|string|max:200',
             'employee_id' => 'sometimes|exists:employees,id',
             'department_id' => 'sometimes|exists:departments,id',
             'manager' => 'nullable|string|max:200',
-            'submission_date' => 'nullable|string|max:99',
+            'submission_date' => 'nullable|date',
             'document' => 'nullable|string|max:200',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:10000',
+            'status' => 'nullable|in:Pending,In Progress,Completed',
         ]);
+
+        if ($dailyTask->employee_id !== $request->user()->employee?->id) return response()->json(['detail' => 'Only the task owner may edit it.'], 403);
+
+        unset($validated['employee_id'], $validated['username'], $validated['department_id']);
+        if (isset($validated['submission_date'])) $validated['submission_date'] = Carbon::parse($validated['submission_date'])->toDateString();
 
         $dailyTask->update($validated);
         
@@ -213,22 +251,66 @@ class TaskController extends Controller
         ]);
     }
 
-    public function destroyDailyTask($id): JsonResponse
+    public function destroyDailyTask(Request $request, $id): JsonResponse
     {
-        $dailyTask = DailyTask::find($id);
+        $dailyTask = $this->dailyTaskQuery($request)->find($id);
         
         if (!$dailyTask) {
             return response()->json(['error' => 'Daily task not found'], 404);
         }
+        if ($dailyTask->employee_id !== $request->user()->employee?->id) return response()->json(['detail' => 'Only the task owner may delete it.'], 403);
         
         $dailyTask->delete();
         
         return response()->json(['message' => 'Daily task deleted successfully']);
     }
 
-    public function getEmployeeDailyTasks($employeeId): JsonResponse
+    public function downloadDailyTaskReport(Request $request)
     {
-        $dailyTasks = DailyTask::with(['department'])
+        $data = $request->validate([
+            'period' => 'required|in:weekly,monthly',
+            'date' => 'required|date_format:Y-m-d',
+            'format' => 'required|in:csv,pdf',
+            'status' => 'nullable|in:Pending,In Progress,Completed',
+            'employee_id' => 'nullable|integer|exists:employees,id',
+        ]);
+        $date = Carbon::parse($data['date']);
+        $from = $data['period'] === 'weekly' ? $date->copy()->startOfWeek() : $date->copy()->startOfMonth();
+        $to = $data['period'] === 'weekly' ? $date->copy()->endOfWeek() : $date->copy()->endOfMonth();
+        $query = $this->dailyTaskQuery($request)->with('employee')
+            ->whereBetween('submission_date', [$from->toDateString(), $to->toDateString()]);
+        if (isset($data['status'])) $query->where('status', $data['status']);
+        if (isset($data['employee_id'])) $query->where('employee_id', $data['employee_id']);
+        $tasks = $query->orderBy('submission_date')->orderBy('id')->get();
+        $filename = 'daily-tasks-'.$data['period'].'-'.$from->toDateString().'-'.$to->toDateString().'.'.$data['format'];
+        if ($data['format'] === 'csv') {
+            return response()->streamDownload(function () use ($tasks) {
+                $handle = fopen('php://output', 'w');
+                fwrite($handle, "\xEF\xBB\xBF");
+                fputcsv($handle, ['Date', 'Employee', 'Task', 'Description', 'Status']);
+                foreach ($tasks as $task) {
+                    $cells = [$task->submission_date, $task->employee?->emp_name ?? $task->username, $task->task, $task->description, $task->status];
+                    fputcsv($handle, array_map(fn ($value) => preg_match('/^\s*[=+@\-]/u', (string) $value) ? "'".$value : $value, $cells));
+                }
+                fclose($handle);
+            }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
+        $lines = ['Daily task report', $from->toDateString().' to '.$to->toDateString(), 'Tasks: '.$tasks->count(), 'Generated: '.now()->format('Y-m-d H:i'), ''];
+        foreach ($tasks as $task) {
+            $lines[] = $task->submission_date.' | '.($task->employee?->emp_name ?? $task->username).' | '.$task->status;
+            $lines[] = 'Task: '.$task->task;
+            if ($task->description) $lines[] = 'Description: '.$task->description;
+            $lines[] = '';
+        }
+        return response(TaskReportPdf::render($lines), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
+    }
+
+    public function getEmployeeDailyTasks(Request $request, $employeeId): JsonResponse
+    {
+        $dailyTasks = $this->dailyTaskQuery($request)->with(['department'])
             ->where('username', $employeeId)
             ->orderBy('created_at')
             ->get();
@@ -236,9 +318,9 @@ class TaskController extends Controller
         return response()->json($dailyTasks);
     }
 
-    public function getDailyTasksByDepartment($departmentId): JsonResponse
+    public function getDailyTasksByDepartment(Request $request, $departmentId): JsonResponse
     {
-        $dailyTasks = DailyTask::with(['employee'])
+        $dailyTasks = $this->dailyTaskQuery($request)->with(['employee'])
             ->where('department_id', $departmentId)
             ->orderBy('created_at')
             ->get();
@@ -260,12 +342,12 @@ class TaskController extends Controller
         return response()->json($tasks);
     }
 
-    public function getDailyTasksByManager($manager_id): JsonResponse
+    public function getDailyTasksByManager(Request $request, $manager_id): JsonResponse
     {
         // Get employees under this manager
         $employeeIds = Employee::where('manager_id', $manager_id)->pluck('id');
         
-        $dailyTasks = DailyTask::with(['employee', 'department'])
+        $dailyTasks = $this->dailyTaskQuery($request)->with(['employee', 'department'])
             ->whereIn('employee_id', $employeeIds)
             ->orderBy('created_at')
             ->get();

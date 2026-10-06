@@ -96,41 +96,8 @@ Future<String> dailyTask(
       'manager': manager,
       'description': description,
     });
-    if (response.statusCode == 200) {
-      List months = [
-        '01',
-        '02',
-        '03',
-        '04',
-        '05',
-        '06',
-        '07',
-        '08',
-        '09',
-        '10',
-        '11',
-        '12'
-      ];
-      var now = new DateTime.now();
-      var current_day = now.day;
-      var current_mon = now.month;
-      var current_year = now.year;
-      var minutes;
-      var login_date = current_day.toString();
-      var login_month = months[current_mon - 1].toString();
-      var login_year = current_year.toString();
-      if (now.minute.toString().length == 1) {
-        minutes = "0" + now.minute.toString();
-      } else {
-        minutes = now.minute.toString();
-      }
-      var current_time = now.hour.toString() + ":" + minutes;
-      updateAttendance(current_time, login_year, login_month, login_date);
-      Get.snackbar("Response", 'Logout time updated!');
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.setString(
-          'shared_current_time', 'Last logout time: ' + current_time);
-      prefs.setString('shared_office_mode', 'You are now logged out!');
+    if (response.statusCode == 201) {
+      Get.snackbar('Task', 'Daily task saved.');
       Get.offAll(AttendancePage());
     }
     if (response.statusCode == 401) {
@@ -143,7 +110,7 @@ Future<String> dailyTask(
   return 'Loaded';
 }
 
-Future<String> applyLeave(String from, String to, String reason) async {
+Future<String> applyLeave(String from, String to, String reason, String leaveType) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   String? uname = prefs.getString('username');
   String? empid = prefs.getString('empid');
@@ -167,17 +134,20 @@ Future<String> applyLeave(String from, String to, String reason) async {
       'leave_from_date': from,
       'leave_to_date': to,
       'leave_reason': reason,
+      'leave_type': leaveType,
       'leave_status': "Pending",
     });
-    if (response.statusCode == 200) {
+    if (response.statusCode == 201) {
       Get.offAll(LeavePage());
     }
     if (response.statusCode == 401) {
       Get.snackbar("Error while submitting!", "Please try again..");
     }
+  } on DioException catch (e) {
+    final detail = e.response?.data is Map ? e.response?.data['detail'] ?? e.response?.data['message'] : null;
+    Get.snackbar('Leave request', detail?.toString() ?? 'Unable to submit leave. Please try again.');
   } catch (e) {
-    Get.snackbar("Error while creating data!", "Please try again..");
-    print(e);
+    Get.snackbar('Leave request', 'Unable to submit leave. Please try again.');
   }
   return 'Loaded';
 }
@@ -280,12 +250,11 @@ Future<String> userlogin(String email, String password) async {
       }
       await getUserDetails(email);
     }
-    if (response.statusCode == 401) {
-      Get.snackbar("Error while login!", "Please try again..");
-    }
+  } on DioException catch (e) {
+    final detail = e.response?.data is Map ? e.response?.data['detail'] ?? e.response?.data['message'] : null;
+    Get.snackbar('Sign in failed', detail?.toString() ?? 'Check your connection and try again.');
   } catch (e) {
-    Get.snackbar("Error while login from catch!", "Please try again..");
-    print(e);
+    Get.snackbar('Sign in failed', 'Please try again.');
   }
   return 'Loaded';
 }

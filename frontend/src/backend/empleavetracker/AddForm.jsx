@@ -125,7 +125,7 @@ export default function AddForm({ onClick }) {
         })
         .catch(function (error) {
           console.log("kcheckpost" + error); //return 429
-          toast.error("Something went wrong!", {
+          toast.error(error.response?.data?.detail || error.response?.data?.message || "Something went wrong!", {
             position: "top-right",
             autoClose: 5000,
             hideProgressBar: true,

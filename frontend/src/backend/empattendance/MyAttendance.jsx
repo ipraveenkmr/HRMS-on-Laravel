@@ -112,6 +112,11 @@ TablePaginationActions.propTypes = {
 };
 
 export default function MyAttendance() {
+  const [punchRecord, setPunchRecord] = useState(null);
+  const [punchBusy, setPunchBusy] = useState(false);
+  const [punchError, setPunchError] = useState('');
+  const [filters, setFilters] = useState({ from: moment().startOf('month').format('YYYY-MM-DD'), to: moment().endOf('month').format('YYYY-MM-DD'), status: '' });
+  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [eventid, setEventid] = useState("");
@@ -124,7 +129,8 @@ export default function MyAttendance() {
   const updateAttendance = usecdotStore((state) => state.updateAttendance);
   const updateFiyear = usecdotStore((state) => state.updateFiyear);
   const username = usecdotStore((state) => state.username);
-  const attendance = usecdotStore((state) => state.attendance).sort((a, b) =>
+  const attendanceData = usecdotStore((state) => state.attendance);
+  const attendance = (Array.isArray(attendanceData) ? [...attendanceData] : []).sort((a, b) =>
     a.id > b.id ? -1 : 1
   );
 
@@ -132,14 +138,39 @@ export default function MyAttendance() {
 
   useEffect(() => {
     attendanceApi();
-  }, []);
+  }, [page, rowsPerPage, filters.from, filters.to, filters.status]);
+
+  useEffect(() => {
+    if (!username) return;
+    axios.get(baseURL + `attendance/check/${moment().format('YYYY-MM-DD')}/${encodeURIComponent(username)}`)
+      .then((response) => setPunchRecord(response.data[0] || null))
+      .catch(() => setPunchError('Could not load today’s punch state.'));
+  }, [username]);
+
+  const punch = async (action) => {
+    if (punchBusy) return;
+    setPunchBusy(true);
+    setPunchError('');
+    try {
+      const response = await axios.post(baseURL + 'attendance/punch', { action });
+      setPunchRecord(response.data);
+      attendanceApi();
+    } catch (error) {
+      setPunchError(error.response?.data?.detail || 'Could not record your punch. Please retry.');
+      axios.get(baseURL + `attendance/check/${moment().format('YYYY-MM-DD')}/${encodeURIComponent(username)}`)
+        .then((response) => setPunchRecord(response.data[0] || null)).catch(() => {});
+    } finally {
+      setPunchBusy(false);
+    }
+  };
 
   const attendanceApi = async () => {
     // starting
     await axios
-      .get(baseURL + "attendance/employee/" + username)
+      .get(baseURL + "attendance/log/filter", { params: { ...filters, page: page + 1, per_page: rowsPerPage } })
       .then(function (response) {
-        updateAttendance(response.data);
+        updateAttendance(response.data.data);
+        setTotal(response.data.total);
       })
       .catch(function (error) {
         console.log("kcheckpost" + error); //return 429
@@ -149,7 +180,7 @@ export default function MyAttendance() {
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - attendance.length) : 0;
+    0;
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -233,15 +264,18 @@ export default function MyAttendance() {
           component="div"
           sx={{ flexGrow: 1 }}
         ></Typography>
-        <Button
-          variant="contained"
-          onClick={addUser}
-          endIcon={<AiOutlineFileAdd />}
-        >
-          Add
-        </Button>
+        <Button variant="contained" disabled={punchBusy || Boolean(punchRecord)} onClick={() => punch('in')}>Punch In</Button>
+        <Button variant="contained" disabled={punchBusy || !punchRecord || Boolean(punchRecord.logout_at)} onClick={() => punch('out')}>Punch Out</Button>
       </Stack>
+      <Typography>{punchRecord ? `Today: In ${punchRecord.login_at || '—'}, Out ${punchRecord.logout_at || '—'}` : 'Not punched in today'}</Typography>
+      {punchError && <Typography color="error" role="alert">{punchError}</Typography>}
       <Box height={20} />
+      <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: 'wrap' }}>
+        <label>From <input type="date" value={filters.from} onChange={(e) => { setPage(0); setFilters({ ...filters, from: e.target.value }); }} /></label>
+        <label>To <input type="date" min={filters.from} value={filters.to} onChange={(e) => { setPage(0); setFilters({ ...filters, to: e.target.value }); }} /></label>
+        <label>Status <select value={filters.status} onChange={(e) => { setPage(0); setFilters({ ...filters, status: e.target.value }); }}><option value="">All</option><option>Present</option><option>Absent</option><option>Half Day</option><option>Holiday</option><option>Web</option></select></label>
+        <Button onClick={() => { setPage(0); setFilters({ from: '', to: '', status: '' }); }}>Clear filters</Button>
+      </Stack>
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 500 }} aria-label="custom pagination table">
           <TableHead>
@@ -255,13 +289,7 @@ export default function MyAttendance() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {(rowsPerPage > 0
-              ? attendance.slice(
-                page * rowsPerPage,
-                page * rowsPerPage + rowsPerPage
-              )
-              : attendance
-            ).map((row) => (
+            {attendance.map((row) => (
               <TableRow key={row.id}>
                 {row.attendance == "Half Day" && (
                   <TableCell style={{ width: 160 }}>
@@ -322,7 +350,7 @@ export default function MyAttendance() {
               <TablePagination
                 rowsPerPageOptions={[5, 10, 25, { label: "All", value: -1 }]}
                 colSpan={8}
-                count={attendance.length}
+                count={total}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 SelectProps={{

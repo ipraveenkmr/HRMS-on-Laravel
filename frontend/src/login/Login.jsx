@@ -104,6 +104,9 @@ function Copyright(props) {
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const baseURL = process.env.REACT_APP_API_URL;
   const updateTokenstore = usecdotStore((state) => state.updateTokenstore);
   const updateIslogin = usecdotStore((state) => state.updateIslogin);
@@ -154,27 +157,31 @@ export default function Login() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (submitting) return;
     const data = new FormData(event.currentTarget);
-
-    const formData = new FormData();
-    formData.append("username", data.get("email"));
-    formData.append("password", data.get("password"));
+    const usernameValue = String(data.get('email') || '').trim();
+    const passwordValue = String(data.get('password') || '');
+    const errors = {};
+    if (!usernameValue) errors.email = 'Enter your username.';
+    if (!passwordValue) errors.password = 'Enter your password.';
+    setFieldErrors(errors);
+    setErrorMessage('');
+    if (Object.keys(errors).length) return;
+    setSubmitting(true);
 
     await axios
-      .post(baseURL + "auth/token", formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      })
+      .post(baseURL + "auth/token", { username: usernameValue, password: passwordValue })
       .then(function (response) {
-        updateTokenstore(response.data.access);
+        updateTokenstore(response.data.access_token);
         updateIslogin(true);
-        updateUsername(data.get("email"));
+        updateUsername(usernameValue);
         navigate("/backend/");
       })
       .catch(function (error) {
-        console.log("kcheckpost" + error);
-        toast.error("Username or password is incorrect!", {
+        const message = error.response?.data?.detail || error.response?.data?.message || (error.response ? 'Unable to sign in. Please check your details.' : 'Network error. Check your connection and try again.');
+        setErrorMessage(message);
+        setFieldErrors(error.response?.data?.errors || {});
+        toast.error(message, {
           position: "top-right",
           autoClose: 5000,
           hideProgressBar: true,
@@ -184,7 +191,8 @@ export default function Login() {
           draggable: true,
           progress: undefined,
         });
-      });
+      })
+      .finally(() => setSubmitting(false));
   };
 
   const handleClickShowPassword = () => {
@@ -276,11 +284,13 @@ export default function Login() {
                   name="email"
                   type="text"
                   autoComplete="email"
+                  aria-invalid={Boolean(fieldErrors.email || fieldErrors.username)}
                   autoFocus
                   placeholder="Username"
                   className="w-full h-10 pl-10 pr-3 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50 hover:bg-white/25 transition-all duration-200"
                 />
               </div>
+              {(fieldErrors.email || fieldErrors.username) && <Typography sx={{ color: 'white', mb: 1 }} role="alert">{fieldErrors.email || fieldErrors.username?.[0]}</Typography>}
 
               <div className="mb-4 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -292,12 +302,13 @@ export default function Login() {
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   autoComplete="current-password"
+                  aria-invalid={Boolean(fieldErrors.password)}
                   placeholder="Password"
                   className="w-full h-10 pl-10 pr-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50 hover:bg-white/25 transition-all duration-200"
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <IconButton
-                    aria-label="toggle password visibility"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                     onClick={handleClickShowPassword}
                     onMouseDown={handleMouseDownPassword}
                     size="small"
@@ -307,6 +318,8 @@ export default function Login() {
                   </IconButton>
                 </div>
               </div>
+              {fieldErrors.password && <Typography sx={{ color: 'white', mb: 1 }} role="alert">{Array.isArray(fieldErrors.password) ? fieldErrors.password[0] : fieldErrors.password}</Typography>}
+              {errorMessage && <Typography sx={{ color: 'white', mb: 1 }} role="alert">{errorMessage}</Typography>}
 
               <FormControlLabel
                 control={
@@ -330,9 +343,10 @@ export default function Login() {
 
               <button
                 type="submit"
+                disabled={submitting}
                 className="w-full h-10 mb-4 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold text-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/50"
               >
-                Sign In
+                {submitting ? 'Signing in…' : 'Sign In'}
               </button>
 
               <Box sx={{ textAlign: 'center' }}>

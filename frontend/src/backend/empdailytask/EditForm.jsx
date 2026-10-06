@@ -27,7 +27,8 @@ export default function EditForm({ onClick, eventid }) {
   const username = usecdotStore((state) => state.username);
   const employees = usecdotStore((state) => state.employees);
   const assignedjobs = usecdotStore((state) => state.assignedjobs);
-  const [submissiondate, setSubmissiondate] = useState(new Date());
+  const [submissiondate, setSubmissiondate] = useState(new Date().toISOString().slice(0, 10));
+  const [status, setStatus] = useState('Pending');
   const formdata = useRef("");
   const emp_id = usecdotStore((state) => state.emp_id);
   const emp_department = usecdotStore((state) => state.emp_department);
@@ -57,6 +58,8 @@ export default function EditForm({ onClick, eventid }) {
         formik.values.manager = response.data.manager;
         formik.values.description = response.data.description;
         setSelectedtask(response.data.task);
+        setSubmissiondate((response.data.submission_date || '').slice(0, 10));
+        setStatus(response.data.status || 'Pending');
         // setSelectedemp(response.data[0].manager);
         {
           employees.map((item, index) => {
@@ -91,6 +94,7 @@ export default function EditForm({ onClick, eventid }) {
         ...values,
         task: selectedtask,
         submission_date: submissiondate,
+        status,
         manager: taskmaanger,
         department_id: emp_department,
         employee_id: emp_id,
@@ -119,7 +123,7 @@ export default function EditForm({ onClick, eventid }) {
         })
         .catch(function (error) {
           console.log("kcheckpost" + error); //return 429
-          toast.error("Something went wrong!", {
+          toast.error(error.response?.data?.detail || error.response?.data?.message || "Something went wrong!", {
             position: "top-right",
             autoClose: 5000,
             hideProgressBar: true,
@@ -237,21 +241,11 @@ export default function EditForm({ onClick, eventid }) {
                   sx={{ minWidth: "92%" }}
                 />
                 <Box sx={{ m: 4 }} />
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <FormControl variant="standard" sx={{ minWidth: "92%" }}>
-                    <DatePicker
-                      label="Submission Date"
-                      inputFormat="DD/MM/YYYY"
-                      value={submissiondate}
-                      onChange={(newValue) => {
-                        setSubmissiondate(newValue);
-                      }}
-                      renderInput={(params) => (
-                        <TextField size="small" {...params} />
-                      )}
-                    />
-                  </FormControl>
-                </LocalizationProvider>
+                <TextField label="Task Date" type="date" value={submissiondate} onChange={(event) => setSubmissiondate(event.target.value)} InputLabelProps={{ shrink: true }} sx={{ minWidth: '92%' }} />
+                <Box sx={{ m: 2 }} />
+                <TextField select label="Status" value={status} onChange={(event) => setStatus(event.target.value)} sx={{ minWidth: '92%' }}>
+                  {['Pending', 'In Progress', 'Completed'].map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}
+                </TextField>
               </Grid>
             </Grid>
             <Box sx={{ m: 4 }} />

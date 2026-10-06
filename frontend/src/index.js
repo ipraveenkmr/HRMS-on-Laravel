@@ -3,6 +3,14 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import axios from 'axios';
+import { usecdotStore } from './components/cdotStore';
+
+axios.interceptors.request.use((config) => {
+  const token = usecdotStore.getState().tokenstore;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

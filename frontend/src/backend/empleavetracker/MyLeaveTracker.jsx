@@ -124,7 +124,8 @@ export default function MyLeaveTracker() {
   const updateLeave = usecdotStore((state) => state.updateLeave);
   const employees = usecdotStore((state) => state.employees);
   const username = usecdotStore((state) => state.username);
-  const leaves = usecdotStore((state) => state.leaves).sort((a, b) =>
+  const leaveData = usecdotStore((state) => state.leaves);
+  const leaves = (Array.isArray(leaveData) ? [...leaveData] : []).sort((a, b) =>
     a.id > b.id ? -1 : 1
   );
 
@@ -132,7 +133,6 @@ export default function MyLeaveTracker() {
 
   useEffect(() => {
     leaveApi();
-    console.log("Emp: " + JSON.stringify(employees[0].id));
   }, []);
 
   const leaveApi = async () => {
@@ -253,7 +253,7 @@ export default function MyLeaveTracker() {
               <TableCell>Leave From</TableCell>
               <TableCell>Leave To</TableCell>
               <TableCell>Created At</TableCell>
-              {/* <TableCell>Action</TableCell> */}
+              <TableCell>Action</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -290,20 +290,15 @@ export default function MyLeaveTracker() {
                 <TableCell style={{ width: 160 }}>
                   {moment(row.created_at).format("DD-MM-YYYY")}
                 </TableCell>
-                {/* <TableCell style={{ width: 20 }}>
+                <TableCell style={{ width: 20 }}>
                   <Stack spacing={2} direction="row">
-                    <FiEdit
+                    {row.leave_status === 'Pending' && <FiEdit
                       style={{ fontSize: "20px", color: "blue" }}
                       className="cursor-pointer"
                       onClick={() => editUser(row.id)}
-                    />
-                    <AiFillDelete
-                      style={{ fontSize: "20px", color: "darkred" }}
-                      className="cursor-pointer"
-                      onClick={() => deleteRecord(row.id)}
-                    />
+                    />}
                   </Stack>
-                </TableCell> */}
+                </TableCell>
               </TableRow>
             ))}
 

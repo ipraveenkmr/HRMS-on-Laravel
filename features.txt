@@ -1,0 +1,27 @@
+1. Login Enhancements
+   
+   - Add proper validation and clear error messages, such as incorrect username or password.
+   - Add an option to show/hide the entered password.
+   - Make other relevant improvements to the login experience.
+
+2. Punch In / Punch Out
+   
+   - Fix the existing Punch In and Punch Out errors.
+
+3. Attendance Log
+   
+   - Add filters to make it easier to view and manage attendance records.
+
+4. Leave Management
+   
+   - Improve the leave management functionality.
+   - Add functionality to update pending leave requests.
+   - Prevent users from applying for multiple leaves for the same date.
+   - Add other required validations and improvements.
+
+5. Daily Task Management
+   
+   - Add functionality for employees to enter and manage their daily tasks.
+   - Provide complete CRUD functionality (Create, View, Update, and Delete).
+   - Add filters for task records.
+   - Add options to download weekly and monthly reports in CSV and PDF formats.

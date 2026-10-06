@@ -6,6 +6,7 @@ import 'forgot_password_page.dart';
 import 'widgets/header_widget.dart';
 import 'package:get/get.dart';
 import '../constants.dart';
+import 'package:dio/dio.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -22,13 +23,21 @@ class _LoginPageState extends State<LoginPage> {
   GlobalKey<FormState> formkey = GlobalKey<FormState>();
   TextEditingController useremailcontroller = TextEditingController();
   TextEditingController userpasswordcontroller = TextEditingController();
+  bool _showPassword = false;
+  bool _submitting = false;
 
-  void login() {
+  void login() async {
     if (useremailcontroller.text.isEmpty || userpasswordcontroller.text.isEmpty) {
       Get.snackbar("Required Fields", "Please enter both User Name and Password");
       return;
     }
-    userlogin(useremailcontroller.text, userpasswordcontroller.text);
+    if (_submitting) return;
+    setState(() => _submitting = true);
+    try {
+      await userlogin(useremailcontroller.text.trim(), userpasswordcontroller.text);
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -104,13 +113,18 @@ class _LoginPageState extends State<LoginPage> {
                                 child: TextField(
                                   controller: userpasswordcontroller,
                                   style: TextStyle(color: Colors.black),
-                                  obscureText: true,
+                                  obscureText: !_showPassword,
                                   decoration: InputDecoration(
                                     labelText: 'Password',
                                     hintText: 'Enter your password',
                                     fillColor: Colors.white,
                                     filled: true,
                                     prefixIcon: Icon(Icons.lock_outline, color: primaryColor),
+                                    suffixIcon: IconButton(
+                                      tooltip: _showPassword ? 'Hide password' : 'Show password',
+                                      icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility),
+                                      onPressed: () => setState(() => _showPassword = !_showPassword),
+                                    ),
                                     contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 15),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -151,13 +165,13 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
                                   child: Text(
-                                    'Sign In'.toUpperCase(),
+                                    _submitting ? 'SIGNING IN…' : 'SIGN IN',
                                     style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white),
                                   ),
-                                  onPressed: login,
+                                  onPressed: _submitting ? null : login,
                                 ),
                               ),
                               if (AppConstants.dummyMode) ...[

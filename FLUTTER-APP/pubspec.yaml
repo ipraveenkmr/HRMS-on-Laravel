@@ -48,6 +48,7 @@ dependencies:
   otp_text_field:
   intl:
   device_info_plus:
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:

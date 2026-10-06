@@ -18,6 +18,8 @@ import '../common/api_client.dart';
 import '../constants.dart';
 import 'leave_page.dart';
 import 'task_page.dart';
+import 'daily_task_management.dart';
+import 'attendance_log.dart';
 import 'asset_page.dart';
 import 'apply_leave.dart';
 import 'apply_loan.dart';
@@ -48,6 +50,7 @@ class _AttendancePageState extends State<AttendancePage> {
   String shared_current_time = "Not checked in";
   String shared_office_mode = "Select calendar card to punch";
   List users = [];
+  bool _punchBusy = false;
 
   Timer? _clockTimer;
   String _currentTimeString = "";
@@ -127,6 +130,28 @@ class _AttendancePageState extends State<AttendancePage> {
       setState(() => users = attendanceRecords);
     }
     return attendanceRecords;
+  }
+
+  Future<void> _performPunch() async {
+    if (_punchBusy || shared_office_mode.contains('logged out')) return;
+    final action = shared_office_mode.contains('signed in') ? 'out' : 'in';
+    setState(() => _punchBusy = true);
+    try {
+      final response = await ApiClient.client.post(
+        '${AppConstants.apiLink}attendance/punch',
+        data: {'action': action},
+      );
+      if (response.statusCode == 200) {
+        await _loadAttendanceData();
+        Get.snackbar('Attendance', action == 'in' ? 'Punched in successfully.' : 'Punched out successfully.');
+      }
+    } on DioException catch (e) {
+      final detail = e.response?.data is Map ? e.response?.data['detail'] : null;
+      Get.snackbar('Attendance', detail?.toString() ?? 'Unable to punch. Check your connection and try again.');
+      try { await _loadAttendanceData(); } catch (_) {}
+    } finally {
+      if (mounted) setState(() => _punchBusy = false);
+    }
   }
 
   Widget buildText(String text) => Center(
@@ -622,13 +647,7 @@ class _AttendancePageState extends State<AttendancePage> {
                             const SizedBox(height: 20),
                             // Interactive Punch Button
                             GestureDetector(
-                              onTap: () {
-                                if (isPunchedIn) {
-                                  confirmAttendance();
-                                } else {
-                                  _getLocation();
-                                }
-                              },
+                              onTap: _punchBusy || shared_office_mode.contains('logged out') ? null : _performPunch,
                               child: Container(
                                 width: 140,
                                 height: 140,
@@ -665,7 +684,7 @@ class _AttendancePageState extends State<AttendancePage> {
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        isPunchedIn ? "PUNCH OUT" : "PUNCH IN",
+                                        _punchBusy ? 'PLEASE WAIT' : shared_office_mode.contains('logged out') ? 'DONE TODAY' : isPunchedIn ? "PUNCH OUT" : "PUNCH IN",
                                         style: TextStyle(
                                           color: isPunchedIn
                                               ? Colors.red
@@ -774,6 +793,12 @@ class _AttendancePageState extends State<AttendancePage> {
                             () => Get.to(LeavePage())),
                         _buildQuickAction(
                             context,
+                            "Daily Tasks",
+                            Icons.today,
+                            Colors.deepPurple,
+                            () => Get.to(const DailyTaskManagementPage())),
+                        _buildQuickAction(
+                            context,
                             "My Tasks",
                             Icons.assignment_turned_in,
                             Colors.purple,
@@ -812,6 +837,10 @@ class _AttendancePageState extends State<AttendancePage> {
                         ),
                       ),
                     ),
+                    Align(alignment: Alignment.centerRight, child: TextButton(
+                      onPressed: () => Get.to(const AttendanceLogPage()),
+                      child: const Text('View and filter all logs'),
+                    )),
                     const SizedBox(height: 10),
 
                     FutureBuilder(
