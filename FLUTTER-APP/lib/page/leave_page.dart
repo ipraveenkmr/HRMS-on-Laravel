@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
 import '../door/widgets/cdotcomponents.dart';
@@ -224,7 +223,10 @@ class _LeavePageState extends State<LeavePage> {
       drawer: CdotComponents.sidenav(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          await Get.to(() => const ApplyLeavePage());
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ApplyLeavePage()),
+          );
           refreshData();
         },
         icon: const Icon(Icons.add, color: Colors.white),

@@ -57,36 +57,36 @@ class LeaveController extends Controller
         return $values;
     }
 
-    private function balanceError(int $employeeId, int $yearId, array $values, ?int $exceptId = null, bool $includePending = true): ?string
+    private function normalizeLeaveDate($date, $month = null, $year = null): ?string
     {
-        $calculator = LeaveCalculator::where('employee_id', $employeeId)->where('financial_year_id', $yearId)->first();
-        $config = $calculator ? null : Leave::where('financial_year_id', $yearId)->first();
-        foreach (self::TYPE_DAYS as $type => $field) {
-            if ($field === 'lwp_days') continue;
-            $requested = (float) ($values[$field] ?? 0);
-            if (!$requested) continue;
-            $balanceField = 'remaining_'.$field;
-            $reserved = $includePending ? LeaveTracker::where('employee_id', $employeeId)
-                ->where('financial_year_id', $yearId)->where('leave_status', 'Pending')
-                ->when($exceptId, fn ($query) => $query->where('id', '!=', $exceptId))->sum($field) : 0;
-            $available = $calculator ? (float) $calculator->$balanceField : (float) ($config?->$field ?? 0);
-            if ($requested + $reserved > $available) return 'Insufficient '.$type.' balance.';
+        if (empty($date)) return null;
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return $date;
         }
-        return null;
+        if ($month && $year) {
+            $d = str_pad((string) $date, 2, '0', STR_PAD_LEFT);
+            $m = str_pad((string) $month, 2, '0', STR_PAD_LEFT);
+            $y = strlen((string) $year) === 2 ? '20' . $year : $year;
+            return "$y-$m-$d";
+        }
+        try {
+            return Carbon::parse($date)->toDateString();
+        } catch (\Exception $e) {
+            return null;
+        }
     }
+
     private function overlaps(int $employeeId, string $from, string $to, ?int $exceptId = null): bool
     {
         return LeaveTracker::where('employee_id', $employeeId)
             ->whereIn('leave_status', ['Pending', 'Approved'])
             ->when($exceptId, fn ($query) => $query->where('id', '!=', $exceptId))
-            ->get(['leave_from_date', 'leave_to_date'])
+            ->get()
             ->contains(function ($leave) use ($from, $to) {
-                try {
-                    return Carbon::parse($leave->leave_from_date)->toDateString() <= $to
-                        && Carbon::parse($leave->leave_to_date)->toDateString() >= $from;
-                } catch (\Exception $e) {
-                    return false;
-                }
+                $fromDate = $this->normalizeLeaveDate($leave->leave_from_date, $leave->leave_from_month, $leave->leave_from_year);
+                $toDate = $this->normalizeLeaveDate($leave->leave_to_date, $leave->leave_to_month, $leave->leave_to_year);
+                if (!$fromDate || !$toDate) return false;
+                return $fromDate <= $to && $toDate >= $from;
             });
     }
     private function getCurrentFinancialYear()
@@ -729,7 +729,8 @@ class LeaveController extends Controller
         // Find the leave calculator for this employee and financial year
         $leaveCalculator = LeaveCalculator::where('employee_id', $leave->employee_id)
             ->where('financial_year_id', $leave->financial_year_id)
-            ->first();
+            ->first()
+            ?? LeaveCalculator::where('employee_id', $leave->employee_id)->first();
         
         // If no leave calculator exists, create one with leave totals from Leave config
         if (!$leaveCalculator) {

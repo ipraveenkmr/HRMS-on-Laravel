@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:get/get.dart';
 import '../common/api_client.dart';
 import '../constants.dart';
 import '../controller/authentication.dart';
@@ -60,6 +59,27 @@ class _ApplyLeavePageState extends State<ApplyLeavePage> {
     return to.difference(from).inDays + 1;
   }
 
+  String? _normalizeDate(Map leave, bool isFrom) {
+    final raw = isFrom ? leave['leave_from_date'] : leave['leave_to_date'];
+    if (raw == null || raw.toString().trim().isEmpty) return null;
+    final str = raw.toString().trim();
+    if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(str)) return str;
+
+    final month = isFrom ? leave['leave_from_month'] : leave['leave_to_month'];
+    final year = isFrom ? leave['leave_from_year'] : leave['leave_to_year'];
+    if (month != null && year != null) {
+      final d = str.padLeft(2, '0');
+      final m = month.toString().padLeft(2, '0');
+      final y = year.toString().length == 2 ? '20$year' : year.toString();
+      return '$y-$m-$d';
+    }
+    try {
+      return DateFormat('yyyy-MM-dd').format(DateTime.parse(str));
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _fetchInitialData() async {
     setState(() => _isLoadingData = true);
     try {
@@ -106,21 +126,17 @@ class _ApplyLeavePageState extends State<ApplyLeavePage> {
 
     for (var leave in _existingLeaves) {
       final status = leave['leave_status']?.toString() ?? '';
-      // Only Pending and Approved leaves block the dates
       if (status == 'Pending' || status == 'Approved') {
-        final existingFromStr = leave['leave_from_date']?.toString() ?? '';
-        final existingToStr = leave['leave_to_date']?.toString() ?? '';
+        final existingFromStr = _normalizeDate(leave, true);
+        final existingToStr = _normalizeDate(leave, false);
 
-        if (existingFromStr.isNotEmpty && existingToStr.isNotEmpty) {
-          try {
-            // Check interval intersection: [StartA <= EndB] and [EndA >= StartB]
-            if (selectedFromStr.compareTo(existingToStr) <= 0 &&
-                selectedToStr.compareTo(existingFromStr) >= 0) {
-              _conflictError =
-                  'You already have a $status leave ($existingFromStr to $existingToStr) covering the selected dates.';
-              break;
-            }
-          } catch (_) {}
+        if (existingFromStr != null && existingToStr != null) {
+          if (selectedFromStr.compareTo(existingToStr) <= 0 &&
+              selectedToStr.compareTo(existingFromStr) >= 0) {
+            _conflictError =
+                'You already have a $status leave ($existingFromStr to $existingToStr) covering the selected dates.';
+            break;
+          }
         }
       }
     }
@@ -150,15 +166,11 @@ class _ApplyLeavePageState extends State<ApplyLeavePage> {
     setState(() {});
 
     if (_conflictError != null) {
-      Get.snackbar(
-        'Date Conflict',
-        _conflictError!,
-        backgroundColor: Colors.red.shade700,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(16),
-        borderRadius: 10,
-        icon: const Icon(Icons.warning_amber_rounded, color: Colors.white),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_conflictError!),
+          backgroundColor: Colors.red.shade700,
+        ),
       );
       return;
     }
@@ -167,11 +179,11 @@ class _ApplyLeavePageState extends State<ApplyLeavePage> {
 
     final reason = _reasonController.text.trim();
     if (reason.isEmpty) {
-      Get.snackbar(
-        'Validation Error',
-        'Please enter the reason for your leave.',
-        backgroundColor: Colors.orange.shade800,
-        colorText: Colors.white,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter the reason for your leave.'),
+          backgroundColor: Colors.orange.shade800,
+        ),
       );
       return;
     }
@@ -188,29 +200,26 @@ class _ApplyLeavePageState extends State<ApplyLeavePage> {
 
       if (error == null) {
         if (mounted) {
-          Get.offAll(() => LeavePage());
-          Get.snackbar(
-            'Leave Applied',
-            'Leave application submitted successfully.',
-            backgroundColor: Colors.green.shade700,
-            colorText: Colors.white,
-            snackPosition: SnackPosition.TOP,
-            margin: const EdgeInsets.all(16),
-            borderRadius: 10,
-            duration: const Duration(seconds: 3),
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Leave application submitted successfully!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LeavePage()),
           );
         }
       } else {
         if (mounted) {
-          Get.snackbar(
-            'Leave Request Failed',
-            error,
-            backgroundColor: Colors.red.shade700,
-            colorText: Colors.white,
-            snackPosition: SnackPosition.TOP,
-            margin: const EdgeInsets.all(16),
-            borderRadius: 10,
-            duration: const Duration(seconds: 4),
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error),
+              backgroundColor: Colors.red.shade700,
+              duration: const Duration(seconds: 4),
+            ),
           );
         }
       }
@@ -256,7 +265,6 @@ class _ApplyLeavePageState extends State<ApplyLeavePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header card
                     Card(
                       elevation: 2,
                       shadowColor: Colors.black12,
@@ -479,7 +487,7 @@ class _ApplyLeavePageState extends State<ApplyLeavePage> {
                             ),
                             const SizedBox(height: 20),
 
-                            // Conflict Warning Banner if dates overlap existing leave
+                            // Conflict Warning Banner
                             if (_conflictError != null) ...[
                               Container(
                                 width: double.infinity,
