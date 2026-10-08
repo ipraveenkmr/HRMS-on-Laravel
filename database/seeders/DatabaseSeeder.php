@@ -4,8 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\EmployeeDetails;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,9 +17,9 @@ class DatabaseSeeder extends Seeder
         User::factory(4)->create();
 
         User::factory()->create([
-            'name' => 'Praveen Kumar',
-            'email' => 'praveen@trickuweb.com',
-            'password' => bcrypt('12345678'),
+            'username' => 'praveen',
+            'hashed_password' => Hash::make('12345678'),
+            'is_active' => true,
         ]);
         EmployeeDetails::factory(10)->create();
     }

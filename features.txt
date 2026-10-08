@@ -25,3 +25,9 @@
    - Provide complete CRUD functionality (Create, View, Update, and Delete).
    - Add filters for task records.
    - Add options to download weekly and monthly reports in CSV and PDF formats.
+
+
+   Before release, run `composer install`, 
+   `php artisan migrate`, 
+   and `php artisan test --filter=HrmsWorkflowTest`. 
+   Coordinate the API and mobile release: older mobile builds do not send bearer tokens to the now protected leave and daily task routes.
