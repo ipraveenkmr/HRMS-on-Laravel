@@ -89,6 +89,38 @@ class LeaveController extends Controller
                 return $fromDate <= $to && $toDate >= $from;
             });
     }
+
+    private function balanceError(int $employeeId, int $financialYearId, array $values, ?int $exceptId = null, bool $includePending = true): ?string
+    {
+        $calculator = LeaveCalculator::where('employee_id', $employeeId)
+            ->where('financial_year_id', $financialYearId)
+            ->first()
+            ?? LeaveCalculator::where('employee_id', $employeeId)->first();
+
+        if (!$calculator) {
+            return null;
+        }
+
+        $fields = [
+            'cl_days' => ['remaining_cl_days', 'Casual Leave'],
+            'ei_days' => ['remaining_ei_days', 'Earned Leave'],
+            'medical_leave_in_days' => ['remaining_medical_leave_in_days', 'Medical Leave'],
+            'other_leave_in_days' => ['remaining_other_leave_in_days', 'Other Leave'],
+            'lwp_days' => ['remaining_lwp_days', 'Unpaid Leave'],
+        ];
+
+        foreach ($fields as $reqField => [$calcField, $label]) {
+            $requested = (float) ($values[$reqField] ?? 0);
+            if ($requested <= 0) continue;
+
+            $available = (float) ($calculator->{$calcField} ?? 0);
+            if ($reqField !== 'lwp_days' && $requested > $available) {
+                return "Insufficient balance for {$label}. Requested: {$requested} day(s), Available: {$available} day(s).";
+            }
+        }
+
+        return null;
+    }
     private function getCurrentFinancialYear()
     {
         $currentDate = Carbon::now();

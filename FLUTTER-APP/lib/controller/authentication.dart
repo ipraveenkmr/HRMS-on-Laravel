@@ -147,8 +147,7 @@ Future<String?> applyLeave(String from, String to, String reason, String leaveTy
       return "Could not submit leave (Code ${response.statusCode}).";
     }
   } on DioException catch (e) {
-    final detail = e.response?.data is Map ? e.response?.data['detail'] ?? e.response?.data['message'] : null;
-    return detail?.toString() ?? 'Unable to submit leave. Please check your dates and try again.';
+    return _extractDioErrorMessage(e);
   } catch (e) {
     return 'An unexpected error occurred: ${e.toString()}';
   }
