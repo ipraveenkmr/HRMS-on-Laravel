@@ -56,22 +56,19 @@ function Nav(props) {
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
-      <span className="logo center">
-        <img src={logo} alt="HRMS Logo" height={30} />
-      </span>
+      <Typography
+        variant="h6"
+        sx={{
+          py: 2,
+          fontWeight: 800,
+          letterSpacing: 2,
+          color: "primary.main",
+          fontSize: "1.35rem"
+        }}
+      >
+        HRMS
+      </Typography>
       <Divider />
-      {/* <List>
-        <ListItem disablePadding>
-          <ListItemButton
-            sx={{ textAlign: "center" }}
-            onClick={() => {
-              routeChange(navItems);
-            }}
-          >
-            <ListItemText primary={navItems} />
-          </ListItemButton>
-        </ListItem>
-      </List> */}
     </Box>
   );
 
@@ -94,11 +91,16 @@ function Nav(props) {
           <Typography
             variant="h6"
             component="div"
-            sx={{ flexGrow: 1, display: { xs: "none", sm: "block" } }}
+            sx={{
+              flexGrow: 1,
+              display: { xs: "none", sm: "block" },
+              fontWeight: 800,
+              letterSpacing: 2,
+              color: "#ffffff",
+              fontSize: "1.35rem"
+            }}
           >
-            <span className="logo">
-              <img src={logo} alt="HRMS Logo" height={30} />
-            </span>
+            HRMS
           </Typography>
           {/* <Box sx={{ display: { xs: "none", sm: "block" } }}>
             <Button

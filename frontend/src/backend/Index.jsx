@@ -370,10 +370,22 @@ const Index = () => {
               <MenuIcon />
             </IconButton>
 
-            <Typography variant="h6" component="div" sx={{ flexGrow: 2 }}>
-              <span className="logo">
-                <img src={logo} alt="CDOT Logo" height={30} />
-              </span>
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{
+                fontWeight: 800,
+                letterSpacing: 2,
+                color: "#ffffff",
+                fontSize: "1.35rem",
+                mr: 3,
+                userSelect: "none",
+                display: "flex",
+                alignItems: "center",
+                flexShrink: 0
+              }}
+            >
+              HRMS
             </Typography>
 
             <Marquee speed={40}>{notifications}</Marquee>

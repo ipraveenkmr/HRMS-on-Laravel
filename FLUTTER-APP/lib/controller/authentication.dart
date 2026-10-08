@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:hrms/page/attendance_page.dart';
 import 'package:hrms/page/leave_page.dart';
 import 'package:dio/dio.dart';
@@ -236,38 +237,118 @@ Future<String> updateAttendance(String logoutAt, String login_year,
   return 'Loaded';
 }
 
-Future<String> userlogin(String email, String password) async {
+Future<String?> userlogin(String email, String password) async {
   try {
-    var response = await ApiClient.client.post(link + 'auth/token', data: {
-      'username': email,
-      'password': password,
-    });
-    if (response.statusCode == 200) {
+    var response = await ApiClient.client.post(
+      AppConstants.apiLink + 'auth/token',
+      data: {
+        'username': email,
+        'password': password,
+      },
+      options: Options(
+        sendTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+      ),
+    );
+
+    if (response.statusCode == 200 && response.data != null) {
       final prefs = await SharedPreferences.getInstance();
       final token = response.data['access_token']?.toString();
       if (token != null && token.isNotEmpty) {
         await prefs.setString('access_token', token);
       }
-      await getUserDetails(email);
+      return await getUserDetails(email);
+    } else {
+      return "Unexpected server response (Code ${response.statusCode}). Please try again.";
     }
   } on DioException catch (e) {
-    final detail = e.response?.data is Map ? e.response?.data['detail'] ?? e.response?.data['message'] : null;
-    Get.snackbar('Sign in failed', detail?.toString() ?? 'Check your connection and try again.');
+    String errorMsg = _extractDioErrorMessage(e);
+    Get.snackbar(
+      'Sign In Failed',
+      errorMsg,
+      backgroundColor: Colors.red.shade700,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 10,
+      duration: const Duration(seconds: 4),
+      icon: const Icon(Icons.error_outline_rounded, color: Colors.white),
+    );
+    return errorMsg;
   } catch (e) {
-    Get.snackbar('Sign in failed', 'Please try again.');
+    String errorMsg = 'An unexpected error occurred: ${e.toString()}';
+    Get.snackbar(
+      'Sign In Failed',
+      errorMsg,
+      backgroundColor: Colors.red.shade700,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 10,
+      duration: const Duration(seconds: 4),
+      icon: const Icon(Icons.error_outline_rounded, color: Colors.white),
+    );
+    return errorMsg;
   }
-  return 'Loaded';
 }
 
-Future<String> getUserDetails(String email) async {
+String _extractDioErrorMessage(DioException e) {
+  if (e.response != null) {
+    final statusCode = e.response?.statusCode;
+    final data = e.response?.data;
+
+    if (data is Map) {
+      final detail = data['detail'] ?? data['message'] ?? data['error'];
+      if (detail != null && detail.toString().trim().isNotEmpty) {
+        final detailStr = detail.toString().trim();
+        if (detailStr.toLowerCase().contains('incorrect username or password')) {
+          return "Incorrect username or password. Please verify your credentials and try again.";
+        }
+        return detailStr;
+      }
+    }
+
+    if (statusCode == 401) {
+      return "Incorrect username or password. Please verify your credentials and try again.";
+    } else if (statusCode == 403) {
+      return "Access denied. Your account is inactive or lacks required permissions.";
+    } else if (statusCode == 404) {
+      return "Authentication endpoint not found (404). Please verify the server address.";
+    } else if (statusCode == 422) {
+      return "Please enter a valid username and password.";
+    } else if (statusCode == 429) {
+      return "Too many sign-in attempts. Please wait a moment and try again.";
+    } else if (statusCode != null && statusCode >= 500) {
+      return "Backend server error ($statusCode). Please verify the backend is running.";
+    }
+  }
+
+  if (e.type == DioExceptionType.connectionTimeout ||
+      e.type == DioExceptionType.sendTimeout ||
+      e.type == DioExceptionType.receiveTimeout) {
+    return "Connection timed out. Please check your internet connection or server status.";
+  }
+
+  if (e.type == DioExceptionType.connectionError) {
+    return "Unable to connect to server at ${AppConstants.apiLink}. Please make sure 'php artisan serve' is running.";
+  }
+
+  return "Unable to connect to server. Please check your network and try again.";
+}
+
+Future<String?> getUserDetails(String email) async {
   try {
-    var response =
-        await ApiClient.client.get(link + 'employees/username/' + email);
+    var response = await ApiClient.client.get(
+      AppConstants.apiLink + 'employees/username/' + email,
+      options: Options(
+        sendTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+      ),
+    );
+
     if (response.statusCode == 200 &&
         response.data != null &&
         (response.data as List).isNotEmpty) {
-      print(response.data[0]['longitude'].toString());
-      print(response.data[0]['latitude'].toString());
       SharedPreferences prefs = await SharedPreferences.getInstance();
       var emp = response.data[0];
       prefs.setString('loginemail', email);
@@ -295,17 +376,45 @@ Future<String> getUserDetails(String email) async {
       prefs.setString('shared_office_mode', 'Select calendar card to punch');
 
       Get.offAll(AttendancePage());
+      return null;
     } else {
-      Get.snackbar("Error", "Employee details not found.");
+      String msg = "Login succeeded, but employee profile was not found for '$email'.";
+      Get.snackbar(
+        "Profile Notice",
+        msg,
+        backgroundColor: Colors.orange.shade800,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 10,
+      );
+      return msg;
     }
-    if (response.statusCode == 401) {
-      Get.snackbar("Error while creating 401!", "Please try again..");
-    }
+  } on DioException catch (e) {
+    String msg = _extractDioErrorMessage(e);
+    Get.snackbar(
+      "Profile Error",
+      msg,
+      backgroundColor: Colors.red.shade700,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 10,
+    );
+    return msg;
   } catch (e) {
-    Get.snackbar("Error while creating catch another!", "Please try again..");
-    print(e);
+    String msg = "Failed to load employee details: ${e.toString()}";
+    Get.snackbar(
+      "Profile Error",
+      msg,
+      backgroundColor: Colors.red.shade700,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 10,
+    );
+    return msg;
   }
-  return 'Loaded';
 }
 
 Future<String> checkUserDetails(String email) async {

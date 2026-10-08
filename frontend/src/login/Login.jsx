@@ -92,10 +92,7 @@ function Copyright(props) {
       sx={{ mt: 4 }}
       {...props}
     >
-      {"Copyright © "}
-      <Link color="inherit" href="https://codingmstr.com">
-        CodingMSTR.com
-      </Link>{" "}
+      {"Copyright © HRMS "}
       {new Date().getFullYear()}
       {"."}
     </Typography>

@@ -18,10 +18,7 @@ function Copyright(props) {
       align="center"
       {...props}
     >
-      {"Copyright © "}
-      <Link color="inherit" href="https://codingmstr.com">
-        Upstairs Applied Tech Pvt Ltd
-      </Link>{" "}
+      {"Copyright © HRMS "}
       {new Date().getFullYear()}
       {"."}
     </Typography>
