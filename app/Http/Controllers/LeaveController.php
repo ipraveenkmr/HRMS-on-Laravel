@@ -326,18 +326,28 @@ class LeaveController extends Controller
 
     public function destroy(Request $request, $id): JsonResponse
     {
-        $leave = $this->visibleLeaves($request)->find($id);
+        $leave = LeaveTracker::find($id);
         
         if (!$leave) {
             return response()->json(['error' => 'Leave record not found'], 404);
         }
         
-        if ($request->user()->employee?->id !== $leave->employee_id) return response()->json(['detail' => 'Only the requester may cancel this leave.'], 403);
-        if ($leave->leave_status !== 'Pending') return response()->json(['detail' => 'Only pending leave can be cancelled.'], 409);
+        $actor = $request->user()?->employee;
+        $isOwner = $actor && ((int) $actor->id === (int) $leave->employee_id);
+        $isAdmin = $actor && ($actor->emp_type === 'Admin');
+
+        if (!$isOwner && !$isAdmin) {
+            return response()->json(['detail' => 'Only the requester may delete this leave.'], 403);
+        }
+
+        if ($leave->leave_status !== 'Pending') {
+            return response()->json(['detail' => 'Once approved, leave cannot be deleted.'], 422);
+        }
+
         DB::transaction(function () use ($leave, $request) {
             $before = $leave->toArray();
-            $leave->update(['leave_status' => 'Cancelled']);
-            $this->auditLeave($leave, $before, 'cancelled', $request->user()->id);
+            $this->auditLeave($leave, $before, 'deleted', $request->user()->id);
+            $leave->delete();
         });
         
         return response()->json(['message' => 'Leave record deleted successfully']);

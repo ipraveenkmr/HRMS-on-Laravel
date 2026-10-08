@@ -122,6 +122,87 @@ class _LeavePageState extends State<LeavePage> {
     }
   }
 
+  Future<void> deleteLeave(Map leave) async {
+    final status = leave['leave_status']?.toString() ?? '';
+    if (status != 'Pending') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only pending leave requests can be deleted.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final leaveId = leave['id'];
+    if (leaveId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Delete Leave Request', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text('Are you sure you want to delete this pending leave request? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final response = await ApiClient.client.delete('${link}leave/$leaveId');
+        if (response.statusCode == 200) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Leave request deleted successfully.'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+            refreshData();
+          }
+        }
+      } on DioException catch (e) {
+        final detail = e.response?.data is Map
+            ? e.response?.data['detail'] ?? e.response?.data['message'] ?? e.response?.data['error']
+            : null;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(detail?.toString() ?? 'Could not delete leave request.'),
+              backgroundColor: Colors.red.shade700,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting leave: $e'),
+              backgroundColor: Colors.red.shade700,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   void refreshData() {
     getLeave();
     getUsers().then((data) {
@@ -417,43 +498,85 @@ class _LeavePageState extends State<LeavePage> {
                                     Divider(color: Colors.grey.shade100, height: 1),
                                     const SizedBox(height: 12),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.date_range,
-                                              size: 16,
-                                              color: Colors.grey.shade500,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              "Duration: ",
-                                              style: TextStyle(
-                                                color: Colors.grey.shade600,
-                                                fontSize: 13,
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.date_range,
+                                                size: 16,
+                                                color: Colors.grey.shade500,
                                               ),
-                                            ),
-                                            Text(
-                                              "${leave['leave_from_date'] ?? 'N/A'}  to  ${leave['leave_to_date'] ?? 'N/A'}",
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 13,
-                                                color: Colors.grey.shade800,
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                "Duration: ",
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade600,
+                                                  fontSize: 13,
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                              Expanded(
+                                                child: Text(
+                                                  "${leave['leave_from_date'] ?? 'N/A'} to ${leave['leave_to_date'] ?? 'N/A'}",
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 13,
+                                                    color: Colors.grey.shade800,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                        if (status == 'Pending')
-                                          TextButton.icon(
-                                            onPressed: () => editLeave(leave),
-                                            icon: const Icon(Icons.edit, size: 16),
-                                            label: const Text('Edit'),
-                                            style: TextButton.styleFrom(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                                              visualDensity: VisualDensity.compact,
+                                        if (status == 'Pending') ...[
+                                          const SizedBox(width: 8),
+                                          InkWell(
+                                            onTap: () => editLeave(leave),
+                                            borderRadius: BorderRadius.circular(6),
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.edit_outlined, size: 15, color: primaryColor),
+                                                  const SizedBox(width: 3),
+                                                  Text(
+                                                    'Edit',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: primaryColor,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
+                                          const SizedBox(width: 4),
+                                          InkWell(
+                                            onTap: () => deleteLeave(leave),
+                                            borderRadius: BorderRadius.circular(6),
+                                            child: const Padding(
+                                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.delete_outline, size: 15, color: Colors.red),
+                                                  SizedBox(width: 3),
+                                                  Text(
+                                                    'Delete',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.red,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   ],

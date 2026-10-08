@@ -243,6 +243,20 @@ class _ApplyLeavePageState extends State<ApplyLeavePage> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          tooltip: 'Back',
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LeavePage()),
+              );
+            }
+          },
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -254,7 +268,6 @@ class _ApplyLeavePageState extends State<ApplyLeavePage> {
           ),
         ),
       ),
-      drawer: CdotComponents.sidenav(),
       body: _isLoadingData
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
