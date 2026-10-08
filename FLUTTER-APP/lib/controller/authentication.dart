@@ -132,69 +132,25 @@ Future<String?> applyLeave(String from, String to, String reason, String leaveTy
 
   try {
     var response = await ApiClient.client.post(link + 'leave', data: {
-      'employee_id': empid,
-      'username': uname,
-      'department_id': empdepartment,
-      'CL_Days': 0,
-      'CL_Hours': 0,
-      'EI_Days': 0,
-      'EI_Hours': 0,
-      'LWP_Days': 0,
-      'LWP_Hours': 0,
-      'medical_leave_in_days': 0,
-      'medical_leave_in_hours': 0,
-      'other_leave_in_days': 0,
-      'other_leave_in_hours': 0,
+      if (empid != null && empid.isNotEmpty) 'employee_id': int.tryParse(empid) ?? empid,
+      if (uname != null && uname.isNotEmpty) 'username': uname,
+      if (empdepartment != null && empdepartment.isNotEmpty) 'department_id': int.tryParse(empdepartment) ?? empdepartment,
       'leave_from_date': from,
       'leave_to_date': to,
       'leave_reason': reason,
       'leave_type': leaveType,
       'leave_status': "Pending",
     });
-    if (response.statusCode == 201) {
-      Get.offAll(() => LeavePage());
-      Get.snackbar(
-        'Leave Applied',
-        'Leave application submitted successfully.',
-        backgroundColor: Colors.green.shade700,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(16),
-        borderRadius: 10,
-        duration: const Duration(seconds: 3),
-      );
+    if (response.statusCode == 201 || response.statusCode == 200) {
       return null;
     } else {
-      String msg = "Could not submit leave (Code ${response.statusCode}).";
-      Get.snackbar("Leave Request Failed", msg, backgroundColor: Colors.red.shade700, colorText: Colors.white);
-      return msg;
+      return "Could not submit leave (Code ${response.statusCode}).";
     }
   } on DioException catch (e) {
     final detail = e.response?.data is Map ? e.response?.data['detail'] ?? e.response?.data['message'] : null;
-    String errorMsg = detail?.toString() ?? 'Unable to submit leave. Please check your dates and try again.';
-    Get.snackbar(
-      'Leave Request Failed',
-      errorMsg,
-      backgroundColor: Colors.red.shade700,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 10,
-      duration: const Duration(seconds: 4),
-    );
-    return errorMsg;
+    return detail?.toString() ?? 'Unable to submit leave. Please check your dates and try again.';
   } catch (e) {
-    String errorMsg = 'An unexpected error occurred: ${e.toString()}';
-    Get.snackbar(
-      'Leave Request Failed',
-      errorMsg,
-      backgroundColor: Colors.red.shade700,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 10,
-    );
-    return errorMsg;
+    return 'An unexpected error occurred: ${e.toString()}';
   }
 }
 

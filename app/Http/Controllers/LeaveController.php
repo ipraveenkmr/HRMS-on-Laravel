@@ -168,8 +168,8 @@ class LeaveController extends Controller
         $validated = $request->validate([
             'financial_year_id' => 'sometimes|exists:financial_years,id',
             'username' => 'nullable|string|max:200',
-            'employee_id' => 'required|exists:employees,id',
-            'department_id' => 'required|exists:departments,id',
+            'employee_id' => 'nullable|exists:employees,id',
+            'department_id' => 'nullable|exists:departments,id',
             'cl_days' => 'nullable|numeric|min:0',
             'cl_hours' => 'nullable|numeric|min:0',
             'ei_days' => 'nullable|numeric|min:0',
@@ -204,9 +204,10 @@ class LeaveController extends Controller
             ], 400);
         }
         $actor = $request->user()?->employee;
-        if (!$actor || $actor->id !== (int) $validated['employee_id']) {
-            return response()->json(['detail' => 'You can only apply for your own leave.'], 403);
+        if (!$actor) {
+            return response()->json(['detail' => 'Employee profile not found.'], 403);
         }
+        $validated['employee_id'] = $actor->id;
         $validated['financial_year_id'] = $financialYear->id;
         $validated['username'] = $actor->username;
         $validated['department_id'] = $actor->department_id;

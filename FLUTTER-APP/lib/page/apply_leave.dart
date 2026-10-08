@@ -6,6 +6,7 @@ import '../common/api_client.dart';
 import '../constants.dart';
 import '../controller/authentication.dart';
 import '../door/widgets/cdotcomponents.dart';
+import 'leave_page.dart';
 
 class ApplyLeavePage extends StatefulWidget {
   const ApplyLeavePage({Key? key}) : super(key: key);
@@ -178,12 +179,41 @@ class _ApplyLeavePageState extends State<ApplyLeavePage> {
     setState(() => _isLoading = true);
 
     try {
-      await applyLeave(
+      final error = await applyLeave(
         _formatDate(_fromDate),
         _formatDate(_toDate),
         reason,
         _selectedLeaveType,
       );
+
+      if (error == null) {
+        if (mounted) {
+          Get.offAll(() => LeavePage());
+          Get.snackbar(
+            'Leave Applied',
+            'Leave application submitted successfully.',
+            backgroundColor: Colors.green.shade700,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+            margin: const EdgeInsets.all(16),
+            borderRadius: 10,
+            duration: const Duration(seconds: 3),
+          );
+        }
+      } else {
+        if (mounted) {
+          Get.snackbar(
+            'Leave Request Failed',
+            error,
+            backgroundColor: Colors.red.shade700,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+            margin: const EdgeInsets.all(16),
+            borderRadius: 10,
+            duration: const Duration(seconds: 4),
+          );
+        }
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
