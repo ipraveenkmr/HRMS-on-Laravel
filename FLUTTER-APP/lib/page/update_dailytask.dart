@@ -12,16 +12,10 @@ class DailyTaskPage extends StatefulWidget {
 }
 
 class _DailyTaskState extends State<DailyTaskPage> {
-  double _headerHeight = 230;
-  final Key _formKey = GlobalKey<FormState>();
-  late String email;
-  late String password;
-  var my_services;
-  GlobalKey<FormState> formkey = GlobalKey<FormState>();
-  List tasks = [];
-  TextEditingController taskcontroller = TextEditingController();
-  TextEditingController managercontroller = TextEditingController();
-  TextEditingController descriptioncontroller = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController taskcontroller = TextEditingController();
+  final TextEditingController managercontroller = TextEditingController();
+  final TextEditingController descriptioncontroller = TextEditingController();
 
   void applyTaskhere() {
     dailyTask(

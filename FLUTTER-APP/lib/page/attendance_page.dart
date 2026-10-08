@@ -272,8 +272,8 @@ class _AttendancePageState extends State<AttendancePage> {
       Widget continueButton = TextButton(
         child: Text("Ok"),
         onPressed: () async {
-          Get.to(DailyTaskPage());
           Navigator.of(context, rootNavigator: true).pop(true);
+          Get.to(() => DailyTaskPage());
         },
       );
       // set up the AlertDialog

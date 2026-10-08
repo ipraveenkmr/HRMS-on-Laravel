@@ -35,6 +35,15 @@ class _TaskPageState extends State<TaskPage> {
     String username = prefs.getString('username')?.toString() ?? '';
     if (username.isEmpty) return [];
     var response = await ApiClient.client.get(link + "tasks/employee/" + username);
+    if (response.data is List) {
+      final list = List.from(response.data);
+      list.sort((a, b) {
+        final idA = a['id'] is int ? a['id'] as int : int.tryParse(a['id']?.toString() ?? '') ?? 0;
+        final idB = b['id'] is int ? b['id'] as int : int.tryParse(b['id']?.toString() ?? '') ?? 0;
+        return idB.compareTo(idA);
+      });
+      return list;
+    }
     return response.data;
   }
 

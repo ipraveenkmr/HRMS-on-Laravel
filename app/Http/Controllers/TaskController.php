@@ -130,7 +130,7 @@ class TaskController extends Controller
     {
         $tasks = AssignedJob::with(['department'])
             ->where('username', $username)
-            ->orderBy('created_at')
+            ->orderByDesc('id')
             ->get();
         
         return response()->json($tasks);
@@ -140,7 +140,7 @@ class TaskController extends Controller
     {
         $tasks = AssignedJob::with(['employee'])
             ->where('department_id', $departmentId)
-            ->orderBy('created_at')
+            ->orderByDesc('id')
             ->get();
         
         return response()->json($tasks);
@@ -174,7 +174,7 @@ class TaskController extends Controller
         if (isset($filters['to'])) $query->where('submission_date', '<=', $filters['to']);
         if (isset($filters['status'])) $query->where('status', $filters['status']);
         if (isset($filters['employee_id'])) $query->where('employee_id', $filters['employee_id']);
-        $dailyTasks = $query->orderByDesc('submission_date')->orderByDesc('id')->get();
+        $dailyTasks = $query->orderByDesc('id')->get();
         
         return response()->json($dailyTasks);
     }
@@ -312,7 +312,7 @@ class TaskController extends Controller
     {
         $dailyTasks = $this->dailyTaskQuery($request)->with(['department'])
             ->where('username', $employeeId)
-            ->orderBy('created_at')
+            ->orderByDesc('id')
             ->get();
         
         return response()->json($dailyTasks);
@@ -322,7 +322,7 @@ class TaskController extends Controller
     {
         $dailyTasks = $this->dailyTaskQuery($request)->with(['employee'])
             ->where('department_id', $departmentId)
-            ->orderBy('created_at')
+            ->orderByDesc('id')
             ->get();
         
         return response()->json($dailyTasks);

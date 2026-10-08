@@ -38,7 +38,7 @@ Future<String> getCompanyDetails() async {
           'companylongitude', response.data[0]['longitude']?.toString() ?? '');
       prefs.setString(
           'companylatitude', response.data[0]['latitude']?.toString() ?? '');
-      Get.offAll(AttendancePage());
+      Get.offAll(() => AttendancePage());
     } else {
       Get.snackbar("Error", "No company details found.");
     }
@@ -69,7 +69,7 @@ Future<String> applyLoan(String amount, String period, String purpose) async {
       'purpose': purpose,
     });
     if (response.statusCode == 200) {
-      Get.offAll(AttendancePage());
+      Get.offAll(() => AttendancePage());
     }
     if (response.statusCode == 401) {
       Get.snackbar("Error while submitting!", "Please try again..");
@@ -93,17 +93,30 @@ Future<String> dailyTask(
       'employee_id': int.tryParse(empid ?? '') ?? 0,
       'department_id': empdepartment,
       'username': uname,
-      'task': task, //should be int
+      'task': task,
       'manager': manager,
       'description': description,
     });
     if (response.statusCode == 201) {
-      Get.snackbar('Task', 'Daily task saved.');
-      Get.offAll(AttendancePage());
-    }
-    if (response.statusCode == 401) {
+      Get.offAll(() => AttendancePage());
+      Get.snackbar(
+        'Task Submitted',
+        'Daily task saved successfully.',
+        backgroundColor: Colors.green.shade700,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 10,
+        duration: const Duration(seconds: 3),
+      );
+    } else if (response.statusCode == 401) {
       Get.snackbar("Error while submitting!", "Please try again..");
     }
+  } on DioException catch (e) {
+    final detail = e.response?.data is Map
+        ? e.response?.data['detail'] ?? e.response?.data['message']
+        : null;
+    Get.snackbar("Task Error", detail?.toString() ?? "Could not save daily task.");
   } catch (e) {
     Get.snackbar("Error while creating data!", "Please try again..");
     print(e);
@@ -139,7 +152,7 @@ Future<String> applyLeave(String from, String to, String reason, String leaveTyp
       'leave_status': "Pending",
     });
     if (response.statusCode == 201) {
-      Get.offAll(LeavePage());
+      Get.offAll(() => LeavePage());
     }
     if (response.statusCode == 401) {
       Get.snackbar("Error while submitting!", "Please try again..");
@@ -375,7 +388,7 @@ Future<String?> getUserDetails(String email) async {
       prefs.setString('shared_current_time', 'Not checked in');
       prefs.setString('shared_office_mode', 'Select calendar card to punch');
 
-      Get.offAll(AttendancePage());
+      Get.offAll(() => AttendancePage());
       return null;
     } else {
       String msg = "Login succeeded, but employee profile was not found for '$email'.";

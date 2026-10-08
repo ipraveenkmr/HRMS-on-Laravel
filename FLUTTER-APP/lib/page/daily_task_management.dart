@@ -40,7 +40,20 @@ class _DailyTaskManagementPageState extends State<DailyTaskManagementPage> {
         if (to != null) 'to': date(to!),
         if (status.isNotEmpty) 'status': status,
       });
-      if (mounted) setState(() => tasks = (response.data as List).map((item) => Map<String, dynamic>.from(item)).toList());
+      if (mounted) {
+        final list = (response.data as List).map((item) => Map<String, dynamic>.from(item)).toList();
+        list.sort((a, b) {
+          final idA = a['id'] is int ? a['id'] as int : int.tryParse(a['id']?.toString() ?? '') ?? 0;
+          final idB = b['id'] is int ? b['id'] as int : int.tryParse(b['id']?.toString() ?? '') ?? 0;
+          if (idA != 0 && idB != 0 && idA != idB) {
+            return idB.compareTo(idA);
+          }
+          final dateA = a['submission_date']?.toString() ?? a['created_at']?.toString() ?? '';
+          final dateB = b['submission_date']?.toString() ?? b['created_at']?.toString() ?? '';
+          return dateB.compareTo(dateA);
+        });
+        setState(() => tasks = list);
+      }
     } on DioException catch (e) {
       if (mounted) setState(() => error = e.response?.data is Map ? e.response?.data['detail']?.toString() ?? 'Could not load tasks.' : 'Could not load tasks.');
     } finally {
