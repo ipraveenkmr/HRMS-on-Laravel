@@ -124,7 +124,7 @@ Future<String> dailyTask(
   return 'Loaded';
 }
 
-Future<String> applyLeave(String from, String to, String reason, String leaveType) async {
+Future<String?> applyLeave(String from, String to, String reason, String leaveType) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   String? uname = prefs.getString('username');
   String? empid = prefs.getString('empid');
@@ -153,17 +153,49 @@ Future<String> applyLeave(String from, String to, String reason, String leaveTyp
     });
     if (response.statusCode == 201) {
       Get.offAll(() => LeavePage());
-    }
-    if (response.statusCode == 401) {
-      Get.snackbar("Error while submitting!", "Please try again..");
+      Get.snackbar(
+        'Leave Applied',
+        'Leave application submitted successfully.',
+        backgroundColor: Colors.green.shade700,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 10,
+        duration: const Duration(seconds: 3),
+      );
+      return null;
+    } else {
+      String msg = "Could not submit leave (Code ${response.statusCode}).";
+      Get.snackbar("Leave Request Failed", msg, backgroundColor: Colors.red.shade700, colorText: Colors.white);
+      return msg;
     }
   } on DioException catch (e) {
     final detail = e.response?.data is Map ? e.response?.data['detail'] ?? e.response?.data['message'] : null;
-    Get.snackbar('Leave request', detail?.toString() ?? 'Unable to submit leave. Please try again.');
+    String errorMsg = detail?.toString() ?? 'Unable to submit leave. Please check your dates and try again.';
+    Get.snackbar(
+      'Leave Request Failed',
+      errorMsg,
+      backgroundColor: Colors.red.shade700,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 10,
+      duration: const Duration(seconds: 4),
+    );
+    return errorMsg;
   } catch (e) {
-    Get.snackbar('Leave request', 'Unable to submit leave. Please try again.');
+    String errorMsg = 'An unexpected error occurred: ${e.toString()}';
+    Get.snackbar(
+      'Leave Request Failed',
+      errorMsg,
+      backgroundColor: Colors.red.shade700,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 10,
+    );
+    return errorMsg;
   }
-  return 'Loaded';
 }
 
 Future<String> updateAttendance(String logoutAt, String login_year,
