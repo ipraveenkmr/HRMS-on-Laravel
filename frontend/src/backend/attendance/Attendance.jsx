@@ -133,7 +133,6 @@ export default function Attendance() {
   const handleEditOpen = () => setEditOpen(true);
   const handleEditClose = () => setEditOpen(false);
   const updateAttendance = usecdotStore((state) => state.updateAttendance);
-  const updateFiyear = usecdotStore((state) => state.updateFiyear);
   const employees = usecdotStore((state) => state.employees);
   const updateEmployee = usecdotStore((state) => state.updateEmployee);
   const [changedepartment, setChangeDepartment] = useState("");

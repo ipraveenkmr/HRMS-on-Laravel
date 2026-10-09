@@ -361,7 +361,7 @@ export default function AddForm({ onClick }) {
                   label="User Type"
                 >
                   {employees.map((item, index) => {
-                    return <MenuItem value={item.id}>{item.emp_name}</MenuItem>;
+                    return <MenuItem key={item.id || index} value={item.id}>{item.emp_name}</MenuItem>;
                   })}
                 </Select>
               </FormControl>

@@ -322,13 +322,14 @@ class LeaveController extends Controller
         $actor = $request->user()?->employee;
         if (!$actor) return response()->json(['detail' => 'Employee profile not found'], 403);
         $isOwner = $actor->id === (int) $leave->employee_id;
-        $isApprover = $actor->emp_type === 'Admin' || ($actor->emp_type === 'Manager' && $leave->employee?->manager_id === $actor->id);
+        $isAdmin = $actor->emp_type === 'Admin';
+        $isApprover = $isAdmin || ($actor->emp_type === 'Manager' && $leave->employee?->manager_id === $actor->id);
         $changingStatus = isset($validated['leave_status']) && $validated['leave_status'] !== $leave->leave_status;
         if ($changingStatus && !$isApprover) return response()->json(['detail' => 'Only an authorized approver may change leave status.'], 403);
         if (!$isOwner && !$isApprover) return response()->json(['detail' => 'You cannot edit this leave.'], 403);
-        if ($leave->leave_status !== 'Pending') return response()->json(['detail' => 'Only pending leave can be updated.'], 409);
-        if ($changingStatus) $validated = ['leave_status' => $validated['leave_status']];
-        if (!$isOwner && !$changingStatus) return response()->json(['detail' => 'Only the requester may edit leave details.'], 403);
+        if ($leave->leave_status !== 'Pending' && !$isAdmin) return response()->json(['detail' => 'Only pending leave can be updated.'], 409);
+        if ($changingStatus && !$isAdmin) $validated = ['leave_status' => $validated['leave_status']];
+        if (!$isOwner && !$changingStatus && !$isAdmin) return response()->json(['detail' => 'Only the requester may edit leave details.'], 403);
         unset($validated['employee_id'], $validated['username'], $validated['department_id'], $validated['financial_year_id']);
         $from = Carbon::parse($validated['leave_from_date'] ?? $leave->leave_from_date)->toDateString();
         $to = Carbon::parse($validated['leave_to_date'] ?? $leave->leave_to_date)->toDateString();

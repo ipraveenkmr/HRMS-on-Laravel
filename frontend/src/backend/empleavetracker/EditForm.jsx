@@ -110,10 +110,10 @@ export default function EditForm({ onClick, eventid }) {
 
     onSubmit: async (values) => {
       function convert(str) {
-        var date = new Date(str),
-          mnth = ("0" + (date.getMonth() + 1)).slice(-2),
-          day = ("0" + date.getDate()).slice(-2);
-        return [date.getFullYear(), mnth, day].join("-");
+        if (!str) return "";
+        const m = moment(str);
+        if (m.isValid()) return m.format("YYYY-MM-DD");
+        return str;
       }
 
       console.log(values);
@@ -130,40 +130,46 @@ export default function EditForm({ onClick, eventid }) {
       formik.values.remaining_leave_in_hours = indays;
 
       // starting
-      await axios
-        .put(baseURL + "leave/" + eventid, values)
-        .then(function (response) {
-          console.log("Employee post: " + JSON.stringify(response.data));
-          toast.success("Your data is submitted!", {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: true,
-            toastId: "id",
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-          });
-          leaveApi();
-          onClick();
-        })
-        .catch(function (error) {
-          console.log("kcheckpost" + error); //return 429
-          toast.error(error.response?.data?.detail || error.response?.data?.message || "Something went wrong!", {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: true,
-            toastId: "id",
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-          });
+      try {
+        const response = await axios.put(baseURL + "leave/" + eventid, formik.values);
+        console.log("Employee post: " + JSON.stringify(response.data));
+        toast.success("Your data is submitted!", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: true,
+          toastId: "id",
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
         });
+        await leaveApi();
+        onClick();
+      } catch (error) {
+        console.log("kcheckpost" + error);
+        toast.error(error.response?.data?.detail || error.response?.data?.message || "Something went wrong!", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: true,
+          toastId: "id",
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
+      }
       // ending
-      // formik.resetForm();
     },
   });
+
+  const leaveApi = async () => {
+    try {
+      const response = await axios.get(baseURL + "leave/employee/" + username);
+      updateLeave(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.log("kcheckpost" + error);
+    }
+  };
 
   const handleLeavetypeChange = (event) => {
     setLeavetype(event.target.value);
@@ -194,19 +200,6 @@ export default function EditForm({ onClick, eventid }) {
 
   const handleEmployeeChange = (event) => {
     setSelectedemp(event.target.value);
-  };
-
-  const leaveApi = async () => {
-    // starting
-    await axios
-      .get(baseURL + "leave/employee/" + username)
-      .then(function (response) {
-        updateLeave(response.data);
-      })
-      .catch(function (error) {
-        console.log("kcheckpost" + error); //return 429
-      });
-    // ending
   };
 
   return (

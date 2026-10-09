@@ -297,7 +297,9 @@ export default function LeaveTracker() {
               </MenuItem>
               {departments.map((item, index) => {
                 return (
-                  <MenuItem value={item.id}>{item.department_name}</MenuItem>
+                  <MenuItem key={item.id || index} value={item.id}>
+                    {item.department_name}
+                  </MenuItem>
                 );
               })}
             </Select>
@@ -361,9 +363,7 @@ export default function LeaveTracker() {
             ).map((row) => (
               <TableRow key={row.id}>
                 <TableCell style={{ width: 160 }}>
-                  {employees.map((item, index) => {
-                    return <>{item.id === row.employee_id && item.emp_name}</>;
-                  })}
+                  {employees.find((item) => item.id === row.employee_id)?.emp_name || row.username}
                 </TableCell>
                 {row.leave_status === "Pending" && (
                   <TableCell style={{ width: 160 }}>

@@ -13,6 +13,7 @@ import { usecdotStore } from "../../components/cdotStore";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import axios from "axios";
+import moment from "moment";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
@@ -141,10 +142,10 @@ export default function AddForm({ onClick, eventid, uname }) {
 
     onSubmit: async (values) => {
       function convert(str) {
-        var date = new Date(str),
-          mnth = ("0" + (date.getMonth() + 1)).slice(-2),
-          day = ("0" + date.getDate()).slice(-2);
-        return [date.getFullYear(), mnth, day].join("-");
+        if (!str) return "";
+        const m = moment(str);
+        if (m.isValid()) return m.format("YYYY-MM-DD");
+        return str;
       }
       console.log(values);
       formik.values.username = empusername;
@@ -170,40 +171,46 @@ export default function AddForm({ onClick, eventid, uname }) {
       formik.values.other_leave_in_hours = otherhours;
 
       // starting
-      await axios
-        .post(baseURL + "leave", values)
-        .then(function (response) {
-          console.log("Employee post: " + JSON.stringify(response.data));
-          toast.success("Your data is submitted!", {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: true,
-            toastId: "id",
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-          });
-          leaveApi();
-          onClick();
-        })
-        .catch(function (error) {
-          console.log("kcheckpost" + error); //return 429
-          toast.error("Something went wrong!", {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: true,
-            toastId: "id",
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-          });
+      try {
+        const response = await axios.put(baseURL + "leave/" + eventid, formik.values);
+        console.log("Employee put: " + JSON.stringify(response.data));
+        toast.success("Leave updated successfully!", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: true,
+          toastId: "id",
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
         });
+        await leaveApi();
+        onClick();
+      } catch (error) {
+        console.log("kcheckpost" + error);
+        toast.error(error.response?.data?.detail || error.response?.data?.message || "Something went wrong!", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: true,
+          toastId: "id",
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
+      }
       // ending
-      // formik.resetForm();
     },
   });
+
+  const leaveApi = async () => {
+    try {
+      const response = await axios.get(baseURL + "leave");
+      updateLeave(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.log("Error loading leaves: " + error);
+    }
+  };
 
   // useEffect(() => {
   //   setTlid(dayRef.current);
@@ -356,20 +363,6 @@ export default function AddForm({ onClick, eventid, uname }) {
     setLreason(event.target.value);
   };
 
-  const leaveApi = async () => {
-    // starting
-    await axios
-      .get(baseURL + "leave")
-      .then(function (response) {
-        console.log("leaves: " + JSON.stringify(response.data));
-        updateLeave(response.data);
-      })
-      .catch(function (error) {
-        console.log("kcheckpost" + error); //return 429
-      });
-    // ending
-  };
-
   return (
     <>
       {showform && (
@@ -409,7 +402,9 @@ export default function AddForm({ onClick, eventid, uname }) {
                   >
                     {employees.map((item, index) => {
                       return (
-                        <MenuItem value={item.id}>{item.emp_name}</MenuItem>
+                        <MenuItem key={item.id || index} value={item.id}>
+                          {item.emp_name}
+                        </MenuItem>
                       );
                     })}
                   </Select>
