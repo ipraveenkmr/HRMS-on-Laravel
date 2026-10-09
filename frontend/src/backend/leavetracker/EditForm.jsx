@@ -66,65 +66,63 @@ export default function AddForm({ onClick, eventid, uname }) {
   }, []);
 
   const leaveCalcApi = async () => {
-    // starting
-    await axios
-      .get(baseURL + "leave/calculator/username/" + uname)
-      .then(function (response) {
-        seRremainingClDays(response.data[0].remaining_CL_Days);
-        seRremainingClHours(response.data[0].remaining_CL_Hours);
-        setRemainingEiDays(response.data[0].remaining_EI_Days);
-        setRemainingEiHours(response.data[0].remaining_EI_Hours);
-        setRemainingLwpDays(response.data[0].remaining_LWP_Days);
-        setRemainingLwpHours(response.data[0].remaining_LWP_Hours);
-        setRemainingMedicalDays(response.data[0].remaining_medical_leave_in_days);
-        setRemainingMedicalHours(response.data[0].remaining_medical_leave_in_hours);
-        setRemainingOtherDays(response.data[0].remaining_other_leave_in_days);
-        setRemainingOtherHours(response.data[0].remaining_other_leave_in_hours);
-      })
-      .catch(function (error) {
-        console.log("kcheckpost" + error); //return 429
-      });
-    // ending
+    if (!uname) return;
+    try {
+      const response = await axios.get(baseURL + "leave/calculator/username/" + uname);
+      const calc = Array.isArray(response.data) ? response.data[0] : response.data;
+      if (!calc) return;
+      seRremainingClDays(calc.remaining_cl_days ?? calc.remaining_CL_Days ?? 0);
+      seRremainingClHours(calc.remaining_cl_hours ?? calc.remaining_CL_Hours ?? 0);
+      setRemainingEiDays(calc.remaining_ei_days ?? calc.remaining_EI_Days ?? 0);
+      setRemainingEiHours(calc.remaining_ei_hours ?? calc.remaining_EI_Hours ?? 0);
+      setRemainingLwpDays(calc.remaining_lwp_days ?? calc.remaining_LWP_Days ?? 0);
+      setRemainingLwpHours(calc.remaining_lwp_hours ?? calc.remaining_LWP_Hours ?? 0);
+      setRemainingMedicalDays(calc.remaining_medical_leave_in_days ?? 0);
+      setRemainingMedicalHours(calc.remaining_medical_leave_in_hours ?? 0);
+      setRemainingOtherDays(calc.remaining_other_leave_in_days ?? 0);
+      setRemainingOtherHours(calc.remaining_other_leave_in_hours ?? 0);
+    } catch (error) {
+      console.log("Error fetching leave calculator: " + error);
+    }
   };
 
   const leaveEditApi = async () => {
-    // starting
-    await axios
-      .get(baseURL + "leave/" + eventid)
-      .then(function (response) {
-        formdata.current = response.data[0];
-        setDateleavefrom(formdata.current.leave_from_date);
-        setMonthleavefrom(formdata.current.leave_from_month);
-        setYearleavefrom(formdata.current.leave_from_year);
-        setDateleaveto(formdata.current.leave_to_date);
-        setMonthleaveto(formdata.current.leave_to_month);
-        setYearleaveto(formdata.current.leave_to_year);
-        setSelectedemp(formdata.current.employee);
-        setLeavestatus(formdata.current.leave_status);
-        setLreason(formdata.current.leave_reason);
-        setCldays(formdata.current.CL_Days);
-        setClhours(formdata.current.CL_Hours);
-        setEidays(formdata.current.EI_Days);
-        setEihours(formdata.current.EI_Hours);
-        setLwpdays(formdata.current.LWP_Days);
-        setLwphours(formdata.current.LWP_Hours);
-        setMedicaldays(formdata.current.medical_leave_in_days);
-        setMedicalhours(formdata.current.medical_leave_in_hours);
-        setOtherdays(formdata.current.other_leave_in_days);
-        setOtherhours(formdata.current.other_leave_in_hours);
+    try {
+      const response = await axios.get(baseURL + "leave/" + eventid);
+      const data = Array.isArray(response.data) ? response.data[0] : response.data;
+      if (!data) return;
 
-        // Extract department_id from department object if it's an object, otherwise use the value directly
-        const deptId = response.data[0].department && typeof response.data[0].department === 'object' 
-          ? response.data[0].department.id 
-          : response.data[0].department_id || response.data[0].department;
-        setDept(deptId);
-        formik.values.leave_reason = formdata.current.leave_reason;
-        setShowform(true);
-      })
-      .catch(function (error) {
-        console.log("kcheckpost" + error); //return 429
-      });
-    // ending
+      formdata.current = data;
+      setDateleavefrom(data.leave_from_date || new Date());
+      setMonthleavefrom(data.leave_from_month || "");
+      setYearleavefrom(data.leave_from_year || "");
+      setDateleaveto(data.leave_to_date || new Date());
+      setMonthleaveto(data.leave_to_month || "");
+      setYearleaveto(data.leave_to_year || "");
+      setSelectedemp(data.employee_id || data.employee?.id || "");
+      setLeavestatus(data.leave_status || "Pending");
+      setLreason(data.leave_reason || "");
+      setCldays(data.cl_days ?? data.CL_Days ?? 0);
+      setClhours(data.cl_hours ?? data.CL_Hours ?? 0);
+      setEidays(data.ei_days ?? data.EI_Days ?? 0);
+      setEihours(data.ei_hours ?? data.EI_Hours ?? 0);
+      setLwpdays(data.lwp_days ?? data.LWP_Days ?? 0);
+      setLwphours(data.lwp_hours ?? data.LWP_Hours ?? 0);
+      setMedicaldays(data.medical_leave_in_days ?? 0);
+      setMedicalhours(data.medical_leave_in_hours ?? 0);
+      setOtherdays(data.other_leave_in_days ?? 0);
+      setOtherhours(data.other_leave_in_hours ?? 0);
+
+      // Extract department_id from department object if it's an object, otherwise use the value directly
+      const deptId = data.department && typeof data.department === 'object' 
+        ? data.department.id 
+        : data.department_id || data.department || "";
+      setDept(deptId);
+      formik.values.leave_reason = data.leave_reason || "";
+      setShowform(true);
+    } catch (error) {
+      console.log("Error fetching leave record for edit: " + error);
+    }
   };
 
   const formik = useFormik({

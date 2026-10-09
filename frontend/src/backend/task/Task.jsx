@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -129,21 +129,25 @@ export default function Task() {
   const employees = usecdotStore((state) => state.employees);
   const updateAssignedjobs = usecdotStore((state) => state.updateAssignedjobs);
   const assignedjobsData = usecdotStore((state) => state.assignedjobs);
-  const assignedjobs = (Array.isArray(assignedjobsData) ? [...assignedjobsData] : []).sort(
-    (a, b) => Number(b.id) - Number(a.id)
-  );
-  const [emprecord, SetEmprecord] = useState([]);
+  const assignedjobs = useMemo(() => {
+    return (Array.isArray(assignedjobsData) ? [...assignedjobsData] : []).sort(
+      (a, b) => Number(b.id) - Number(a.id)
+    );
+  }, [assignedjobsData]);
   const [statustype, setStatustype] = useState("");
   const baseURL = process.env.REACT_APP_API_URL;
   const departments = usecdotStore((state) => state.departments);
 
+  const emprecord = useMemo(() => {
+    if (statustype) {
+      return assignedjobs.filter((job) => job.status && job.status.includes(statustype));
+    }
+    return assignedjobs;
+  }, [assignedjobs, statustype]);
+
   useEffect(() => {
     taskApi();
   }, []);
-
-  useEffect(() => {
-    SetEmprecord(assignedjobs);
-  }, [assignedjobs]);
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
@@ -224,13 +228,7 @@ export default function Task() {
 
   const handleStatusChange = (event) => {
     setStatustype(event.target.value);
-    if (event.target.value) {
-      SetEmprecord(
-        assignedjobs.filter((job) => job.status.includes(event.target.value))
-      );
-    } else {
-      SetEmprecord(assignedjobs);
-    }
+    setPage(0);
   };
 
   const handleChangeDepartment = async (event) => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -131,38 +131,29 @@ export default function Task() {
   const employees = usecdotStore((state) => state.employees);
   const updateDeptEmployee = usecdotStore((state) => state.updateDeptEmployee);
   const updateAssignedjobs = usecdotStore((state) => state.updateAssignedjobs);
-  const assignedjobs = usecdotStore((state) => state.assignedjobs).sort(
-    (a, b) => (a.id > b.id ? -1 : 1)
-  );
-  const [emprecord, SetEmprecord] = useState([]);
-  const [empdata, SetEmpdata] = useState([]);
+  const assignedjobsData = usecdotStore((state) => state.assignedjobs);
+  const assignedjobs = useMemo(() => {
+    return (Array.isArray(assignedjobsData) ? [...assignedjobsData] : []).sort(
+      (a, b) => (a.id > b.id ? -1 : 1)
+    );
+  }, [assignedjobsData]);
   const [statustype, setStatustype] = useState("");
   const baseURL = process.env.REACT_APP_API_URL;
   const departments = usecdotStore((state) => state.departments);
   const emp_department = usecdotStore((state) => state.emp_department);
   const emp_id = usecdotStore((state) => state.emp_id);
 
+  const emprecord = useMemo(() => {
+    if (statustype) {
+      return assignedjobs.filter((job) => job.status && job.status.includes(statustype));
+    }
+    return assignedjobs;
+  }, [assignedjobs, statustype]);
+
   useEffect(() => {
     taskApi();
     employeeApi();
   }, []);
-
-  const employeeApi = async () => {
-    // starting
-    await axios
-      .get(baseURL + "employees/manager/" + emp_id)
-      .then(function (response) {
-        updateDeptEmployee(response.data);
-      })
-      .catch(function (error) {
-        console.log("kcheckpost" + error); //return 429
-      });
-    // ending
-  };
-
-  useEffect(() => {
-    SetEmprecord(assignedjobs);
-  }, [assignedjobs]);
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
@@ -233,24 +224,22 @@ export default function Task() {
     // ending
   };
 
-  // useEffect(() => {
-  //   if (empdata) {
-  //     SetEmprecord([empdata]);
-  //     // SetEmprecord([...emprecord, empdata]);
-  //   } else {
-  //     SetEmprecord(assignedjobs);
-  //   }
-  // }, [empdata]);
+  const employeeApi = async () => {
+    // starting
+    await axios
+      .get(baseURL + "employees/manager/" + emp_id)
+      .then(function (response) {
+        updateDeptEmployee(response.data);
+      })
+      .catch(function (error) {
+        console.log("kcheckpost" + error); //return 429
+      });
+    // ending
+  };
 
   const handleStatusChange = (event) => {
     setStatustype(event.target.value);
-    if (event.target.value) {
-      SetEmprecord(
-        assignedjobs.filter((job) => job.status.includes(event.target.value))
-      );
-    } else {
-      SetEmprecord(assignedjobs);
-    }
+    setPage(0);
   };
 
   const handleChangeDepartment = async (event) => {

@@ -62,29 +62,30 @@ export default function EditForm({ onClick, eventid }) {
 
   const leaveEditApi = async () => {
     // starting
-    await axios
-      .get(baseURL + "leave/" + eventid)
-      .then(function (response) {
-        formdata.current = response.data[0];
-        console.log("kcheckpost " + JSON.stringify(formdata.current));
-        setDateleavefrom(formdata.current.leave_from_date);
-        setMonthleavefrom(formdata.current.leave_from_month);
-        setYearleavefrom(formdata.current.leave_from_year);
-        setDateleaveto(formdata.current.leave_to_date);
-        setMonthleaveto(formdata.current.leave_to_month);
-        setYearleaveto(formdata.current.leave_to_year);
-        setLeavetype(formdata.current.leave_type);
-        setSelectedemp(formdata.current.employee);
-        formik.values.total_leave_in_days =
-          formdata.current.total_leave_in_days;
-        formik.values.total_leave_in_hours =
-          formdata.current.total_leave_in_hours;
-        formik.values.leave_reason = formdata.current.leave_reason;
-        setShowform(true);
-      })
-      .catch(function (error) {
-        console.log("kcheckpost" + error); //return 429
-      });
+    try {
+      const response = await axios.get(baseURL + "leave/" + eventid);
+      const data = Array.isArray(response.data) ? response.data[0] : response.data;
+      if (!data) return;
+
+      formdata.current = data;
+      console.log("kcheckpost " + JSON.stringify(data));
+      setDateleavefrom(data.leave_from_date || "");
+      setMonthleavefrom(data.leave_from_month || "");
+      setYearleavefrom(data.leave_from_year || "");
+      setDateleaveto(data.leave_to_date || "");
+      setMonthleaveto(data.leave_to_month || "");
+      setYearleaveto(data.leave_to_year || "");
+      setLeavetype(data.leave_type || "");
+      setSelectedemp(data.employee_id || data.employee?.id || data.employee || "");
+      formik.values.total_leave_in_days =
+        data.total_leave_in_days ?? 0;
+      formik.values.total_leave_in_hours =
+        data.total_leave_in_hours ?? 0;
+      formik.values.leave_reason = data.leave_reason || "";
+      setShowform(true);
+    } catch (error) {
+      console.log("kcheckpost" + error);
+    }
     // ending
   };
 

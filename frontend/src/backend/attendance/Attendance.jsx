@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import PropTypes from "prop-types";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -138,9 +138,11 @@ export default function Attendance() {
   const updateEmployee = usecdotStore((state) => state.updateEmployee);
   const [changedepartment, setChangeDepartment] = useState("");
   const attendanceData = usecdotStore((state) => state.attendance);
-  const attendance = (Array.isArray(attendanceData) ? [...attendanceData] : []).sort(
-    (a, b) => Number(b.id) - Number(a.id)
-  );
+  const attendance = useMemo(() => {
+    return (Array.isArray(attendanceData) ? [...attendanceData] : []).sort(
+      (a, b) => Number(b.id) - Number(a.id)
+    );
+  }, [attendanceData]);
   const baseURL = process.env.REACT_APP_API_URL;
   const onlyURL = process.env.REACT_APP_URL;
   const [fromvalue, setFromValue] = useState(new Date());
@@ -151,23 +153,16 @@ export default function Attendance() {
   const [month, SetMonth] = useState("January");
   const [alldata, SetAllData] = useState([]);
   const [isDownload, setIsDownload] = useState(false);
-  const [exportattendance, setIsExportAttendance] = useState([]);
 
-  useEffect(() => {
-    attendanceApi();
-    employeeApi();
-    setIsExportAttendance(attendance);
-  }, []);
-
-  useEffect(() => {
-    function getEmployeeDetails(username) {
-      return employees.find((employee) => employee.username === username);
+  const exportattendance = useMemo(() => {
+    function getEmployeeDetails(uname) {
+      return employees.find((employee) => employee.username === uname);
     }
 
-    const transformedData = attendance.map(item => {
+    return attendance.map(item => {
       const employeeInfo = getEmployeeDetails(item.username);
       return {
-        attendance_date: item.attendance_date.split('-').slice(0, 3).reverse().join('/'),
+        attendance_date: item.attendance_date ? item.attendance_date.split('-').slice(0, 3).reverse().join('/') : '',
         name: employeeInfo?.emp_name || '',
         phone: employeeInfo?.emp_phone || '',
         work_mode: employeeInfo?.work_mode || '',
@@ -183,9 +178,12 @@ export default function Attendance() {
         ip_address: item.ip_address,
       };
     });
+  }, [attendance, employees]);
 
-    setIsExportAttendance(transformedData);
-  }, [attendance]);
+  useEffect(() => {
+    attendanceApi();
+    employeeApi();
+  }, []);
 
   const employeeApi = async () => {
     // starting

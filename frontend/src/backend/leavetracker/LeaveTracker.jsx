@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -129,10 +129,11 @@ export default function LeaveTracker() {
   const employees = usecdotStore((state) => state.employees);
   const updateLeave = usecdotStore((state) => state.updateLeave);
   const leavesData = usecdotStore((state) => state.leaves);
-  const leaves = (Array.isArray(leavesData) ? [...leavesData] : []).sort((a, b) =>
-    Number(b.id) - Number(a.id)
-  );
-  const [emprecord, SetEmprecord] = useState([]);
+  const leaves = useMemo(() => {
+    return (Array.isArray(leavesData) ? [...leavesData] : []).sort((a, b) =>
+      Number(b.id) - Number(a.id)
+    );
+  }, [leavesData]);
   const [statustype, setStatustype] = useState("");
   const baseURL = process.env.REACT_APP_API_URL;
   const [changedepartment, setChangeDepartment] = useState("");
@@ -140,24 +141,22 @@ export default function LeaveTracker() {
   const emp_type = usecdotStore((state) => state.emp_type);
   const emp_department = usecdotStore((state) => state.emp_department);
 
+  const emprecord = useMemo(() => {
+    if (statustype) {
+      return leaves.filter((job) => job.leave_status && job.leave_status.includes(statustype));
+    }
+    return leaves;
+  }, [leaves, statustype]);
+
   useEffect(() => {
     leaveApi();
   }, []);
-
-  useEffect(() => {
-    if (statustype) {
-      SetEmprecord(leaves.filter((job) => job.leave_status && job.leave_status.includes(statustype)));
-    } else {
-      SetEmprecord(leaves);
-    }
-  }, [leaves, statustype]);
 
   const leaveApi = async () => {
     try {
       const response = await axios.get(baseURL + "leave");
       const data = Array.isArray(response.data) ? response.data : [];
       updateLeave(data);
-      SetEmprecord(data);
     } catch (error) {
       console.log("Error loading leaves: " + error);
     }
@@ -221,13 +220,7 @@ export default function LeaveTracker() {
 
   const handleStatusChange = (event) => {
     setStatustype(event.target.value);
-    if (event.target.value) {
-      SetEmprecord(
-        leaves.filter((job) => job.leave_status.includes(event.target.value))
-      );
-    } else {
-      SetEmprecord(leaves);
-    }
+    setPage(0);
   };
 
   const handleChangeDepartment = async (event) => {
