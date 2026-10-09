@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hrms/page/attendance_page.dart';
 import 'package:hrms/page/leave_page.dart';
+import 'package:hrms/page/task_page.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -97,8 +98,8 @@ Future<String> dailyTask(
       'manager': manager,
       'description': description,
     });
-    if (response.statusCode == 201) {
-      Get.offAll(() => AttendancePage());
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      Get.offAll(() => const TaskPage());
       Get.snackbar(
         'Task Submitted',
         'Daily task saved successfully.',

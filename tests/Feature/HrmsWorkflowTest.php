@@ -55,7 +55,7 @@ class HrmsWorkflowTest extends TestCase
         $created = $this->postJson('/api/leave', $payload)->assertCreated()->json('leave.id');
         $this->postJson('/api/leave', array_merge($payload, ['leave_from_date' => '2026-10-11']))->assertStatus(422);
         $this->putJson('/api/leave/'.$created, ['leave_from_date' => '2026-10-12', 'leave_to_date' => '2026-10-13'])
-            ->assertOk()->assertJsonPath('leave.cl_days', 2.0);
+            ->assertOk()->assertJsonPath('leave.cl_days', fn ($val) => (float) $val === 2.0);
         $this->postJson('/api/leave', array_merge($payload, ['leave_from_date' => '2026-10-10', 'leave_to_date' => '2026-10-11']))
             ->assertCreated();
     }

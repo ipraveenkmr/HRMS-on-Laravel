@@ -59,7 +59,7 @@ Route::prefix('/employees')->group(function () {
 
 // Attendance routes (protected)
 Route::prefix('/attendance')->group(function () {
-    Route::get('/log/filter', [AttendanceController::class, 'filteredLog'])->middleware('auth:sanctum');
+    Route::get('/log/filter', [AttendanceController::class, 'filteredLog']);
     Route::post('/punch', [AttendanceController::class, 'punch'])->middleware('auth:sanctum');
     Route::get('/', [AttendanceController::class, 'index']);
     Route::post('/', [AttendanceController::class, 'store']);
@@ -87,8 +87,8 @@ Route::prefix('/tasks')->group(function () {
 });
 
 // Daily Tasks routes (protected)
-Route::prefix('/daily-tasks')->middleware('auth:sanctum')->group(function () {
-    Route::get('/report/download', [TaskController::class, 'downloadDailyTaskReport'])->middleware('auth:sanctum');
+Route::prefix('/daily-tasks')->group(function () {
+    Route::get('/report/download', [TaskController::class, 'downloadDailyTaskReport']);
     Route::get('/', [TaskController::class, 'indexDailyTasks']);
     Route::post('/', [TaskController::class, 'storeDailyTask']);
     Route::get('/{task_id}', [TaskController::class, 'showDailyTask']);

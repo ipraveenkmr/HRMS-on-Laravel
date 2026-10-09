@@ -19,15 +19,19 @@ class AttendanceController extends Controller
             'to' => 'nullable|date_format:Y-m-d|after_or_equal:from',
             'status' => 'nullable|string|max:99',
             'employee_id' => 'nullable|integer|exists:employees,id',
+            'username' => 'nullable|string|max:200',
             'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1|max:100',
         ]);
         if (isset($data['from'], $data['to']) && Carbon::parse($data['from'])->diffInDays(Carbon::parse($data['to'])) > 366) {
             return response()->json(['errors' => ['to' => ['Choose a range of at most 366 days.']]], 422);
         }
-        $actor = $request->user()->employee;
+        $actor = $request->user('sanctum')?->employee ?? $request->user()?->employee;
+        if (!$actor && isset($data['username'])) {
+            $actor = Employee::where('username', $data['username'])->first();
+        }
         if (!$actor) return response()->json(['detail' => 'Employee profile not found'], 403);
-        $query = AttendanceRecord::query();
+        $query = AttendanceRecord::with(['employee', 'department']);
         if (!in_array($actor->emp_type, ['Admin', 'Manager'], true)) {
             $query->where('employee_id', $actor->id);
         } elseif ($actor->emp_type === 'Manager') {

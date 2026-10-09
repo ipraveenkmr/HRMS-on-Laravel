@@ -11,6 +11,7 @@ class ApiClient {
   static Dio _createDio() {
     final dio = Dio();
     dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) async {
+      options.headers['Accept'] = 'application/json';
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('access_token');
       if (token != null && token.isNotEmpty) {

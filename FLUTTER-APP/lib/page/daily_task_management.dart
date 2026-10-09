@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../common/api_client.dart';
 import '../constants.dart';
 
@@ -24,23 +25,69 @@ class _DailyTaskManagementPageState extends State<DailyTaskManagementPage> {
   String? error;
   final base = '${AppConstants.apiLink}daily-tasks';
 
+  final DateFormat _apiDateFormat = DateFormat('yyyy-MM-dd');
+  final DateFormat _displayDateFormat = DateFormat('EEE, dd MMM yyyy');
+
+  String date(DateTime value) => _apiDateFormat.format(value);
+
+  String _formatDisplayDate(String? rawDate) {
+    if (rawDate == null || rawDate.isEmpty) return '—';
+    try {
+      final parsed = DateTime.parse(rawDate);
+      return _displayDateFormat.format(parsed);
+    } catch (_) {
+      return rawDate;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     refresh();
   }
 
-  String date(DateTime value) => DateFormat('yyyy-MM-dd').format(value);
+  String _extractDioError(DioException e, String fallback) {
+    if (e.response?.data is Map) {
+      final data = e.response!.data as Map;
+      if (data['detail'] != null && data['detail'].toString().trim().isNotEmpty) {
+        return data['detail'].toString();
+      }
+      if (data['message'] != null && data['message'].toString().trim().isNotEmpty) {
+        return data['message'].toString();
+      }
+      if (data['errors'] is Map) {
+        final errors = data['errors'] as Map;
+        if (errors.isNotEmpty) {
+          final first = errors.values.first;
+          if (first is List && first.isNotEmpty) return first.first.toString();
+          return first.toString();
+        }
+      }
+    }
+    if (e.response?.statusCode == 401) return 'Session expired. Please sign in again.';
+    if (e.response?.statusCode == 403) return 'Access denied.';
+    if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout) {
+      return 'Cannot reach backend server. Ensure server is active.';
+    }
+    return fallback;
+  }
 
   Future<void> refresh() async {
-    setState(() { loading = true; error = null; });
+    setState(() {
+      loading = true;
+      error = null;
+    });
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final uname = prefs.getString('username');
+
       final response = await ApiClient.client.get(base, queryParameters: {
+        if (uname != null && uname.isNotEmpty) 'username': uname,
         if (from != null) 'from': date(from!),
         if (to != null) 'to': date(to!),
         if (status.isNotEmpty) 'status': status,
       });
-      if (mounted) {
+      if (mounted && response.data is List) {
         final list = (response.data as List).map((item) => Map<String, dynamic>.from(item)).toList();
         list.sort((a, b) {
           final idA = a['id'] is int ? a['id'] as int : int.tryParse(a['id']?.toString() ?? '') ?? 0;
@@ -55,7 +102,9 @@ class _DailyTaskManagementPageState extends State<DailyTaskManagementPage> {
         setState(() => tasks = list);
       }
     } on DioException catch (e) {
-      if (mounted) setState(() => error = e.response?.data is Map ? e.response?.data['detail']?.toString() ?? 'Could not load tasks.' : 'Could not load tasks.');
+      if (mounted) setState(() => error = _extractDioError(e, 'Could not load tasks.'));
+    } catch (e) {
+      if (mounted) setState(() => error = 'Error: ${e.toString()}');
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -67,118 +116,550 @@ class _DailyTaskManagementPageState extends State<DailyTaskManagementPage> {
     DateTime selectedDate = DateTime.tryParse(existing?['submission_date']?.toString() ?? '') ?? DateTime.now();
     String selectedStatus = existing?['status']?.toString() ?? 'Pending';
     final formKey = GlobalKey<FormState>();
-    final saved = await showDialog<bool>(context: context, builder: (dialogContext) => StatefulBuilder(
-      builder: (context, update) => AlertDialog(
-        title: Text(existing == null ? 'Add daily task' : 'Edit daily task'),
-        content: SingleChildScrollView(child: Form(key: formKey, child: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextFormField(controller: title, decoration: const InputDecoration(labelText: 'Task'), maxLength: 2000,
-            validator: (value) => value == null || value.trim().isEmpty ? 'Enter a task.' : null),
-          TextFormField(controller: description, decoration: const InputDecoration(labelText: 'Description'), maxLines: 3),
-          ListTile(title: Text('Date: ${date(selectedDate)}'), trailing: const Icon(Icons.calendar_today), onTap: () async {
-            final picked = await showDatePicker(context: context, initialDate: selectedDate,
-              firstDate: DateTime(2020), lastDate: DateTime(2100));
-            if (picked != null) update(() => selectedDate = picked);
-          }),
-          DropdownButtonFormField<String>(value: selectedStatus, decoration: const InputDecoration(labelText: 'Status'),
-            items: ['Pending', 'In Progress', 'Completed'].map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
-            onChanged: (value) => update(() => selectedStatus = value ?? 'Pending')),
-        ]))),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () async {
-            if (!formKey.currentState!.validate()) return;
-            try {
-              final Map<String, dynamic> payload = {'task': title.text.trim(), 'description': description.text.trim(),
-                'submission_date': date(selectedDate), 'status': selectedStatus};
-              if (existing == null) {
-                final profile = await ApiClient.client.get('${AppConstants.apiLink}auth/me');
-                payload['employee_id'] = profile.data['employee_id'];
-                payload['department_id'] = profile.data['department_id'];
-                await ApiClient.client.post(base, data: payload);
-              } else {
-                await ApiClient.client.put('$base/${existing['id']}', data: payload);
-              }
-              if (dialogContext.mounted) Navigator.pop(dialogContext, true);
-            } on DioException catch (e) {
-              final detail = e.response?.data is Map ? e.response?.data['detail'] ?? e.response?.data['message'] : null;
-              if (mounted) ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(detail?.toString() ?? 'Could not save task.')));
-            }
-          }, child: const Text('Save')),
-        ],
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) => StatefulBuilder(
+        builder: (context, update) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        existing == null ? 'Add Daily Task' : 'Edit Daily Task',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(bottomSheetContext, false),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: title,
+                    decoration: InputDecoration(
+                      labelText: 'Task Title *',
+                      hintText: 'Enter task summary',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      prefixIcon: const Icon(Icons.task_alt_rounded),
+                    ),
+                    maxLength: 2000,
+                    validator: (value) => value == null || value.trim().isEmpty ? 'Enter a task title.' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: description,
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      hintText: 'Enter task details',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      prefixIcon: const Icon(Icons.notes_rounded),
+                    ),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2035),
+                            );
+                            if (picked != null) update(() => selectedDate = picked);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade400),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_today_rounded, size: 18, color: Colors.blueAccent),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Date', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                                      Text(date(selectedDate), style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade400),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: selectedStatus,
+                              isExpanded: true,
+                              items: ['Pending', 'In Progress', 'Completed']
+                                  .map((val) => DropdownMenuItem(value: val, child: Text(val, style: const TextStyle(fontSize: 13))))
+                                  .toList(),
+                              onChanged: (val) {
+                                if (val != null) update(() => selectedStatus = val);
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.save_rounded),
+                      label: Text(existing == null ? 'Create Task' : 'Update Task', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                      onPressed: () async {
+                        if (!formKey.currentState!.validate()) return;
+                        final messenger = ScaffoldMessenger.of(this.context);
+                        try {
+                          final prefs = await SharedPreferences.getInstance();
+                          final uname = prefs.getString('username');
+                          final Map<String, dynamic> payload = {
+                            if (uname != null && uname.isNotEmpty) 'username': uname,
+                            'task': title.text.trim(),
+                            'description': description.text.trim(),
+                            'submission_date': date(selectedDate),
+                            'status': selectedStatus,
+                          };
+                          if (existing == null) {
+                            await ApiClient.client.post(base, data: payload);
+                          } else {
+                            await ApiClient.client.put('$base/${existing['id']}', data: payload);
+                          }
+                          if (bottomSheetContext.mounted) {
+                            Navigator.of(bottomSheetContext).pop(true);
+                          }
+                        } on DioException catch (e) {
+                          final msg = _extractDioError(e, 'Could not save task.');
+                          if (bottomSheetContext.mounted) {
+                            ScaffoldMessenger.of(bottomSheetContext).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red.shade700));
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
-    ));
+    );
+
     title.dispose();
     description.dispose();
-    if (saved == true) refresh();
+    if (saved == true) {
+      await refresh();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(existing == null ? 'Task created!' : 'Task updated!'),
+          backgroundColor: Colors.green.shade700,
+        ));
+      }
+    }
   }
 
   Future<void> deleteTask(Map<String, dynamic> task) async {
-    final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
-      title: const Text('Delete task?'), actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
-      ]));
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Daily Task?'),
+        content: Text("Are you sure you want to delete '${task['task']}'?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red.shade600),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
     if (confirmed != true) return;
-    try { await ApiClient.client.delete('$base/${task['id']}'); refresh(); }
-    on DioException catch (_) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not delete task.'))); }
+    try {
+      await ApiClient.client.delete('$base/${task['id']}');
+      refresh();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Task deleted.')));
+    } on DioException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_extractDioError(e, 'Could not delete task.')), backgroundColor: Colors.red.shade700));
+    }
   }
 
   Future<void> download(String format) async {
     try {
-      final response = await ApiClient.client.get('$base/report/download',
-        queryParameters: {'period': period, 'date': date(reportDate), 'format': format,
-          if (status.isNotEmpty) 'status': status},
-        options: Options(responseType: ResponseType.bytes));
+      final prefs = await SharedPreferences.getInstance();
+      final uname = prefs.getString('username');
+      final response = await ApiClient.client.get(
+        '$base/report/download',
+        queryParameters: {
+          if (uname != null && uname.isNotEmpty) 'username': uname,
+          'period': period,
+          'date': date(reportDate),
+          'format': format,
+          if (status.isNotEmpty) 'status': status,
+        },
+        options: Options(responseType: ResponseType.bytes),
+      );
       final directory = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/daily-tasks-$period-${date(reportDate)}.$format');
       await file.writeAsBytes(List<int>.from(response.data));
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved report: ${file.path}')));
-    } on DioException catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not download report.')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Saved report: ${file.path}'),
+            backgroundColor: Colors.green.shade700,
+          ),
+        );
+      }
+    } on DioException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_extractDioError(e, 'Could not download report.')), backgroundColor: Colors.red.shade700));
     }
   }
 
-  Future<void> pickDate(bool isFrom) async {
-    final picked = await showDatePicker(context: context, initialDate: DateTime.now(),
-      firstDate: DateTime(2020), lastDate: DateTime(2100));
-    if (picked != null) { setState(() { if (isFrom) from = picked; else to = picked; }); refresh(); }
+  Future<void> pickFilterDateRange() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
+      initialDateRange: (from != null && to != null)
+          ? DateTimeRange(start: from!, end: to!)
+          : DateTimeRange(start: DateTime.now().subtract(const Duration(days: 30)), end: DateTime.now()),
+    );
+    if (picked != null) {
+      setState(() {
+        from = picked.start;
+        to = picked.end;
+      });
+      refresh();
+    }
+  }
+
+  Color _getStatusColor(String? statusText) {
+    switch ((statusText ?? '').toLowerCase()) {
+      case 'completed':
+        return Colors.green.shade700;
+      case 'in progress':
+        return Colors.blue.shade700;
+      case 'pending':
+      default:
+        return Colors.orange.shade800;
+    }
+  }
+
+  Color _getStatusBgColor(String? statusText) {
+    switch ((statusText ?? '').toLowerCase()) {
+      case 'completed':
+        return Colors.green.shade50;
+      case 'in progress':
+        return Colors.blue.shade50;
+      case 'pending':
+      default:
+        return Colors.orange.shade50;
+    }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Daily tasks')),
-    floatingActionButton: FloatingActionButton(onPressed: () => editTask(), child: const Icon(Icons.add)),
-    body: Column(children: [
-      Wrap(spacing: 8, children: [
-        TextButton(onPressed: () => pickDate(true), child: Text(from == null ? 'From date' : 'From ${date(from!)}')),
-        TextButton(onPressed: () => pickDate(false), child: Text(to == null ? 'To date' : 'To ${date(to!)}')),
-        DropdownButton<String>(value: status, items: ['', 'Pending', 'In Progress', 'Completed']
-          .map((value) => DropdownMenuItem(value: value, child: Text(value.isEmpty ? 'All statuses' : value))).toList(),
-          onChanged: (value) { setState(() => status = value ?? ''); refresh(); }),
-        TextButton(onPressed: () { setState(() { from = null; to = null; status = ''; }); refresh(); }, child: const Text('Clear')),
-      ]),
-      Wrap(spacing: 8, children: [
-        DropdownButton<String>(value: period, items: ['weekly', 'monthly'].map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
-          onChanged: (value) => setState(() => period = value ?? 'weekly')),
-        TextButton(onPressed: () async { final picked = await showDatePicker(context: context, initialDate: reportDate,
-          firstDate: DateTime(2020), lastDate: DateTime(2100)); if (picked != null) setState(() => reportDate = picked); },
-          child: Text(date(reportDate))),
-        OutlinedButton(onPressed: () => download('csv'), child: const Text('CSV')),
-        OutlinedButton(onPressed: () => download('pdf'), child: const Text('PDF')),
-      ]),
-      if (loading) const LinearProgressIndicator(),
-      if (error != null) Text(error!),
-      Expanded(child: tasks.isEmpty && !loading ? const Center(child: Text('No tasks found.')) : ListView.builder(
-        itemCount: tasks.length, itemBuilder: (context, index) {
-          final task = tasks[index];
-          return ListTile(title: Text(task['task']?.toString() ?? ''),
-            subtitle: Text('${task['submission_date'] ?? ''} • ${task['status'] ?? 'Pending'}\n${task['description'] ?? ''}'),
-            isThreeLine: true,
-            trailing: Wrap(children: [
-              IconButton(tooltip: 'Edit task', icon: const Icon(Icons.edit), onPressed: () => editTask(task)),
-              IconButton(tooltip: 'Delete task', icon: const Icon(Icons.delete), onPressed: () => deleteTask(task)),
-            ]));
-        })),
-    ]),
+    backgroundColor: Colors.grey.shade100,
+    appBar: AppBar(
+      title: const Text('Daily Tasks', style: TextStyle(fontWeight: FontWeight.bold)),
+      elevation: 0,
+      actions: [
+        IconButton(icon: const Icon(Icons.refresh_rounded), tooltip: 'Refresh', onPressed: refresh),
+      ],
+    ),
+    floatingActionButton: FloatingActionButton.extended(
+      onPressed: () => editTask(),
+      icon: const Icon(Icons.add_rounded),
+      label: const Text('Add Task', style: TextStyle(fontWeight: FontWeight.bold)),
+    ),
+    body: Column(
+      children: [
+        // Filter Controls
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                offset: const Offset(0, 2),
+                blurRadius: 6,
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: OutlinedButton.icon(
+                      onPressed: pickFilterDateRange,
+                      icon: const Icon(Icons.date_range_rounded, size: 18),
+                      label: Text(
+                        (from != null && to != null)
+                            ? '${DateFormat('dd MMM').format(from!)} - ${DateFormat('dd MMM').format(to!)}'
+                            : 'Date Range',
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: status,
+                          isExpanded: true,
+                          items: const [
+                            DropdownMenuItem(value: '', child: Text('All', style: TextStyle(fontSize: 13))),
+                            DropdownMenuItem(value: 'Pending', child: Text('Pending', style: TextStyle(fontSize: 13))),
+                            DropdownMenuItem(value: 'In Progress', child: Text('In Progress', style: TextStyle(fontSize: 13))),
+                            DropdownMenuItem(value: 'Completed', child: Text('Completed', style: TextStyle(fontSize: 13))),
+                          ],
+                          onChanged: (val) {
+                            setState(() => status = val ?? '');
+                            refresh();
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (from != null || to != null || status.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          from = null;
+                          to = null;
+                          status = '';
+                        });
+                        refresh();
+                      },
+                      icon: const Icon(Icons.clear_rounded, color: Colors.redAccent),
+                      tooltip: 'Clear',
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Download reports row
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: period,
+                        items: const [
+                          DropdownMenuItem(value: 'weekly', child: Text('Weekly', style: TextStyle(fontSize: 12))),
+                          DropdownMenuItem(value: 'monthly', child: Text('Monthly', style: TextStyle(fontSize: 12))),
+                        ],
+                        onChanged: (val) => setState(() => period = val ?? 'weekly'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: reportDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2035),
+                        );
+                        if (picked != null) setState(() => reportDate = picked);
+                      },
+                      child: Text(date(reportDate), style: const TextStyle(fontSize: 12)),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      backgroundColor: Colors.green.shade700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () => download('csv'),
+                    icon: const Icon(Icons.table_chart_rounded, size: 16),
+                    label: const Text('CSV', style: TextStyle(fontSize: 12)),
+                  ),
+                  const SizedBox(width: 6),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      backgroundColor: Colors.red.shade700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () => download('pdf'),
+                    icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                    label: const Text('PDF', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        if (loading) const LinearProgressIndicator(minHeight: 2),
+
+        if (error != null)
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(error!, style: TextStyle(color: Colors.red.shade700)),
+          ),
+
+        Expanded(
+          child: tasks.isEmpty && !loading
+              ? const Center(child: Text('No daily tasks found.'))
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 80),
+                  itemCount: tasks.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final task = tasks[index];
+                    final statusVal = task['status']?.toString() ?? 'Pending';
+                    return Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    task['task']?.toString() ?? '',
+                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: _getStatusBgColor(statusVal),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: _getStatusColor(statusVal).withValues(alpha: 0.3)),
+                                  ),
+                                  child: Text(
+                                    statusVal,
+                                    style: TextStyle(
+                                      color: _getStatusColor(statusVal),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (task['description'] != null && task['description'].toString().isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                task['description'].toString(),
+                                style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                              ),
+                            ],
+                            const SizedBox(height: 10),
+                            Divider(color: Colors.grey.shade100, height: 1),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  _formatDisplayDate(task['submission_date']?.toString()),
+                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                ),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      tooltip: 'Edit task',
+                                      icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blueAccent),
+                                      onPressed: () => editTask(task),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Delete task',
+                                      icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
+                                      onPressed: () => deleteTask(task),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    ),
   );
 }

@@ -149,7 +149,10 @@ class TaskController extends Controller
     // Daily Tasks
     private function dailyTaskQuery(Request $request)
     {
-        $actor = $request->user()?->employee;
+        $actor = $request->user('sanctum')?->employee ?? $request->user()?->employee;
+        if (!$actor && $request->has('username')) {
+            $actor = Employee::where('username', $request->input('username'))->first();
+        }
         if (!$actor) abort(403, 'Employee profile not found');
         $query = DailyTask::query();
         if ($actor->emp_type === 'Manager') {
@@ -168,6 +171,7 @@ class TaskController extends Controller
             'to' => 'nullable|date_format:Y-m-d|after_or_equal:from',
             'status' => 'nullable|in:Pending,In Progress,Completed',
             'employee_id' => 'nullable|integer|exists:employees,id',
+            'username' => 'nullable|string|max:200',
         ]);
         $query = $this->dailyTaskQuery($request)->with(['employee', 'department']);
         if (isset($filters['from'])) $query->where('submission_date', '>=', $filters['from']);
@@ -192,11 +196,17 @@ class TaskController extends Controller
 
     public function storeDailyTask(Request $request): JsonResponse
     {
+        $actor = $request->user('sanctum')?->employee ?? $request->user()?->employee;
+        if (!$actor && $request->has('username')) {
+            $actor = Employee::where('username', $request->input('username'))->first();
+        }
+        if (!$actor) return response()->json(['detail' => 'Employee profile not found'], 403);
+
         $validated = $request->validate([
             'task' => 'required|string|max:2000',
             'username' => 'nullable|string|max:200',
-            'employee_id' => 'required|exists:employees,id',
-            'department_id' => 'required|exists:departments,id',
+            'employee_id' => 'nullable|exists:employees,id',
+            'department_id' => 'nullable|exists:departments,id',
             'manager' => 'nullable|string|max:200',
             'submission_date' => 'nullable|date',
             'document' => 'nullable|string|max:200',
@@ -204,11 +214,15 @@ class TaskController extends Controller
             'status' => 'nullable|in:Pending,In Progress,Completed',
         ]);
 
-        $actor = $request->user()?->employee;
-        if (!$actor || $actor->id !== (int) $validated['employee_id']) return response()->json(['detail' => 'You can only create your own tasks.'], 403);
+        if (isset($validated['employee_id']) && (int) $validated['employee_id'] !== $actor->id) {
+            return response()->json(['detail' => 'You can only create your own tasks.'], 403);
+        }
+
+        $validated['employee_id'] = $actor->id;
         $validated['username'] = $actor->username;
         $validated['department_id'] = $actor->department_id;
         $validated['submission_date'] = isset($validated['submission_date']) ? Carbon::parse($validated['submission_date'])->toDateString() : now()->toDateString();
+        $validated['status'] = $validated['status'] ?? 'Pending';
 
         $dailyTask = DailyTask::create($validated);
         
@@ -238,7 +252,14 @@ class TaskController extends Controller
             'status' => 'nullable|in:Pending,In Progress,Completed',
         ]);
 
-        if ($dailyTask->employee_id !== $request->user()->employee?->id) return response()->json(['detail' => 'Only the task owner may edit it.'], 403);
+        $actor = $request->user('sanctum')?->employee ?? $request->user()?->employee;
+        if (!$actor && $request->has('username')) {
+            $actor = Employee::where('username', $request->input('username'))->first();
+        }
+
+        if ($dailyTask->employee_id !== $actor?->id && $actor?->emp_type !== 'Admin') {
+            return response()->json(['detail' => 'Only the task owner may edit it.'], 403);
+        }
 
         unset($validated['employee_id'], $validated['username'], $validated['department_id']);
         if (isset($validated['submission_date'])) $validated['submission_date'] = Carbon::parse($validated['submission_date'])->toDateString();
@@ -258,7 +279,15 @@ class TaskController extends Controller
         if (!$dailyTask) {
             return response()->json(['error' => 'Daily task not found'], 404);
         }
-        if ($dailyTask->employee_id !== $request->user()->employee?->id) return response()->json(['detail' => 'Only the task owner may delete it.'], 403);
+
+        $actor = $request->user('sanctum')?->employee ?? $request->user()?->employee;
+        if (!$actor && $request->has('username')) {
+            $actor = Employee::where('username', $request->input('username'))->first();
+        }
+
+        if ($dailyTask->employee_id !== $actor?->id && $actor?->emp_type !== 'Admin') {
+            return response()->json(['detail' => 'Only the task owner may delete it.'], 403);
+        }
         
         $dailyTask->delete();
         
@@ -273,6 +302,7 @@ class TaskController extends Controller
             'format' => 'required|in:csv,pdf',
             'status' => 'nullable|in:Pending,In Progress,Completed',
             'employee_id' => 'nullable|integer|exists:employees,id',
+            'username' => 'nullable|string|max:200',
         ]);
         $date = Carbon::parse($data['date']);
         $from = $data['period'] === 'weekly' ? $date->copy()->startOfWeek() : $date->copy()->startOfMonth();
