@@ -135,6 +135,28 @@ class _AttendancePageState extends State<AttendancePage> {
   Future<void> _performPunch() async {
     if (_punchBusy || shared_office_mode.contains('logged out')) return;
     final action = shared_office_mode.contains('signed in') ? 'out' : 'in';
+
+    if (action == 'out') {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Confirm Punch Out'),
+          content: const Text('Are you sure you want to punch out for the day?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Punch Out'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
     setState(() => _punchBusy = true);
     try {
       final response = await ApiClient.client.post(
@@ -826,22 +848,44 @@ class _AttendancePageState extends State<AttendancePage> {
                     const SizedBox(height: 25),
 
                     // Recent History Section
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Recent Logs",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade800,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Recent Logs",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
                         ),
-                      ),
+                        ElevatedButton.icon(
+                          onPressed: () => Get.to(const AttendanceLogPage()),
+                          icon: const Icon(Icons.filter_list_rounded, size: 16),
+                          label: const Text(
+                            "View & Filter Logs",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade700,
+                            foregroundColor: Colors.white,
+                            elevation: 1,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    Align(alignment: Alignment.centerRight, child: TextButton(
-                      onPressed: () => Get.to(const AttendanceLogPage()),
-                      child: const Text('View and filter all logs'),
-                    )),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
                     FutureBuilder(
                       future: _usersFuture,

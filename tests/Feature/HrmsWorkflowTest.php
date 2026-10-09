@@ -74,4 +74,90 @@ class HrmsWorkflowTest extends TestCase
         $response->assertOk();
         $this->assertStringContainsString('Prepare report', $response->streamedContent());
     }
+
+    public function test_recent_records_returned_in_descending_order(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 6));
+        $employee = $this->employee();
+
+        // 1. Tasks
+        $task1 = DB::table('assigned_jobs')->insertGetId([
+            'employee_id' => $employee['id'],
+            'department_id' => $employee['department'],
+            'task' => 'First Task',
+            'created_at' => '2026-10-06 09:00:00',
+            'updated_at' => '2026-10-06 09:00:00',
+        ]);
+        $task2 = DB::table('assigned_jobs')->insertGetId([
+            'employee_id' => $employee['id'],
+            'department_id' => $employee['department'],
+            'task' => 'Second Task',
+            'created_at' => '2026-10-06 10:00:00',
+            'updated_at' => '2026-10-06 10:00:00',
+        ]);
+        $tasksRes = $this->getJson('/api/tasks')->assertOk()->json();
+        $this->assertEquals($task2, $tasksRes[0]['id']);
+        $this->assertEquals($task1, $tasksRes[1]['id']);
+
+        // 2. Leaves
+        DB::table('leaves')->insert(['financial_year_id' => $employee['year'], 'cl_days' => 10]);
+        $leave1 = $this->postJson('/api/leave', [
+            'employee_id' => $employee['id'], 'department_id' => $employee['department'],
+            'leave_type' => 'Casual Leave', 'leave_reason' => 'Leave 1',
+            'leave_from_date' => '2026-10-10', 'leave_to_date' => '2026-10-10',
+        ])->assertCreated()->json('leave.id');
+        $this->travel(1)->hours();
+        $leave2 = $this->postJson('/api/leave', [
+            'employee_id' => $employee['id'], 'department_id' => $employee['department'],
+            'leave_type' => 'Casual Leave', 'leave_reason' => 'Leave 2',
+            'leave_from_date' => '2026-10-12', 'leave_to_date' => '2026-10-12',
+        ])->assertCreated()->json('leave.id');
+        $leavesRes = $this->getJson('/api/leave')->assertOk()->json();
+        $this->assertEquals($leave2, $leavesRes[0]['id']);
+        $this->assertEquals($leave1, $leavesRes[1]['id']);
+
+        // 3. Attendance
+        $att1 = DB::table('attendance_records')->insertGetId([
+            'employee_id' => $employee['id'],
+            'department_id' => $employee['department'],
+            'financial_year_id' => $employee['year'],
+            'attendance_date' => '2026-10-01',
+            'username' => 'alice',
+            'attendance' => 'Present',
+            'created_at' => '2026-10-01 09:00:00',
+            'updated_at' => '2026-10-01 09:00:00',
+        ]);
+        $att2 = DB::table('attendance_records')->insertGetId([
+            'employee_id' => $employee['id'],
+            'department_id' => $employee['department'],
+            'financial_year_id' => $employee['year'],
+            'attendance_date' => '2026-10-02',
+            'username' => 'alice',
+            'attendance' => 'Present',
+            'created_at' => '2026-10-02 09:00:00',
+            'updated_at' => '2026-10-02 09:00:00',
+        ]);
+        $attRes = $this->getJson('/api/attendance')->assertOk()->json();
+        $this->assertEquals($att2, $attRes[0]['id']);
+        $this->assertEquals($att1, $attRes[1]['id']);
+    }
+
+    public function test_login_error_messages_for_invalid_username_and_password(): void
+    {
+        $this->employee('valid_user');
+
+        // Incorrect username
+        $this->postJson('/api/auth/token', [
+            'username' => 'wrong_user',
+            'password' => '12345678',
+        ])->assertStatus(401)
+          ->assertJsonPath('detail', 'You are trying incorrect username contact to admin');
+
+        // Incorrect password
+        $this->postJson('/api/auth/token', [
+            'username' => 'valid_user',
+            'password' => 'wrong_password',
+        ])->assertStatus(401)
+          ->assertJsonPath('detail', 'Please enter correct password');
+    }
 }

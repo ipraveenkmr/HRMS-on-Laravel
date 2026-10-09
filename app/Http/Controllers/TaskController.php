@@ -42,7 +42,8 @@ class TaskController extends Controller
     public function indexTasks(): JsonResponse
     {
         $tasks = AssignedJob::with(['employee', 'department'])
-            ->orderBy('created_at')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
         
         return response()->json($tasks);
@@ -152,6 +153,12 @@ class TaskController extends Controller
         $actor = $request->user('sanctum')?->employee ?? $request->user()?->employee;
         if (!$actor && $request->has('username')) {
             $actor = Employee::where('username', $request->input('username'))->first();
+        }
+        if (!$actor && ($token = $request->bearerToken())) {
+            $pat = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+            if ($pat && $pat->tokenable) {
+                $actor = $pat->tokenable->employee;
+            }
         }
         if (!$actor) abort(403, 'Employee profile not found');
         $query = DailyTask::query();

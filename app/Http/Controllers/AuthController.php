@@ -61,10 +61,17 @@ class AuthController extends Controller
 
         $user = User::where('username', $fields['username'])->first();
 
-        if (!$user || !Hash::check($fields['password'], $user->hashed_password)) {
+        if (!$user) {
             RateLimiter::hit($key, 60);
             return response()->json([
-                'detail' => 'Incorrect username or password'
+                'detail' => 'You are trying incorrect username contact to admin'
+            ], 401);
+        }
+
+        if (!Hash::check($fields['password'], $user->hashed_password)) {
+            RateLimiter::hit($key, 60);
+            return response()->json([
+                'detail' => 'Please enter correct password'
             ], 401);
         }
 

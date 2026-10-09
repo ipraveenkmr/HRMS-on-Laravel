@@ -137,8 +137,9 @@ export default function Attendance() {
   const employees = usecdotStore((state) => state.employees);
   const updateEmployee = usecdotStore((state) => state.updateEmployee);
   const [changedepartment, setChangeDepartment] = useState("");
-  const attendance = usecdotStore((state) => state.attendance).sort((a, b) =>
-    a.id > b.id ? -1 : 1
+  const attendanceData = usecdotStore((state) => state.attendance);
+  const attendance = (Array.isArray(attendanceData) ? [...attendanceData] : []).sort(
+    (a, b) => Number(b.id) - Number(a.id)
   );
   const baseURL = process.env.REACT_APP_API_URL;
   const onlyURL = process.env.REACT_APP_URL;

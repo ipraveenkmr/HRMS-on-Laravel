@@ -132,7 +132,7 @@ class AttendanceController extends Controller
 
     public function index(): JsonResponse
     {
-        $attendances = AttendanceRecord::orderByDesc('created_at')->get();
+        $attendances = AttendanceRecord::orderByDesc('created_at')->orderByDesc('id')->get();
         return response()->json($attendances);
     }
 
@@ -151,6 +151,7 @@ class AttendanceController extends Controller
     {
         $attendances = AttendanceRecord::where('username', $username)
             ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
         
         return response()->json($attendances);
@@ -167,7 +168,10 @@ class AttendanceController extends Controller
 
     public function getAttendanceByDepartment($dept_id): JsonResponse
     {
-        $attendances = AttendanceRecord::where('department_id', $dept_id)->get();
+        $attendances = AttendanceRecord::where('department_id', $dept_id)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
         return response()->json($attendances);
     }
 
@@ -176,6 +180,8 @@ class AttendanceController extends Controller
         $attendances = AttendanceRecord::join('employees', 'attendance_records.employee_id', '=', 'employees.id')
             ->where('employees.manager_id', $manager_id)
             ->select('attendance_records.*')
+            ->orderByDesc('attendance_records.created_at')
+            ->orderByDesc('attendance_records.id')
             ->get();
         
         return response()->json($attendances);
@@ -280,6 +286,7 @@ class AttendanceController extends Controller
         try {
             $attendances = AttendanceRecord::whereBetween('login_date', [$date_from, $date_to])
                 ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->get();
             
             return response()->json($attendances);
@@ -294,6 +301,7 @@ class AttendanceController extends Controller
             $attendances = AttendanceRecord::with(['employee', 'department'])
                 ->whereBetween('login_date', [$date_from, $date_to])
                 ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->get();
 
             $output = fopen('php://output', 'w');

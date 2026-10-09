@@ -126,13 +126,13 @@ export default function LeaveTracker() {
   const handleClose = () => setOpen(false);
   const handleEditOpen = () => setEditOpen(true);
   const handleEditClose = () => setEditOpen(false);
-  const updateLeave = usecdotStore((state) => state.updateLeave);
   const employees = usecdotStore((state) => state.employees);
-  const leaves = usecdotStore((state) => state.leaves).sort((a, b) =>
-    a.id > b.id ? -1 : 1
+  const updateLeave = usecdotStore((state) => state.updateLeave);
+  const leavesData = usecdotStore((state) => state.leaves);
+  const leaves = (Array.isArray(leavesData) ? [...leavesData] : []).sort((a, b) =>
+    Number(b.id) - Number(a.id)
   );
   const [emprecord, SetEmprecord] = useState([]);
-  const [empdata, SetEmpdata] = useState([]);
   const [statustype, setStatustype] = useState("");
   const baseURL = process.env.REACT_APP_API_URL;
   const [changedepartment, setChangeDepartment] = useState("");
@@ -145,40 +145,22 @@ export default function LeaveTracker() {
   }, []);
 
   useEffect(() => {
-    SetEmprecord(leaves);
-  }, [leaves]);
-
-  // useEffect(() => {
-  //   if (empdata) {
-  //     SetEmprecord([empdata]);
-  //     // SetEmprecord([...emprecord, empdata]);
-  //   } else {
-  //     SetEmprecord(leaves);
-  //   }
-  // }, [empdata]);
+    if (statustype) {
+      SetEmprecord(leaves.filter((job) => job.leave_status && job.leave_status.includes(statustype)));
+    } else {
+      SetEmprecord(leaves);
+    }
+  }, [leaves, statustype]);
 
   const leaveApi = async () => {
-    // starting
-    await axios
-      .get(baseURL + "leave")
-      .then(function (response) {
-        if (emp_type == "Admin") {
-          updateLeave(response.data);
-          SetEmprecord(response.data);
-        } else {
-          let records = response.data;
-          function filterRecordsByDepartment(records) {
-            return records.filter((record) => record.department === emp_department);
-          }
-          const filteredRecords = filterRecordsByDepartment(records);
-          updateLeave(filteredRecords);
-          SetEmprecord(filteredRecords);
-        }
-      })
-      .catch(function (error) {
-        console.log("kcheckpost" + error); //return 429
-      });
-    // ending
+    try {
+      const response = await axios.get(baseURL + "leave");
+      const data = Array.isArray(response.data) ? response.data : [];
+      updateLeave(data);
+      SetEmprecord(data);
+    } catch (error) {
+      console.log("Error loading leaves: " + error);
+    }
   };
 
   // Avoid a layout jump when reaching the last page with empty rows.
@@ -305,7 +287,7 @@ export default function LeaveTracker() {
             <TextField {...params} label="By Status" size="small" />
           )}
         /> */}
-        {emp_type == "Admin" && (<>
+        {emp_type === "Admin" && (<>
           <FormControl sx={{ minWidth: "16%" }} size="small">
             <InputLabel id="demo-simple-dept-helper-label">
               Select Department
@@ -371,7 +353,7 @@ export default function LeaveTracker() {
               <TableCell>From</TableCell>
               <TableCell>To</TableCell>
               <TableCell>Created At</TableCell>
-              {emp_type == "Admin" && (
+              {emp_type === "Admin" && (
                 <TableCell>Action</TableCell>
               )}
             </TableRow>
@@ -390,17 +372,17 @@ export default function LeaveTracker() {
                     return <>{item.id === row.employee_id && item.emp_name}</>;
                   })}
                 </TableCell>
-                {row.leave_status == "Pending" && (
+                {row.leave_status === "Pending" && (
                   <TableCell style={{ width: 160 }}>
                     <span className="text-violet-700">{row.leave_status}</span>
                   </TableCell>
                 )}
-                {row.leave_status == "Approved" && (
+                {row.leave_status === "Approved" && (
                   <TableCell style={{ width: 160 }}>
                     <span className="text-green-700">{row.leave_status}</span>
                   </TableCell>
                 )}
-                {row.leave_status == "Rejected" && (
+                {row.leave_status === "Rejected" && (
                   <TableCell style={{ width: 160 }}>
                     <span className="text-red-700">{row.leave_status}</span>
                   </TableCell>
@@ -423,7 +405,7 @@ export default function LeaveTracker() {
                       className="cursor-pointer"
                       onClick={() => editUser(row.id, row.username)}
                     />
-                    {emp_type == "Admin" && (
+                    {emp_type === "Admin" && (
                       <AiFillDelete
                         style={{ fontSize: "20px", color: "darkred" }}
                         className="cursor-pointer"

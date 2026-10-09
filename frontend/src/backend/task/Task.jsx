@@ -30,8 +30,6 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import InputLabel from "@mui/material/InputLabel";
 import moment from "moment";
-import Autocomplete from "@mui/material/Autocomplete";
-import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import FormControl from "@mui/material/FormControl";
@@ -130,11 +128,11 @@ export default function Task() {
   const handleEditClose = () => setEditOpen(false);
   const employees = usecdotStore((state) => state.employees);
   const updateAssignedjobs = usecdotStore((state) => state.updateAssignedjobs);
-  const assignedjobs = usecdotStore((state) => state.assignedjobs).sort(
-    (a, b) => (a.id > b.id ? -1 : 1)
+  const assignedjobsData = usecdotStore((state) => state.assignedjobs);
+  const assignedjobs = (Array.isArray(assignedjobsData) ? [...assignedjobsData] : []).sort(
+    (a, b) => Number(b.id) - Number(a.id)
   );
   const [emprecord, SetEmprecord] = useState([]);
-  const [empdata, SetEmpdata] = useState([]);
   const [statustype, setStatustype] = useState("");
   const baseURL = process.env.REACT_APP_API_URL;
   const departments = usecdotStore((state) => state.departments);
@@ -374,22 +372,22 @@ export default function Task() {
                 <TableCell style={{ width: 160 }}>
                   {moment(row.submission_date).format("DD-MM-YYYY")}
                 </TableCell>
-                {row.status == "Active" && (
+                {row.status === "Active" && (
                   <TableCell style={{ width: 160 }}>
                     <span className="text-cyan-400">{row.status}</span>
                   </TableCell>
                 )}
-                {row.status == "Pending" && (
+                {row.status === "Pending" && (
                   <TableCell style={{ width: 160 }}>
                     <span className="text-red-600">{row.status}</span>
                   </TableCell>
                 )}
-                {row.status == "Completed" && (
+                {row.status === "Completed" && (
                   <TableCell style={{ width: 160 }}>
                     <span className="text-green-600">{row.status}</span>
                   </TableCell>
                 )}
-                {row.status == "Rejected" && (
+                {row.status === "Rejected" && (
                   <TableCell style={{ width: 160 }}>
                     <span className="text-orange-500">{row.status}</span>
                   </TableCell>

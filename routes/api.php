@@ -87,7 +87,7 @@ Route::prefix('/tasks')->group(function () {
 });
 
 // Daily Tasks routes (protected)
-Route::prefix('/daily-tasks')->group(function () {
+Route::prefix('/daily-tasks')->middleware('auth:sanctum')->group(function () {
     Route::get('/report/download', [TaskController::class, 'downloadDailyTaskReport']);
     Route::get('/', [TaskController::class, 'indexDailyTasks']);
     Route::post('/', [TaskController::class, 'storeDailyTask']);
@@ -98,6 +98,8 @@ Route::prefix('/daily-tasks')->group(function () {
     Route::get('/department/{dept_id}', [TaskController::class, 'getDailyTasksByDepartment']);
     Route::get('/manager/{manager_id}', [TaskController::class, 'getDailyTasksByManager']);
 });
+
+Route::get('/dailytaskbydept/{dept_id}', [TaskController::class, 'getDailyTasksByDepartment']);
 
 // Leave routes (protected)
 Route::prefix('/leave')->middleware('auth:sanctum')->group(function () {

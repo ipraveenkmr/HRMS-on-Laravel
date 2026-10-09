@@ -8,6 +8,14 @@ class ApiService {
         this.axiosInstance = axios.create({
             baseURL: this.baseURL,
         });
+
+        this.axiosInstance.interceptors.request.use((config) => {
+            const token = usecdotStore.getState().tokenstore;
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+            return config;
+        });
     }
 
     // Generic API methods
@@ -101,6 +109,7 @@ class ApiService {
         const roleApiMap = {
             Admin: [
                 { endpoint: "tasks", action: "updateAssignedjobs" },
+                { endpoint: "daily-tasks", action: "updateDailytask" },
                 { endpoint: "payroll", action: "updatePayslip" },
                 { endpoint: "leave", action: "updateLeave" },
                 { endpoint: "asset-allocations", action: "updateAssets" },

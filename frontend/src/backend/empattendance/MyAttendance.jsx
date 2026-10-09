@@ -149,12 +149,35 @@ export default function MyAttendance() {
 
   const punch = async (action) => {
     if (punchBusy) return;
+
+    if (action === 'out') {
+      const result = await Swal.fire({
+        title: "Punch Out?",
+        text: "Are you sure you want to punch out for the day?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, Punch Out",
+        cancelButtonText: "Cancel",
+      });
+      if (!result.isConfirmed) {
+        return;
+      }
+    }
+
     setPunchBusy(true);
     setPunchError('');
     try {
       const response = await axios.post(baseURL + 'attendance/punch', { action });
       setPunchRecord(response.data);
       attendanceApi();
+      Swal.fire({
+        icon: "success",
+        title: action === "out" ? "Punched Out Successfully" : "Punched In Successfully",
+        showConfirmButton: false,
+        timer: 1500,
+      });
     } catch (error) {
       setPunchError(error.response?.data?.detail || 'Could not record your punch. Please retry.');
       axios.get(baseURL + `attendance/check/${moment().format('YYYY-MM-DD')}/${encodeURIComponent(username)}`)

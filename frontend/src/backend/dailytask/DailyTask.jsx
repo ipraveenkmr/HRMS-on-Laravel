@@ -122,8 +122,9 @@ export default function DailyTask() {
   const updateDailytask = usecdotStore((state) => state.updateDailytask);
   const employees = usecdotStore((state) => state.employees);
   const assetlist = usecdotStore((state) => state.assetlist);
-  const dailytask = (usecdotStore((state) => state.dailytask) || []).sort((a, b) =>
-    a.id > b.id ? -1 : 1
+  const dailytaskData = usecdotStore((state) => state.dailytask);
+  const dailytask = (Array.isArray(dailytaskData) ? [...dailytaskData] : []).sort(
+    (a, b) => Number(b.id) - Number(a.id)
   );
 
   const baseURL = process.env.REACT_APP_API_URL;
@@ -175,47 +176,37 @@ export default function DailyTask() {
   };
 
   const dailyTaskApi = async () => {
-    // starting
-    await axios
-      .get(baseURL + "daily-tasks")
-      .then(function (response) {
-        console.log("assets: " + JSON.stringify(response.data));
-        updateDailytask(response.data);
-      })
-      .catch(function (error) {
-        console.log("kcheckpost" + error); //return 429
-      });
-    // ending
+    try {
+      const response = await axios.get(baseURL + "daily-tasks");
+      const data = Array.isArray(response.data) ? response.data : [];
+      updateDailytask(data);
+    } catch (error) {
+      console.log("Error fetching daily tasks: " + error);
+    }
   };
 
   const deleteApi = async (event) => {
-    // starting
-    await axios
-      .delete(baseURL + "daily-tasks/" + event, {})
-      .then(function (response) {
-        Swal.fire("Deleted!", "Your file has been deleted.", "success");
-        dailyTaskApi();
-      })
-      .catch(function (error) {
-        Swal.fire("Error!", "Something went wrong.", "error");
-        console.log("kcheckpost" + error); //return 429
-      });
-    // ending
+    try {
+      await axios.delete(baseURL + "daily-tasks/" + event);
+      Swal.fire("Deleted!", "Your file has been deleted.", "success");
+      dailyTaskApi();
+    } catch (error) {
+      Swal.fire("Error!", "Something went wrong.", "error");
+      console.log("Error deleting daily task: " + error);
+    }
   };
 
   const handleChangeDepartment = async (event) => {
     setChangeDepartment(event.target.value);
 
     if (event.target.value) {
-      await axios
-        .get(baseURL + "dailytaskbydept/" + event.target.value + "/")
-        .then(function (response) {
-          console.log("dailytaskbydept: " + JSON.stringify(response.data));
-          updateDailytask(response.data);
-        })
-        .catch(function (error) {
-          console.log("kcheckpost" + error); //return 429
-        });
+      try {
+        const response = await axios.get(baseURL + "daily-tasks/department/" + event.target.value);
+        const data = Array.isArray(response.data) ? response.data : [];
+        updateDailytask(data);
+      } catch (error) {
+        console.log("Error filtering daily tasks by department: " + error);
+      }
     } else {
       dailyTaskApi();
     }

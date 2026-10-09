@@ -301,11 +301,7 @@ String _extractDioErrorMessage(DioException e) {
     if (data is Map) {
       final detail = data['detail'] ?? data['message'] ?? data['error'];
       if (detail != null && detail.toString().trim().isNotEmpty) {
-        final detailStr = detail.toString().trim();
-        if (detailStr.toLowerCase().contains('incorrect username or password')) {
-          return "Incorrect username or password. Please verify your credentials and try again.";
-        }
-        return detailStr;
+        return detail.toString().trim();
       }
     }
 

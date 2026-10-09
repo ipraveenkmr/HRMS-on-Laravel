@@ -162,7 +162,16 @@ class LeaveController extends Controller
     // Leave Tracker
     private function visibleLeaves(Request $request)
     {
-        $actor = $request->user()?->employee;
+        $actor = $request->user('sanctum')?->employee ?? $request->user()?->employee;
+        if (!$actor && $request->has('username')) {
+            $actor = Employee::where('username', $request->input('username'))->first();
+        }
+        if (!$actor && ($token = $request->bearerToken())) {
+            $pat = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+            if ($pat && $pat->tokenable) {
+                $actor = $pat->tokenable->employee;
+            }
+        }
         if (!$actor) abort(403, 'Employee profile not found');
         $query = LeaveTracker::query();
         if ($actor->emp_type === 'Manager') {
@@ -177,7 +186,8 @@ class LeaveController extends Controller
     public function index(Request $request): JsonResponse
     {
         $leaves = $this->visibleLeaves($request)->with(['employee', 'department', 'financialYear'])
-            ->orderBy('created_at')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
         
         return response()->json($leaves);
@@ -389,7 +399,8 @@ class LeaveController extends Controller
     {
         $leaves = $this->visibleLeaves($request)->with(['employee', 'department', 'financialYear'])
             ->where('username', $username)
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
         
         return response()->json($leaves);
@@ -399,7 +410,8 @@ class LeaveController extends Controller
     {
         $leaves = $this->visibleLeaves($request)->with(['department', 'financialYear'])
             ->where('employee_id', $employeeId)
-            ->orderBy('created_at')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
         
         return response()->json($leaves);
@@ -409,7 +421,8 @@ class LeaveController extends Controller
     {
         $leaves = $this->visibleLeaves($request)->with(['employee', 'financialYear'])
             ->where('department_id', $dept_id)
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
         
         return response()->json($leaves);
@@ -421,7 +434,8 @@ class LeaveController extends Controller
             ->whereHas('employee', function($query) use ($manager_id) {
                 $query->where('manager_id', $manager_id);
             })
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
         
         return response()->json($leaves);
@@ -431,7 +445,8 @@ class LeaveController extends Controller
     {
         $leaves = $this->visibleLeaves($request)->with(['employee', 'financialYear'])
             ->where('department_id', $departmentId)
-            ->orderBy('created_at')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
         
         return response()->json($leaves);
