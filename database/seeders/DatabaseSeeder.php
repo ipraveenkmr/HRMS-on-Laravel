@@ -634,7 +634,7 @@ class DatabaseSeeder extends Seeder
         $employeeModels = [];
 
         foreach ($usersData as $idx => $u) {
-            $user = User::firstOrCreate(
+            $user = User::updateOrCreate(
                 ['username' => $u['username']],
                 [
                     'hashed_password' => $defaultPassword,
