@@ -285,8 +285,6 @@ class _DailyTaskManagementPageState extends State<DailyTaskManagementPage> {
       ),
     );
 
-    title.dispose();
-    description.dispose();
     if (saved == true) {
       await refresh();
       if (mounted) {

@@ -15,7 +15,7 @@ class TaskPage extends StatefulWidget {
   State<TaskPage> createState() => _TaskPageState();
 }
 
-class _TaskPageState extends State<TaskPage> with SingleTickerProviderStateMixin {
+class _TaskPageState extends State<TaskPage> with TickerProviderStateMixin {
   late TabController _tabController;
 
   // Daily Tasks State
@@ -200,245 +200,17 @@ class _TaskPageState extends State<TaskPage> with SingleTickerProviderStateMixin
   // ==========================================
 
   Future<void> openDailyTaskForm([Map<String, dynamic>? existing]) async {
-    final formKey = GlobalKey<FormState>();
-    final titleCtrl = TextEditingController(text: existing?['task']?.toString() ?? '');
-    final descCtrl = TextEditingController(text: existing?['description']?.toString() ?? '');
-    final managerCtrl = TextEditingController(text: existing?['manager']?.toString() ?? '');
-    DateTime selectedDate = DateTime.tryParse(existing?['submission_date']?.toString() ?? '') ?? DateTime.now();
-    String selectedStatus = existing?['status']?.toString() ?? 'Pending';
-    bool isSaving = false;
-
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (bottomSheetContext) => StatefulBuilder(
-        builder: (modalContext, setModalState) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(modalContext).viewInsets.bottom + 20,
-          ),
-          child: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        existing == null ? 'New Daily Task' : 'Edit Daily Task',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: () => Navigator.pop(bottomSheetContext, false),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  const SizedBox(height: 10),
-
-                  // Task Title
-                  TextFormField(
-                    controller: titleCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Task Title *',
-                      hintText: 'What did you work on today?',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      prefixIcon: const Icon(Icons.task_alt_rounded),
-                    ),
-                    maxLength: 2000,
-                    validator: (val) => val == null || val.trim().isEmpty ? 'Task title is required.' : null,
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Description
-                  TextFormField(
-                    controller: descCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Description / Details',
-                      hintText: 'Enter accomplishments, progress, or blockers...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      prefixIcon: const Icon(Icons.notes_rounded),
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Supervisor / Manager
-                  TextFormField(
-                    controller: managerCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Supervisor / Manager (Optional)',
-                      hintText: 'Supervisor name',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      prefixIcon: const Icon(Icons.supervisor_account_outlined),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Date Picker Tile & Status Row
-                  Row(
-                    children: [
-                      // Date Selector
-                      Expanded(
-                        child: InkWell(
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: modalContext,
-                              initialDate: selectedDate,
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime(2035),
-                            );
-                            if (picked != null) {
-                              setModalState(() => selectedDate = picked);
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade400),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.calendar_today_rounded, size: 18, color: Colors.blueAccent),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Date', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-                                      Text(_formatApiDate(selectedDate), style: const TextStyle(fontWeight: FontWeight.w600)),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-
-                      // Status Dropdown
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade400),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: selectedStatus,
-                              isExpanded: true,
-                              items: ['Pending', 'In Progress', 'Completed']
-                                  .map((val) => DropdownMenuItem(
-                                        value: val,
-                                        child: Text(val, style: const TextStyle(fontSize: 13)),
-                                      ))
-                                  .toList(),
-                              onChanged: (val) {
-                                if (val != null) setModalState(() => selectedStatus = val);
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Submit Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      icon: isSaving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Icon(Icons.save_rounded),
-                      label: Text(
-                        isSaving ? 'Saving...' : (existing == null ? 'Create Task' : 'Update Task'),
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      onPressed: isSaving
-                          ? null
-                          : () async {
-                              if (!formKey.currentState!.validate()) return;
-                              setModalState(() => isSaving = true);
-                              try {
-                                final prefs = await SharedPreferences.getInstance();
-                                final uname = prefs.getString('username');
-                                final payload = <String, dynamic>{
-                                  if (uname != null && uname.isNotEmpty) 'username': uname,
-                                  'task': titleCtrl.text.trim(),
-                                  'description': descCtrl.text.trim(),
-                                  'manager': managerCtrl.text.trim(),
-                                  'submission_date': _formatApiDate(selectedDate),
-                                  'status': selectedStatus,
-                                };
-
-                                if (existing == null) {
-                                  await ApiClient.client.post('${AppConstants.apiLink}daily-tasks', data: payload);
-                                } else {
-                                  await ApiClient.client.put(
-                                    '${AppConstants.apiLink}daily-tasks/${existing['id']}',
-                                    data: payload,
-                                  );
-                                }
-
-                                if (bottomSheetContext.mounted) {
-                                  Navigator.of(bottomSheetContext).pop(true);
-                                }
-                              } on DioException catch (e) {
-                                setModalState(() => isSaving = false);
-                                final msg = _extractDioError(e, 'Could not save task.');
-                                if (bottomSheetContext.mounted) {
-                                  ScaffoldMessenger.of(bottomSheetContext).showSnackBar(
-                                    SnackBar(content: Text(msg), backgroundColor: Colors.red.shade700),
-                                  );
-                                }
-                              } catch (e) {
-                                setModalState(() => isSaving = false);
-                                if (bottomSheetContext.mounted) {
-                                  ScaffoldMessenger.of(bottomSheetContext).showSnackBar(
-                                    SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red.shade700),
-                                  );
-                                }
-                              }
-                            },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      builder: (bottomSheetContext) => _DailyTaskFormSheet(
+        existing: existing,
+        extractDioError: _extractDioError,
       ),
     );
 
-    titleCtrl.dispose();
-    descCtrl.dispose();
-    managerCtrl.dispose();
-
-    if (result == true) {
+    if (result == true && mounted) {
       if (_tabController.index != 0) {
         _tabController.animateTo(0);
       }
@@ -1427,6 +1199,272 @@ class _TaskPageState extends State<TaskPage> with SingleTickerProviderStateMixin
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _DailyTaskFormSheet extends StatefulWidget {
+  final Map<String, dynamic>? existing;
+  final String Function(DioException, String) extractDioError;
+
+  const _DailyTaskFormSheet({
+    this.existing,
+    required this.extractDioError,
+  });
+
+  @override
+  State<_DailyTaskFormSheet> createState() => _DailyTaskFormSheetState();
+}
+
+class _DailyTaskFormSheetState extends State<_DailyTaskFormSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _titleCtrl;
+  late TextEditingController _descCtrl;
+  late TextEditingController _managerCtrl;
+  late DateTime _selectedDate;
+  late String _selectedStatus;
+  bool _isSaving = false;
+
+  final DateFormat _apiDateFormat = DateFormat('yyyy-MM-dd');
+  String _formatApiDate(DateTime value) => _apiDateFormat.format(value);
+
+  @override
+  void initState() {
+    super.initState();
+    _titleCtrl = TextEditingController(text: widget.existing?['task']?.toString() ?? '');
+    _descCtrl = TextEditingController(text: widget.existing?['description']?.toString() ?? '');
+    _managerCtrl = TextEditingController(text: widget.existing?['manager']?.toString() ?? '');
+    _selectedDate = DateTime.tryParse(widget.existing?['submission_date']?.toString() ?? '') ?? DateTime.now();
+    _selectedStatus = widget.existing?['status']?.toString() ?? 'Pending';
+  }
+
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _descCtrl.dispose();
+    _managerCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSaving = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final uname = prefs.getString('username');
+      final payload = <String, dynamic>{
+        if (uname != null && uname.isNotEmpty) 'username': uname,
+        'task': _titleCtrl.text.trim(),
+        'description': _descCtrl.text.trim(),
+        'manager': _managerCtrl.text.trim(),
+        'submission_date': _formatApiDate(_selectedDate),
+        'status': _selectedStatus,
+      };
+
+      if (widget.existing == null) {
+        await ApiClient.client.post('${AppConstants.apiLink}daily-tasks', data: payload);
+      } else {
+        await ApiClient.client.put(
+          '${AppConstants.apiLink}daily-tasks/${widget.existing!['id']}',
+          data: payload,
+        );
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } on DioException catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        final msg = widget.extractDioError(e, 'Could not save task.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red.shade700),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red.shade700),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    widget.existing == null ? 'New Daily Task' : 'Edit Daily Task',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(context, false),
+                  ),
+                ],
+              ),
+              const Divider(),
+              const SizedBox(height: 10),
+
+              // Task Title
+              TextFormField(
+                controller: _titleCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Task Title *',
+                  hintText: 'What did you work on today?',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  prefixIcon: const Icon(Icons.task_alt_rounded),
+                ),
+                maxLength: 2000,
+                validator: (val) => val == null || val.trim().isEmpty ? 'Task title is required.' : null,
+              ),
+              const SizedBox(height: 12),
+
+              // Description
+              TextFormField(
+                controller: _descCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Description / Details',
+                  hintText: 'Enter accomplishments, progress, or blockers...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  prefixIcon: const Icon(Icons.notes_rounded),
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 12),
+
+              // Supervisor / Manager
+              TextFormField(
+                controller: _managerCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Supervisor / Manager (Optional)',
+                  hintText: 'Supervisor name',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  prefixIcon: const Icon(Icons.supervisor_account_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Date Picker Tile & Status Row
+              Row(
+                children: [
+                  // Date Selector
+                  Expanded(
+                    child: InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2035),
+                        );
+                        if (picked != null) {
+                          setState(() => _selectedDate = picked);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade400),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today_rounded, size: 18, color: Colors.blueAccent),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Date', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                                  Text(_formatApiDate(_selectedDate), style: const TextStyle(fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Status Dropdown
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedStatus,
+                          isExpanded: true,
+                          items: ['Pending', 'In Progress', 'Completed']
+                              .map((val) => DropdownMenuItem(
+                                    value: val,
+                                    child: Text(val, style: const TextStyle(fontSize: 13)),
+                                  ))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) setState(() => _selectedStatus = val);
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // Submit Button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  icon: _isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.save_rounded),
+                  label: Text(
+                    _isSaving ? 'Saving...' : (widget.existing == null ? 'Create Task' : 'Update Task'),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: _isSaving ? null : _submit,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -257,9 +257,11 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                         icon: const Icon(Icons.date_range_rounded, size: 18),
                         label: Text(
                           (from != null && to != null)
-                              ? '${DateFormat('dd MMM').format(from!)} - ${DateFormat('dd MMM').format(to!)}'
+                              ? (from!.year == to!.year
+                                  ? '${DateFormat('dd MMM').format(from!)} - ${DateFormat('dd MMM yyyy').format(to!)}'
+                                  : '${DateFormat('dd MMM yy').format(from!)} - ${DateFormat('dd MMM yy').format(to!)}')
                               : 'Select Date Range',
-                          style: const TextStyle(fontSize: 13),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                           overflow: TextOverflow.ellipsis,
                         ),
                         style: OutlinedButton.styleFrom(
@@ -442,9 +444,15 @@ class _AttendanceLogPageState extends State<AttendanceLogPage> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  'Try adjusting the date range or status filters.',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Text(
+                    (from != null && to != null)
+                        ? 'No attendance records between ${DateFormat('dd MMM yyyy').format(from!)} and ${DateFormat('dd MMM yyyy').format(to!)}.'
+                        : 'Try adjusting the date range or status filters.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 if (from != null || to != null || status.isNotEmpty)
