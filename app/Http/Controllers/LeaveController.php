@@ -843,43 +843,70 @@ class LeaveController extends Controller
     {
         $leaveCalculator = LeaveCalculator::where('employee_id', $leave->employee_id)
             ->where('financial_year_id', $leave->financial_year_id)
-            ->first();
+            ->first()
+            ?? LeaveCalculator::where('employee_id', $leave->employee_id)->first()
+            ?? LeaveCalculator::where('username', $leave->username)->first();
         
         if (!$leaveCalculator) {
             return;
+        }
+
+        $clDays = (float) ($leave->cl_days ?? 0);
+        $eiDays = (float) ($leave->ei_days ?? 0);
+        $lwpDays = (float) ($leave->lwp_days ?? 0);
+        $medicalDays = (float) ($leave->medical_leave_in_days ?? 0);
+        $otherDays = (float) ($leave->other_leave_in_days ?? 0);
+
+        if ($clDays <= 0 && $eiDays <= 0 && $lwpDays <= 0 && $medicalDays <= 0 && $otherDays <= 0 && $leave->leave_type) {
+            $from = Carbon::parse($leave->leave_from_date);
+            $to = Carbon::parse($leave->leave_to_date);
+            $calculatedDays = $leave->leave_type === 'Half Day Leave' ? 0.5 : $from->diffInDays($to) + 1;
+            
+            if (in_array($leave->leave_type, ['Casual Leave', 'Half Day Leave', 'Full Day Leave'])) {
+                $clDays = $calculatedDays;
+            } elseif ($leave->leave_type === 'Earned Leave') {
+                $eiDays = $calculatedDays;
+            } elseif ($leave->leave_type === 'Medical Leave') {
+                $medicalDays = $calculatedDays;
+            } elseif ($leave->leave_type === 'Other Leave') {
+                $otherDays = $calculatedDays;
+            } elseif ($leave->leave_type === 'Unpaid Leave') {
+                $lwpDays = $calculatedDays;
+            }
         }
         
         // If changing from non-approved to approved, deduct leave
         if ($oldStatus !== 'Approved' && $newStatus === 'Approved') {
             $leaveCalculator->update([
-                'remaining_cl_days' => max(0, $leaveCalculator->remaining_cl_days - ($leave->cl_days ?? 0)),
-                'remaining_cl_hours' => max(0, $leaveCalculator->remaining_cl_hours - ($leave->cl_hours ?? 0)),
-                'remaining_ei_days' => max(0, $leaveCalculator->remaining_ei_days - ($leave->ei_days ?? 0)),
-                'remaining_ei_hours' => max(0, $leaveCalculator->remaining_ei_hours - ($leave->ei_hours ?? 0)),
-                'remaining_lwp_days' => max(0, $leaveCalculator->remaining_lwp_days - ($leave->lwp_days ?? 0)),
-                'remaining_lwp_hours' => max(0, $leaveCalculator->remaining_lwp_hours - ($leave->lwp_hours ?? 0)),
-                'remaining_medical_leave_in_days' => max(0, $leaveCalculator->remaining_medical_leave_in_days - ($leave->medical_leave_in_days ?? 0)),
-                'remaining_medical_leave_in_hours' => max(0, $leaveCalculator->remaining_medical_leave_in_hours - ($leave->medical_leave_in_hours ?? 0)),
-                'remaining_other_leave_in_days' => max(0, $leaveCalculator->remaining_other_leave_in_days - ($leave->other_leave_in_days ?? 0)),
-                'remaining_other_leave_in_hours' => max(0, $leaveCalculator->remaining_other_leave_in_hours - ($leave->other_leave_in_hours ?? 0)),
+                'remaining_cl_days' => max(0, $leaveCalculator->remaining_cl_days - $clDays),
+                'remaining_cl_hours' => max(0, $leaveCalculator->remaining_cl_hours - ($leave->cl_hours ?: ($clDays * 8))),
+                'remaining_ei_days' => max(0, $leaveCalculator->remaining_ei_days - $eiDays),
+                'remaining_ei_hours' => max(0, $leaveCalculator->remaining_ei_hours - ($leave->ei_hours ?: ($eiDays * 8))),
+                'remaining_lwp_days' => max(0, $leaveCalculator->remaining_lwp_days - $lwpDays),
+                'remaining_lwp_hours' => max(0, $leaveCalculator->remaining_lwp_hours - ($leave->lwp_hours ?: ($lwpDays * 8))),
+                'remaining_medical_leave_in_days' => max(0, $leaveCalculator->remaining_medical_leave_in_days - $medicalDays),
+                'remaining_medical_leave_in_hours' => max(0, $leaveCalculator->remaining_medical_leave_in_hours - ($leave->medical_leave_in_hours ?: ($medicalDays * 8))),
+                'remaining_other_leave_in_days' => max(0, $leaveCalculator->remaining_other_leave_in_days - $otherDays),
+                'remaining_other_leave_in_hours' => max(0, $leaveCalculator->remaining_other_leave_in_hours - ($leave->other_leave_in_hours ?: ($otherDays * 8))),
             ]);
         }
         // If changing from approved to non-approved, add leave back
         elseif ($oldStatus === 'Approved' && $newStatus !== 'Approved') {
             // Get the original leave config to check max limits
-            $leaveConfig = Leave::where('financial_year_id', $leave->financial_year_id)->first();
+            $leaveConfig = Leave::where('financial_year_id', $leave->financial_year_id)->first()
+                ?? Leave::where('financial_year_id', $leaveCalculator->financial_year_id)->first();
             
             $updates = [
-                'remaining_cl_days' => $leaveCalculator->remaining_cl_days + ($leave->cl_days ?? 0),
-                'remaining_cl_hours' => $leaveCalculator->remaining_cl_hours + ($leave->cl_hours ?? 0),
-                'remaining_ei_days' => $leaveCalculator->remaining_ei_days + ($leave->ei_days ?? 0),
-                'remaining_ei_hours' => $leaveCalculator->remaining_ei_hours + ($leave->ei_hours ?? 0),
-                'remaining_lwp_days' => $leaveCalculator->remaining_lwp_days + ($leave->lwp_days ?? 0),
-                'remaining_lwp_hours' => $leaveCalculator->remaining_lwp_hours + ($leave->lwp_hours ?? 0),
-                'remaining_medical_leave_in_days' => $leaveCalculator->remaining_medical_leave_in_days + ($leave->medical_leave_in_days ?? 0),
-                'remaining_medical_leave_in_hours' => $leaveCalculator->remaining_medical_leave_in_hours + ($leave->medical_leave_in_hours ?? 0),
-                'remaining_other_leave_in_days' => $leaveCalculator->remaining_other_leave_in_days + ($leave->other_leave_in_days ?? 0),
-                'remaining_other_leave_in_hours' => $leaveCalculator->remaining_other_leave_in_hours + ($leave->other_leave_in_hours ?? 0),
+                'remaining_cl_days' => $leaveCalculator->remaining_cl_days + $clDays,
+                'remaining_cl_hours' => $leaveCalculator->remaining_cl_hours + ($leave->cl_hours ?: ($clDays * 8)),
+                'remaining_ei_days' => $leaveCalculator->remaining_ei_days + $eiDays,
+                'remaining_ei_hours' => $leaveCalculator->remaining_ei_hours + ($leave->ei_hours ?: ($eiDays * 8)),
+                'remaining_lwp_days' => $leaveCalculator->remaining_lwp_days + $lwpDays,
+                'remaining_lwp_hours' => $leaveCalculator->remaining_lwp_hours + ($leave->lwp_hours ?: ($lwpDays * 8)),
+                'remaining_medical_leave_in_days' => $leaveCalculator->remaining_medical_leave_in_days + $medicalDays,
+                'remaining_medical_leave_in_hours' => $leaveCalculator->remaining_medical_leave_in_hours + ($leave->medical_leave_in_hours ?: ($medicalDays * 8)),
+                'remaining_other_leave_in_days' => $leaveCalculator->remaining_other_leave_in_days + $otherDays,
+                'remaining_other_leave_in_hours' => $leaveCalculator->remaining_other_leave_in_hours + ($leave->other_leave_in_hours ?: ($otherDays * 8)),
             ];
             
             // Cap at original allocation if config exists

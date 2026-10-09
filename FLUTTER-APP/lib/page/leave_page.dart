@@ -222,21 +222,26 @@ class _LeavePageState extends State<LeavePage> {
     if (username.isEmpty) return;
     try {
       var response = await ApiClient.client.get(link + "leave/calculator/username/" + username);
-      if (response.statusCode == 200 &&
-          response.data != null &&
-          (response.data as List).isNotEmpty) {
-        if (mounted) {
+      if (response.statusCode == 200 && response.data != null) {
+        dynamic data;
+        if (response.data is List && (response.data as List).isNotEmpty) {
+          data = (response.data as List)[0];
+        } else if (response.data is Map) {
+          data = response.data;
+        }
+
+        if (data != null && mounted) {
           setState(() {
-            remaining_CL_Days = response.data[0]['remaining_CL_Days']?.toString() ??
-                response.data[0]['remaining_cl_days']?.toString() ?? '0';
-            remaining_EI_Days = response.data[0]['remaining_EI_Days']?.toString() ??
-                response.data[0]['remaining_ei_days']?.toString() ?? '0';
-            remaining_LWP_Days = response.data[0]['remaining_LWP_Days']?.toString() ??
-                response.data[0]['remaining_lwp_days']?.toString() ?? '0';
+            remaining_CL_Days = data['remaining_CL_Days']?.toString() ??
+                data['remaining_cl_days']?.toString() ?? '0';
+            remaining_EI_Days = data['remaining_EI_Days']?.toString() ??
+                data['remaining_ei_days']?.toString() ?? '0';
+            remaining_LWP_Days = data['remaining_LWP_Days']?.toString() ??
+                data['remaining_lwp_days']?.toString() ?? '0';
             remaining_other_leave_in_days =
-                response.data[0]['remaining_other_leave_in_days']?.toString() ?? '0';
+                data['remaining_other_leave_in_days']?.toString() ?? '0';
             remaining_medical_leave_in_days =
-                response.data[0]['remaining_medical_leave_in_days']?.toString() ?? '0';
+                data['remaining_medical_leave_in_days']?.toString() ?? '0';
           });
         }
       }

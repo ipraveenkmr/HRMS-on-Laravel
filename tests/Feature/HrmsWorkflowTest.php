@@ -12,18 +12,19 @@ class HrmsWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function employee(string $username = 'alice'): array
+    private function employee(string $username = 'alice', string $empType = 'Employee'): array
     {
-        $company = DB::table('company_details')->insertGetId(['company_name' => 'Example']);
-        $branch = DB::table('branch_details')->insertGetId([
-            'company_name_id' => $company, 'branch_name' => 'Main', 'longitude' => '0', 'latitude' => '0',
+        $company = DB::table('company_details')->value('id') ?? DB::table('company_details')->insertGetId(['company_name' => 'Example ' . uniqid()]);
+        $branch = DB::table('branch_details')->value('id') ?? DB::table('branch_details')->insertGetId([
+            'company_name_id' => $company, 'branch_name' => 'Main ' . uniqid(), 'longitude' => '0', 'latitude' => '0',
         ]);
-        $department = DB::table('departments')->insertGetId(['department_name' => 'Operations']);
-        $grade = DB::table('pay_grades')->insertGetId(['grade' => 1]);
-        $year = DB::table('financial_years')->insertGetId(['year' => '2026-2027']);
+        $department = DB::table('departments')->value('id') ?? DB::table('departments')->insertGetId(['department_name' => 'Operations ' . uniqid()]);
+        $grade = DB::table('pay_grades')->value('id') ?? DB::table('pay_grades')->insertGetId(['grade' => 1]);
+        $year = DB::table('financial_years')->value('id') ?? DB::table('financial_years')->insertGetId(['year' => '2026-2027']);
         $id = DB::table('employees')->insertGetId([
-            'username' => $username, 'emp_name' => 'Alice', 'company_name_id' => $company,
+            'username' => $username, 'emp_name' => ucfirst($username), 'company_name_id' => $company,
             'branch_name_id' => $branch, 'department_id' => $department, 'pay_grade_id' => $grade,
+            'emp_type' => $empType,
         ]);
         $user = User::create(['username' => $username, 'hashed_password' => bcrypt('password'), 'is_active' => true]);
         Sanctum::actingAs($user);
@@ -159,5 +160,36 @@ class HrmsWorkflowTest extends TestCase
             'password' => 'wrong_password',
         ])->assertStatus(401)
           ->assertJsonPath('detail', 'Please enter correct password');
+    }
+
+    public function test_leave_approval_deducts_leave_balance(): void
+    {
+        $employee = $this->employee('emma_emp');
+        DB::table('leave_calculators')->insert([
+            'financial_year_id' => $employee['year'],
+            'username' => 'emma_emp',
+            'employee_id' => $employee['id'],
+            'remaining_cl_days' => 11,
+            'remaining_cl_hours' => 88,
+        ]);
+
+        $leaveId = $this->postJson('/api/leave', [
+            'employee_id' => $employee['id'],
+            'department_id' => $employee['department'],
+            'leave_type' => 'Casual Leave',
+            'leave_reason' => 'Need 1 day casual leave',
+            'leave_from_date' => '2026-10-20',
+            'leave_to_date' => '2026-10-20',
+        ])->assertCreated()->json('leave.id');
+
+        // Admin approves the leave
+        $admin = $this->employee('admin_user', 'Admin');
+        $this->putJson("/api/leave/{$leaveId}", [
+            'leave_status' => 'Approved',
+        ])->assertOk();
+
+        // Verify balance decreased from 11 to 10
+        $calcRes = $this->getJson('/api/leave/calculator/username/emma_emp')->assertOk()->json();
+        $this->assertEquals(10, $calcRes[0]['remaining_cl_days']);
     }
 }
